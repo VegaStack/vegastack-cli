@@ -1,0 +1,15 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./src/*"]
+    },
+    "types": ["@cloudflare/workers-types", "astro/client"],
+    "jsx": "preserve",
+    "moduleResolution": "Bundler",
+    "verbatimModuleSyntax": true
+  },
+  "include": ["src", "tests", "astro.config.mjs", "*.d.ts"],
+  "exclude": ["dist", ".astro", "node_modules"]
+}

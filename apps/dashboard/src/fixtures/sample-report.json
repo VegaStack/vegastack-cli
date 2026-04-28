@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "date": "2026-04-28",
+  "bundle_version": "2026.04.28",
+  "cli_version": "0.1.0",
+  "model": "claude-sonnet-4-7",
+  "prompt_count": 50,
+  "lift": 0.47,
+  "baseline_pass_rate": 0.41,
+  "with_skill_pass_rate": 0.69,
+  "duration_s": 1842,
+  "archetypes": [
+    { "archetype": "A1", "prompt_count": 6, "baseline_pass_rate": 0.58, "with_skill_pass_rate": 0.83, "lift": 0.6 },
+    { "archetype": "A2", "prompt_count": 4, "baseline_pass_rate": 0.45, "with_skill_pass_rate": 0.85, "lift": 0.73 },
+    { "archetype": "A3", "prompt_count": 4, "baseline_pass_rate": 0.31, "with_skill_pass_rate": 0.81, "lift": 0.72 },
+    { "archetype": "A4", "prompt_count": 4, "baseline_pass_rate": 0.27, "with_skill_pass_rate": 0.7, "lift": 0.59 },
+    { "archetype": "A5", "prompt_count": 5, "baseline_pass_rate": 0.32, "with_skill_pass_rate": 0.78, "lift": 0.68 },
+    { "archetype": "A6", "prompt_count": 5, "baseline_pass_rate": 0.5, "with_skill_pass_rate": 0.74, "lift": 0.48 },
+    { "archetype": "A7", "prompt_count": 5, "baseline_pass_rate": 0.36, "with_skill_pass_rate": 0.68, "lift": 0.5 },
+    { "archetype": "A8", "prompt_count": 4, "baseline_pass_rate": 0.39, "with_skill_pass_rate": 0.71, "lift": 0.52 },
+    { "archetype": "A9", "prompt_count": 3, "baseline_pass_rate": 0.42, "with_skill_pass_rate": 0.6, "lift": 0.31 },
+    { "archetype": "A10", "prompt_count": 4, "baseline_pass_rate": 0.4, "with_skill_pass_rate": 0.66, "lift": 0.43 },
+    { "archetype": "A11", "prompt_count": 3, "baseline_pass_rate": 0.45, "with_skill_pass_rate": 0.62, "lift": 0.31 },
+    { "archetype": "A12", "prompt_count": 3, "baseline_pass_rate": 0.18, "with_skill_pass_rate": 0.79, "lift": 0.74 }
+  ],
+  "knowledge_cards": [
+    { "id": "aws-s3-native-state-locking", "title": "S3 native state locking obsoletes DynamoDB", "expected_in_prompts": 3, "cited_in_prompts": 3, "hit_rate": 1.0 },
+    { "id": "aws-s3-bpa-default-on", "title": "S3 Block Public Access on by default", "expected_in_prompts": 2, "cited_in_prompts": 2, "hit_rate": 1.0 },
+    { "id": "aws-s3-versioning-split", "title": "aws_s3_bucket inline blocks deprecated", "expected_in_prompts": 3, "cited_in_prompts": 2, "hit_rate": 0.67 },
+    { "id": "aws-alb-rename", "title": "aws_alb is alias for aws_lb", "expected_in_prompts": 2, "cited_in_prompts": 2, "hit_rate": 1.0 },
+    { "id": "aws-ebs-encryption-default", "title": "EBS encryption-by-default flips region defaults", "expected_in_prompts": 1, "cited_in_prompts": 1, "hit_rate": 1.0 },
+    { "id": "aws-iam-oidc-github", "title": "GitHub OIDC → AWS thumbprint no longer required", "expected_in_prompts": 2, "cited_in_prompts": 2, "hit_rate": 1.0 },
+    { "id": "cloudflare-resource-renames-v5", "title": "Cloudflare provider v5 mass-rename", "expected_in_prompts": 3, "cited_in_prompts": 2, "hit_rate": 0.67 },
+    { "id": "cloudflare-empty-subcategory", "title": "Cloudflare upstream docs lack subcategory", "expected_in_prompts": 1, "cited_in_prompts": 0, "hit_rate": 0.0 },
+    { "id": "gcp-google-beta-split", "title": "google vs google-beta provider", "expected_in_prompts": 2, "cited_in_prompts": 1, "hit_rate": 0.5 },
+    { "id": "gcp-cloud-run-v2-default", "title": "Cloud Run v2 supersedes v1", "expected_in_prompts": 1, "cited_in_prompts": 1, "hit_rate": 1.0 },
+    { "id": "azure-azurerm-v4-renames", "title": "azurerm v4 provider renames + behaviour changes", "expected_in_prompts": 1, "cited_in_prompts": 1, "hit_rate": 1.0 },
+    { "id": "kubernetes-provider-v2-fields", "title": "kubernetes provider _v1 vs unsuffixed", "expected_in_prompts": 1, "cited_in_prompts": 1, "hit_rate": 1.0 },
+    { "id": "datadog-monitor-v2-syntax", "title": "Datadog monitor query syntax v2", "expected_in_prompts": 1, "cited_in_prompts": 0, "hit_rate": 0.0 },
+    { "id": "vault-kv-v2-mount", "title": "Vault KV v1 vs v2 mount path", "expected_in_prompts": 1, "cited_in_prompts": 1, "hit_rate": 1.0 },
+    { "id": "mongodb-atlas-cluster-vs-advanced", "title": "mongodbatlas_cluster deprecated", "expected_in_prompts": 1, "cited_in_prompts": 1, "hit_rate": 1.0 }
+  ],
+  "recipes": [
+    { "id": "scalable-backend-aws-ecs-fargate-rds-datadog", "expected_in_prompts": 2, "cited_in_prompts": 2, "hit_rate": 1.0 },
+    { "id": "github-oidc-to-aws-deploy-role", "expected_in_prompts": 2, "cited_in_prompts": 2, "hit_rate": 1.0 },
+    { "id": "eks-with-irsa-and-alb-controller", "expected_in_prompts": 2, "cited_in_prompts": 1, "hit_rate": 0.5 },
+    { "id": "zero-trust-cloudflare-aws-okta", "expected_in_prompts": 1, "cited_in_prompts": 1, "hit_rate": 1.0 },
+    { "id": "gke-cloudflare-dns-and-waf", "expected_in_prompts": 1, "cited_in_prompts": 0, "hit_rate": 0.0 },
+    { "id": "serverless-webhook-aws-lambda-apigw-ddb", "expected_in_prompts": 1, "cited_in_prompts": 1, "hit_rate": 1.0 },
+    { "id": "gitops-atlantis-on-eks", "expected_in_prompts": 1, "cited_in_prompts": 1, "hit_rate": 1.0 },
+    { "id": "mongo-atlas-aws-privatelink", "expected_in_prompts": 1, "cited_in_prompts": 1, "hit_rate": 1.0 },
+    { "id": "observability-grafana-cloud-dashboards-as-code", "expected_in_prompts": 1, "cited_in_prompts": 1, "hit_rate": 1.0 }
+  ],
+  "prompts": [
+    {
+      "id": "A1-s3-versioning-kms",
+      "archetype": "A1",
+      "title": "S3 bucket with versioning + KMS",
+      "prompt": "Create an S3 bucket called 'app-prod-logs' with versioning enabled and SSE-KMS using a customer-managed key.",
+      "expectations": [
+        { "id": "has_bucket", "kind": "resource_present", "passed": true },
+        { "id": "has_versioning_resource", "kind": "resource_present", "passed": true },
+        { "id": "has_sse_resource", "kind": "resource_present", "passed": true },
+        { "id": "no_inline_versioning", "kind": "argument_absent", "passed": true },
+        { "id": "cites_split_card", "kind": "cites_card", "passed": true }
+      ],
+      "baseline": { "pass_rate": 0.4, "tool_calls": 0, "cited_cards": [], "cited_recipes": [] },
+      "with_skill": { "pass_rate": 1.0, "tool_calls": 1, "cited_cards": ["aws-s3-versioning-split"], "cited_recipes": [] },
+      "lift": 1.0
+    },
+    {
+      "id": "A5-eks-soft-deps",
+      "archetype": "A5",
+      "title": "Spin up a dev EKS cluster",
+      "prompt": "Stand up a small dev EKS cluster in us-east-1 — single node group, public endpoint OK for dev.",
+      "expectations": [
+        { "id": "has_eks_cluster", "kind": "resource_present", "passed": true },
+        { "id": "has_node_group", "kind": "resource_present", "passed": true },
+        { "id": "has_oidc_provider", "kind": "resource_present", "passed": true },
+        { "id": "has_iam_role_cluster", "kind": "resource_present", "passed": true },
+        { "id": "has_security_group", "kind": "resource_present", "passed": true },
+        { "id": "no_hallucinated_lb_v2", "kind": "no_resource", "passed": true },
+        { "id": "valid_required_args", "kind": "manifest_check", "passed": false, "reason": "endpoint_config block missing required public_access_cidrs" }
+      ],
+      "baseline": { "pass_rate": 0.43, "tool_calls": 0, "cited_cards": [], "cited_recipes": [] },
+      "with_skill": { "pass_rate": 0.86, "tool_calls": 1, "cited_cards": [], "cited_recipes": ["eks-with-irsa-and-alb-controller"] },
+      "lift": 0.75,
+      "failure_excerpt": "Missing public_access_cidrs inside aws_eks_cluster.vpc_config — required when endpoint_public_access = true."
+    },
+    {
+      "id": "A12-cloudflare-record-deprecated",
+      "archetype": "A12",
+      "title": "Is cloudflare_record still a thing?",
+      "prompt": "I've inherited a config that uses `resource \"cloudflare_record\" \"www\"`. Is that still the right resource?",
+      "expectations": [
+        { "id": "mentions_v5_rename", "kind": "cites_card", "passed": true },
+        { "id": "uses_dns_record", "kind": "resource_present", "passed": true },
+        { "id": "no_legacy_record", "kind": "no_resource", "passed": true }
+      ],
+      "baseline": { "pass_rate": 0.0, "tool_calls": 0, "cited_cards": [], "cited_recipes": [] },
+      "with_skill": { "pass_rate": 1.0, "tool_calls": 1, "cited_cards": ["cloudflare-resource-renames-v5"], "cited_recipes": [] },
+      "lift": 1.0
+    },
+    {
+      "id": "A3-import-cloudflare-dns",
+      "archetype": "A3",
+      "title": "Import a Cloudflare DNS record",
+      "prompt": "How do I import an existing Cloudflare DNS record for app.example.com into Terraform state?",
+      "expectations": [
+        { "id": "import_syntax", "kind": "import_syntax_match", "passed": true },
+        { "id": "uses_v5_resource", "kind": "resource_present", "passed": true },
+        { "id": "composite_id_format", "kind": "manifest_check", "passed": false, "reason": "used <zone_id>/<record_id> but example used a name not an ID" }
+      ],
+      "baseline": { "pass_rate": 0.33, "tool_calls": 0, "cited_cards": [], "cited_recipes": [] },
+      "with_skill": { "pass_rate": 0.67, "tool_calls": 1, "cited_cards": ["cloudflare-resource-renames-v5"], "cited_recipes": [] },
+      "lift": 0.51,
+      "failure_excerpt": "Composite ID format wrong — Cloudflare wants <zone_id>/<record_id>, not <zone_id>/<record_name>."
+    },
+    {
+      "id": "A8-s3-soc2-hardening",
+      "archetype": "A8",
+      "title": "Make this S3 bucket SOC2-ready",
+      "prompt": "Take this aws_s3_bucket resource and harden it for SOC2 — encryption, versioning, public access blocked, ownership controls, logging.",
+      "expectations": [
+        { "id": "has_bpa", "kind": "resource_present", "passed": true },
+        { "id": "has_ownership", "kind": "resource_present", "passed": true },
+        { "id": "has_versioning", "kind": "resource_present", "passed": true },
+        { "id": "has_sse", "kind": "resource_present", "passed": true },
+        { "id": "cites_bpa_default", "kind": "cites_card", "passed": false }
+      ],
+      "baseline": { "pass_rate": 0.4, "tool_calls": 0, "cited_cards": [], "cited_recipes": [] },
+      "with_skill": { "pass_rate": 0.8, "tool_calls": 1, "cited_cards": ["aws-s3-versioning-split"], "cited_recipes": [] },
+      "lift": 0.67
+    }
+  ]
+}

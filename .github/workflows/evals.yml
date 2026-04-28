@@ -1,0 +1,364 @@
+name: Evals
+
+on:
+  schedule:
+    # 07:00 UTC nightly — after E4's 06:00 bundle build cron.
+    - cron: "0 7 * * *"
+  pull_request:
+    paths:
+      - "src/lib/discover/**"
+      - "bundle/knowledge/**"
+      - "bundle/recipes/**"
+      - "bundle/*/aliases.yaml"
+      - "evals/**"
+      - ".github/workflows/evals.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Full 50-prompt nightly run, both modes. Uploads JSON artifact and pushes
+  # a copy to eval-history branch so the dashboard (E8) can read it.
+  nightly:
+    name: Nightly evals (50 prompts × baseline+with-skill)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        env:
+          VEGA_SKIP_POSTINSTALL: "1"
+      - run: npm run build
+
+      # Provision the bundle from R2 so the runner has real data to query.
+      # We sync from `cli/bundle/` (extracted files the build-and-publish
+      # workflow uploads as individual R2 objects — see option α in the
+      # cross-repo dependency notes). VEGA_BUNDLE_DIR exported into env so
+      # every subsequent step (and the runner-spawned `vega tf` calls) finds
+      # the bundle without touching the network postinstall path.
+      - name: Provision latest bundle from R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          set -euo pipefail
+          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          BUNDLE_DIR="${RUNNER_TEMP}/vega-bundle"
+          mkdir -p "$BUNDLE_DIR"
+          aws s3 sync \
+            --endpoint-url "$ENDPOINT" \
+            --no-progress \
+            --exact-timestamps \
+            "s3://${R2_BUCKET_NAME}/cli/bundle/" "$BUNDLE_DIR/"
+          # Sanity: root MANIFEST.json must exist or the runner will fail
+          # with no useful diagnostic.
+          if [ ! -f "$BUNDLE_DIR/MANIFEST.json" ]; then
+            echo "::error::R2 sync completed but $BUNDLE_DIR/MANIFEST.json is missing — has build-and-publish.yml run successfully today?"
+            ls -la "$BUNDLE_DIR" || true
+            exit 1
+          fi
+          BUNDLE_VER=$(python3 -c "import json; print(json.load(open('$BUNDLE_DIR/MANIFEST.json')).get('bundle_version','unknown'))" 2>/dev/null || echo "unknown")
+          PROVIDER_COUNT=$(python3 -c "import json; m=json.load(open('$BUNDLE_DIR/MANIFEST.json')); print(len(m.get('providers',{})))" 2>/dev/null || echo "?")
+          echo "Provisioned bundle ${BUNDLE_VER} with ${PROVIDER_COUNT} providers at ${BUNDLE_DIR}"
+          echo "VEGA_BUNDLE_DIR=${BUNDLE_DIR}" >> "$GITHUB_ENV"
+
+      - name: Run full eval suite
+        id: run
+        env:
+          # VEGA_BUNDLE_DIR is also in $GITHUB_ENV from the previous step;
+          # re-asserted here for clarity. The runner spawns `vega tf` per
+          # prompt and each child inherits the env.
+          VEGA_BUNDLE_DIR: ${{ env.VEGA_BUNDLE_DIR }}
+        run: |
+          set -euo pipefail
+          DATE=$(date -u +%Y-%m-%d)
+          OUT="evals/reports/${DATE}.json"
+          npx tsx evals/runner.ts --mode both --concurrency 4 --output "$OUT" --vega "$(pwd)/dist/cli.js"
+          echo "report=$OUT" >> "$GITHUB_OUTPUT"
+          echo "date=$DATE"   >> "$GITHUB_OUTPUT"
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report-${{ steps.run.outputs.date }}
+          path: ${{ steps.run.outputs.report }}
+          retention-days: 90
+      - name: Push to eval-history branch (backup)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPORT: ${{ steps.run.outputs.report }}
+          DATE: ${{ steps.run.outputs.date }}
+        run: |
+          set -euo pipefail
+          git config user.name  "vega-eval-bot"
+          git config user.email "eval-bot@vegastack.com"
+          # Maintain an eval-history orphan branch holding only the JSON reports.
+          # This is the secondary archive — primary is R2 (next step) which the
+          # dashboard reads. eval-history stays for offline backup + traceability.
+          if git ls-remote --exit-code --heads origin eval-history >/dev/null 2>&1; then
+            git fetch origin eval-history:eval-history
+            git checkout eval-history
+          else
+            git checkout --orphan eval-history
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+          mkdir -p reports
+          cp "$REPORT" "reports/${DATE}.json"
+          git add "reports/${DATE}.json"
+          git commit -m "Eval report ${DATE}" || echo "no change"
+          git push origin eval-history
+
+      # --- Primary publish path: R2 (the dashboard reads from here) ---
+      # R2 layout matches apps/dashboard/src/lib/r2.ts:
+      #   cli/evals/reports/<YYYY-MM-DD>.json     — single report per date
+      #   cli/evals/reports/INDEX.json            — { dates, latest, generated_at }
+      # Inlined here (instead of `uses: ./evals-upload-r2.yml`) because reusable
+      # workflows can't accept dynamic step outputs as inputs. The reusable
+      # workflow at .github/workflows/evals-upload-r2.yml remains available for
+      # manual / backfill invocations (workflow_dispatch).
+      - name: Re-checkout main (eval-history checkout earlier swapped HEAD)
+        run: git checkout ${{ github.sha }}
+
+      - name: Upload single report to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          REPORT: ${{ steps.run.outputs.report }}
+          DATE: ${{ steps.run.outputs.date }}
+        run: |
+          set -euo pipefail
+          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          KEY="cli/evals/reports/${DATE}.json"
+          aws s3 cp \
+            --endpoint-url "$ENDPOINT" \
+            --cache-control "public, max-age=300" \
+            --content-type "application/json" \
+            "$REPORT" \
+            "s3://${R2_BUCKET_NAME}/${KEY}"
+          echo "✓ uploaded s3://${R2_BUCKET_NAME}/${KEY}"
+
+      - name: Update R2 INDEX.json
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          DATE: ${{ steps.run.outputs.date }}
+        run: |
+          set -euo pipefail
+          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          INDEX_KEY="cli/evals/reports/INDEX.json"
+          if aws s3 cp --endpoint-url "$ENDPOINT" \
+              "s3://${R2_BUCKET_NAME}/${INDEX_KEY}" ./old-index.json 2>/dev/null; then
+            echo "Found existing INDEX.json"
+          else
+            echo '{"dates":[],"latest":"","generated_at":""}' > ./old-index.json
+            echo "No existing INDEX.json — initializing empty"
+          fi
+          DATE="$DATE" python3 - <<'PY' > new-index.json
+          import json, os
+          from datetime import datetime, timezone
+          old = json.load(open("old-index.json"))
+          dates = set(old.get("dates", []))
+          dates.add(os.environ["DATE"])
+          sorted_dates = sorted(dates, reverse=True)
+          out = {
+            "dates": sorted_dates,
+            "latest": sorted_dates[0] if sorted_dates else "",
+            "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+          }
+          print(json.dumps(out, indent=2))
+          PY
+          aws s3 cp --endpoint-url "$ENDPOINT" \
+            --cache-control "public, max-age=60" \
+            --content-type "application/json" \
+            ./new-index.json \
+            "s3://${R2_BUCKET_NAME}/${INDEX_KEY}"
+          echo "✓ updated s3://${R2_BUCKET_NAME}/${INDEX_KEY}"
+          cat new-index.json
+
+  # 12-prompt smoke (one per archetype) on PRs. Comments lift on the PR.
+  pr-smoke:
+    name: PR smoke (12 prompts × both modes)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      # Parallelise across 4 chunks so a 12-prompt smoke completes in ~6 min.
+      matrix:
+        shard: [1, 2, 3, 4]
+      fail-fast: false
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        env:
+          VEGA_SKIP_POSTINSTALL: "1"
+      - run: npm run build
+
+      # Same R2 bundle provision as the nightly job — PR smoke needs real
+      # data too. The aws s3 sync is incremental + cached across shards
+      # by the GitHub Actions runner image, so the cost is paid once per
+      # shard but the bytes are tiny (only changed objects move).
+      - name: Provision latest bundle from R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          set -euo pipefail
+          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          BUNDLE_DIR="${RUNNER_TEMP}/vega-bundle"
+          mkdir -p "$BUNDLE_DIR"
+          aws s3 sync \
+            --endpoint-url "$ENDPOINT" \
+            --no-progress \
+            --exact-timestamps \
+            "s3://${R2_BUCKET_NAME}/cli/bundle/" "$BUNDLE_DIR/"
+          if [ ! -f "$BUNDLE_DIR/MANIFEST.json" ]; then
+            echo "::error::R2 sync completed but $BUNDLE_DIR/MANIFEST.json is missing"
+            exit 1
+          fi
+          echo "VEGA_BUNDLE_DIR=${BUNDLE_DIR}" >> "$GITHUB_ENV"
+
+      - name: Run smoke shard
+        env:
+          VEGA_BUNDLE_DIR: ${{ env.VEGA_BUNDLE_DIR }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/smoke
+          npx tsx evals/runner.ts \
+            --pr-smoke \
+            --output "/tmp/smoke/shard-${{ matrix.shard }}.json"
+      - name: Upload shard
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-shard-${{ matrix.shard }}
+          path: /tmp/smoke/shard-${{ matrix.shard }}.json
+          retention-days: 7
+
+  # Combine smoke shards, post comment, gate merge if lift drops > 5pp vs main.
+  pr-smoke-comment:
+    name: PR smoke — comment + gate
+    if: github.event_name == 'pull_request'
+    needs: pr-smoke
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: /tmp/smoke
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Aggregate + compare to main baseline
+        id: gate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          # Aggregate shards into one number using the same lift formula.
+          node -e "
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const root = '/tmp/smoke';
+            let bp=0, wp=0, bt=0, wt=0;
+            for (const dir of fs.readdirSync(root)) {
+              for (const f of fs.readdirSync(path.join(root, dir))) {
+                const r = JSON.parse(fs.readFileSync(path.join(root, dir, f), 'utf8'));
+                for (const row of r.baseline)   { bp += row.passed; bt += row.total; }
+                for (const row of r.with_skill) { wp += row.passed; wt += row.total; }
+              }
+            }
+            const baseline_pct  = bt ? bp/bt : 0;
+            const with_skill_pct = wt ? wp/wt : 0;
+            const lift = (with_skill_pct - baseline_pct) / Math.max(0.01, 1 - baseline_pct);
+            const summary = { baseline_pct, with_skill_pct, lift_pct: lift };
+            fs.writeFileSync('/tmp/smoke-summary.json', JSON.stringify(summary, null, 2));
+            console.log('::set-output name=lift::' + lift.toFixed(4));
+            console.log('::set-output name=baseline::' + baseline_pct.toFixed(4));
+            console.log('::set-output name=with_skill::' + with_skill_pct.toFixed(4));
+          "
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const s = JSON.parse(fs.readFileSync('/tmp/smoke-summary.json', 'utf8'));
+            const fmt = (x) => (x*100).toFixed(1) + '%';
+            const body = [
+              '### Eval smoke (12 prompts × baseline+with-skill)',
+              '',
+              `| metric | value |`,
+              `|---|---|`,
+              `| baseline_pct | ${fmt(s.baseline_pct)} |`,
+              `| with_skill_pct | ${fmt(s.with_skill_pct)} |`,
+              `| **lift_pct** | **${fmt(s.lift_pct)}** |`,
+              '',
+              '_Full 50-prompt nightly runs at 07:00 UTC; report uploaded as workflow artifact._',
+            ].join('\n');
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+      - name: Gate (block merge if lift drops > 5pp vs main)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Fetch the latest main-branch nightly report from the eval-history branch.
+          # If it doesn't exist yet (first run), skip the gate.
+          MAIN_LIFT=$(curl -fsSL \
+            "https://raw.githubusercontent.com/${{ github.repository }}/eval-history/reports/latest.json" \
+            2>/dev/null | node -e "
+              let s=''; process.stdin.on('data', d => s+=d).on('end', () => {
+                try { console.log(JSON.parse(s).summary.lift_pct); } catch { console.log('NA'); }
+              });
+            " || echo "NA")
+          PR_LIFT=$(node -e "console.log(JSON.parse(require('fs').readFileSync('/tmp/smoke-summary.json','utf8')).lift_pct)")
+          if [ "$MAIN_LIFT" = "NA" ]; then
+            echo "No baseline yet on eval-history; skipping gate."
+            exit 0
+          fi
+          DELTA=$(node -e "console.log((${PR_LIFT}) - (${MAIN_LIFT}))")
+          echo "main lift=$MAIN_LIFT  pr lift=$PR_LIFT  delta=$DELTA"
+          # Block if PR lift is more than 5pp below main.
+          node -e "process.exit((${DELTA}) >= -0.05 ? 0 : 1)" || {
+            echo "::error::Lift dropped by more than 5 percentage points vs main."
+            exit 1
+          }

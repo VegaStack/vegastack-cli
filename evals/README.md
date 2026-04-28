@@ -1,0 +1,127 @@
+# vegastack-cli eval suite
+
+50 prompts across 12 archetypes. Drives a baseline-vs-skill comparison whose
+single headline number is `lift_pct` — the fraction of remaining error closed
+by the skill.
+
+## Files
+
+```
+evals/
+├── evals.json                # the 50 prompts (this file is the source of truth)
+├── runner.ts                 # CLI: baseline-vs-skill executor
+├── lib/
+│   ├── score.ts              # per-expectation scoring (resource_present, no_resource, ...)
+│   ├── judge.ts              # LLM-as-judge for ambiguous cases (manifest_check fallback)
+│   └── anthropic-runner.ts   # Anthropic SDK driver with bash tool
+└── reports/                  # JSON reports land here (uploaded as CI artifact)
+```
+
+## Prompt format
+
+Each entry in `evals.json:evals[]`:
+
+```json
+{
+  "id": "A5-eks-soft-deps",
+  "archetype": "A5",
+  "title": "Spin up a dev EKS cluster",
+  "prompt": "Stand up a small dev EKS cluster ...",
+  "expectations": [
+    { "id": "has_cluster", "kind": "resource_present", "value": "aws_eks_cluster" }
+  ],
+  "tags": ["aws", "eks", "soft-deps"],
+  "max_tool_calls_with_skill": 5,
+  "max_tool_calls_baseline": 12
+}
+```
+
+### Expectation kinds
+
+| kind | meaning |
+|---|---|
+| `resource_present` | response HCL contains `resource "<value>" "..."` or `data "<value>" "..."` |
+| `no_resource` | response does NOT contain that resource (catches hallucinations) |
+| `argument_present` | value is `resource.arg`; arg appears under that resource block |
+| `argument_absent` | value is `resource.arg`; arg does NOT appear (e.g. deprecated arg) |
+| `import_syntax_match` | response contains `terraform import <value>.X <id>` |
+| `manifest_check` | runner inspects manifest entry; "all required_args present" or "no extra args beyond required+optional+blocks" |
+| `cites_card` | response references a knowledge card by its id (or `authoritative_source` URL) |
+| `cites_recipe` | response references a recipe by its id (or scaffold fingerprint) |
+| `cites_path` | response cites the named bundle path (substring match) |
+
+## Adding a prompt
+
+1. Pick the right archetype (A1-A12; see `/tmp/synthesis/inputs/R4-user-task-taxonomy.md`).
+2. Append to `evals.json:evals[]`.
+3. Use real knowledge-card / recipe ids from `/tmp/synthesis/v1-plan.md §10`.
+4. Set `max_tool_calls_baseline` ≥ `max_tool_calls_with_skill` × 2 — without
+   the skill, the model needs more tool calls to reach the same answer.
+5. Run the smoke locally:
+   ```bash
+   tsx evals/runner.ts --mock --filter <ARCH> --output /tmp/check.json
+   ```
+
+## Running the runner locally
+
+```bash
+# Mock run (no API calls, deterministic) — fastest sanity check:
+tsx evals/runner.ts --mode both --mock --output /tmp/test-report.json
+
+# Real baseline + with-skill (requires ANTHROPIC_API_KEY):
+tsx evals/runner.ts --mode both --concurrency 4 --output evals/reports/local.json
+
+# Single-archetype focus:
+tsx evals/runner.ts --mode both --filter A12 --concurrency 2
+
+# PR smoke (12 prompts, one per archetype, both modes):
+tsx evals/runner.ts --pr-smoke
+```
+
+The runner writes a JSON report shaped like:
+
+```json
+{
+  "generated_at": "2026-04-28T07:00:12Z",
+  "model": "claude-opus-4-7",
+  "mode": "both",
+  "eval_count": 50,
+  "summary": {
+    "baseline_pct": 0.42,
+    "with_skill_pct": 0.81,
+    "lift_pct": 0.67,
+    "per_archetype": { "A1": { "baseline_pct": 0.55, "with_skill_pct": 0.92, "lift_pct": 0.82 } }
+  },
+  "baseline":  [{ "id": "...", "archetype": "A1", "passed": 5, "total": 7, "pct": 0.714, "expectations": [...] }],
+  "with_skill": [...]
+}
+```
+
+## Lift formula
+
+```
+lift = (with_skill_pct - baseline_pct) / max(0.01, 1 - baseline_pct)
+```
+
+Reported per-archetype and overall. The denominator floor (`0.01`) keeps the
+formula sane when `baseline_pct → 1.0`.
+
+## CI integration
+
+See `.github/workflows/evals.yml`:
+
+- **nightly** cron `0 7 * * *` (07:00 UTC, after E4's 06:00 bundle build) —
+  full 50-prompt run, both modes, uploads `evals/reports/<date>.json` as a
+  workflow artifact and pushes a copy to the `eval-history` branch.
+- **pr-smoke** triggers on PRs touching `src/lib/discover/**`,
+  `bundle/knowledge/**`, `bundle/recipes/**`, `bundle/*/aliases.yaml` — runs
+  the 12-prompt smoke (one per archetype), comments lift on the PR, blocks
+  merge if lift drops more than 5pp vs main.
+
+## Judge noise mitigation
+
+The LLM-as-judge fallback (`evals/lib/judge.ts`) runs each ambiguous
+expectation 3× at temperature 0 and takes the median. The judge prompt is
+locked by a snapshot test in `tests/integration/eval-runner.test.ts`. Per
+`/tmp/synthesis/v1-plan.md §8` risk #10, the public lift number is gated on
+a 4-week rolling median.

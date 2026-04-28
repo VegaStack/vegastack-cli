@@ -1,0 +1,150 @@
+{
+  "status": "ok",
+  "query": "ECR repository IAM OIDC role for GitHub Actions",
+  "provider": "aws",
+  "tokens": [
+    "ecr",
+    "repository",
+    "iam",
+    "oidc",
+    "role",
+    "github",
+    "actions"
+  ],
+  "tiers_used": [
+    "manifest"
+  ],
+  "files": [
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/iam_role.html.markdown",
+      "score": 295,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:iam→IAM (Identity & Access Management)",
+        "primary_resource:aws_iam_role",
+        "subcategory:IAM (Identity & Access Management)",
+        "name_partial:aws_iam_role"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecr_repository_policy.html.markdown",
+      "score": 255,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:ecr→ECR (Elastic Container Registry)",
+        "subcategory:ECR (Elastic Container Registry)",
+        "name_partial:aws_ecr_repository_policy",
+        "name_partial:aws_ecr_repository_policy"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/iam_role_policy.html.markdown",
+      "score": 235,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:iam→IAM (Identity & Access Management)",
+        "subcategory:IAM (Identity & Access Management)",
+        "name_partial:aws_iam_role_policy",
+        "name_partial:aws_iam_role_policy"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecr_lifecycle_policy.html.markdown",
+      "score": 220,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:ecr→ECR (Elastic Container Registry)",
+        "subcategory:ECR (Elastic Container Registry)",
+        "name_partial:aws_ecr_lifecycle_policy",
+        "argument_index:repository"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecr_repository.html.markdown",
+      "score": 195,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:ecr→ECR (Elastic Container Registry)",
+        "subcategory:ECR (Elastic Container Registry)",
+        "name_partial:aws_ecr_repository",
+        "name_partial:aws_ecr_repository"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecr_repository_creation_template.html.markdown",
+      "score": 195,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:ecr→ECR (Elastic Container Registry)",
+        "subcategory:ECR (Elastic Container Registry)",
+        "name_partial:aws_ecr_repository_creation_template",
+        "name_partial:aws_ecr_repository_creation_template"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/iam_role_policies_exclusive.html.markdown",
+      "score": 195,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:iam→IAM (Identity & Access Management)",
+        "subcategory:IAM (Identity & Access Management)",
+        "name_partial:aws_iam_role_policies_exclusive",
+        "name_partial:aws_iam_role_policies_exclusive"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/iam_role_policy_attachment.html.markdown",
+      "score": 195,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:iam→IAM (Identity & Access Management)",
+        "subcategory:IAM (Identity & Access Management)",
+        "name_partial:aws_iam_role_policy_attachment",
+        "name_partial:aws_iam_role_policy_attachment"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/iam_role_policy_attachments_exclusive.html.markdown",
+      "score": 195,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:iam→IAM (Identity & Access Management)",
+        "subcategory:IAM (Identity & Access Management)",
+        "name_partial:aws_iam_role_policy_attachments_exclusive",
+        "name_partial:aws_iam_role_policy_attachments_exclusive"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/iam_service_linked_role.html.markdown",
+      "score": 195,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:iam→IAM (Identity & Access Management)",
+        "subcategory:IAM (Identity & Access Management)",
+        "name_partial:aws_iam_service_linked_role",
+        "name_partial:aws_iam_service_linked_role"
+      ]
+    }
+  ],
+  "count": 10,
+  "intents": [
+    {
+      "label": "IAM (Identity & Access Management)",
+      "keyword": "iam",
+      "top_files": [
+        "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/iam_role.html.markdown",
+        "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/iam_role_policy.html.markdown",
+        "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/iam_role_policies_exclusive.html.markdown"
+      ]
+    },
+    {
+      "label": "ECR (Elastic Container Registry)",
+      "keyword": "ecr",
+      "top_files": [
+        "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecr_repository_policy.html.markdown",
+        "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecr_lifecycle_policy.html.markdown",
+        "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecr_repository.html.markdown"
+      ]
+    }
+  ]
+}

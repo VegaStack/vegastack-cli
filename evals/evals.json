@@ -1,0 +1,752 @@
+{
+  "schema_version": 1,
+  "skill_name": "terraform-providers-kit",
+  "comment": "50 prompts across 12 archetypes. Distribution per /tmp/synthesis/v1-plan.md §4: A1×6 A2×4 A3×4 A4×4 A5×5 A6×5 A7×5 A8×4 A9×3 A10×4 A11×3 A12×3.",
+  "evals": [
+    {
+      "id": "A1-s3-versioning-modern",
+      "archetype": "A1",
+      "title": "S3 bucket with versioning + KMS",
+      "prompt": "Write Terraform to create an AWS S3 bucket called 'vegastack-prod-uploads' in us-east-1 with versioning enabled and SSE-KMS encryption using a customer-managed KMS key. Use the current recommended (split-resource) pattern.",
+      "expectations": [
+        { "id": "has_bucket", "kind": "resource_present", "value": "aws_s3_bucket" },
+        { "id": "has_versioning", "kind": "resource_present", "value": "aws_s3_bucket_versioning" },
+        { "id": "has_sse", "kind": "resource_present", "value": "aws_s3_bucket_server_side_encryption_configuration" },
+        { "id": "has_kms_key", "kind": "resource_present", "value": "aws_kms_key" },
+        { "id": "no_inline_versioning", "kind": "no_resource", "value": "aws_s3_bucket_inline_versioning" },
+        { "id": "valid_args", "kind": "manifest_check", "value": "all required_args present" },
+        { "id": "cites_card", "kind": "cites_card", "value": "aws-s3-versioning-split" }
+      ],
+      "tags": ["aws", "s3", "scaffold"],
+      "max_tool_calls_with_skill": 4,
+      "max_tool_calls_baseline": 10
+    },
+    {
+      "id": "A1-cloudflare-dns-record",
+      "archetype": "A1",
+      "title": "Cloudflare DNS A record",
+      "prompt": "Create a Cloudflare DNS A record for api.vegastack.com pointing to 203.0.113.42 in zone vegastack.com (zone_id 023e105f4ecef8ad9ca31a8372d0c353), proxied through Cloudflare, TTL 1.",
+      "expectations": [
+        { "id": "has_dns_record", "kind": "resource_present", "value": "cloudflare_dns_record" },
+        { "id": "no_legacy_record", "kind": "no_resource", "value": "cloudflare_record" },
+        { "id": "valid_args", "kind": "manifest_check", "value": "all required_args present" },
+        { "id": "cites_card", "kind": "cites_card", "value": "cloudflare-resource-renames-v5" }
+      ],
+      "tags": ["cloudflare", "dns", "scaffold"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A1-gcp-cloud-run-v2",
+      "archetype": "A1",
+      "title": "GCP Cloud Run v2 service",
+      "prompt": "Deploy a containerized service called 'api' to GCP Cloud Run in us-central1, image gcr.io/my-proj/api:latest, public ingress, max 10 instances, min 1 instance.",
+      "expectations": [
+        { "id": "uses_v2", "kind": "resource_present", "value": "google_cloud_run_v2_service" },
+        { "id": "no_v1", "kind": "no_resource", "value": "google_cloud_run_service" },
+        { "id": "valid_args", "kind": "manifest_check", "value": "all required_args present" },
+        { "id": "cites_card", "kind": "cites_card", "value": "gcp-cloud-run-v2-default" }
+      ],
+      "tags": ["gcp", "cloud-run", "scaffold"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A1-azurerm-storage-account",
+      "archetype": "A1",
+      "title": "Azure Storage Account",
+      "prompt": "Create an Azure Storage Account named vegastackdata in resource group rg-prod, location eastus2, Standard_LRS, with HTTPS-only and TLS 1.2 minimum.",
+      "expectations": [
+        { "id": "has_storage", "kind": "resource_present", "value": "azurerm_storage_account" },
+        { "id": "has_rg", "kind": "resource_present", "value": "azurerm_resource_group" },
+        { "id": "valid_args", "kind": "manifest_check", "value": "all required_args present" }
+      ],
+      "tags": ["azure", "storage", "scaffold"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A1-vault-kv-secret-v2",
+      "archetype": "A1",
+      "title": "Vault KV v2 secret",
+      "prompt": "Store a Vault KV v2 secret at path 'apps/web/db' with two fields: username=app and password=changeme. Mount the kv-v2 backend at 'secret' if it doesn't exist.",
+      "expectations": [
+        { "id": "has_mount", "kind": "resource_present", "value": "vault_mount" },
+        { "id": "has_secret_v2", "kind": "resource_present", "value": "vault_kv_secret_v2" },
+        { "id": "no_v1_secret", "kind": "no_resource", "value": "vault_kv_secret_unmanaged" },
+        { "id": "valid_args", "kind": "manifest_check", "value": "all required_args present" },
+        { "id": "cites_card", "kind": "cites_card", "value": "vault-kv-v2-mount" }
+      ],
+      "tags": ["vault", "secrets", "scaffold"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A1-datadog-monitor",
+      "archetype": "A1",
+      "title": "Datadog metric monitor",
+      "prompt": "Create a Datadog monitor that alerts when the AWS Lambda function 'web-api' error rate is above 5% averaged over the last 10 minutes. Page @pagerduty-web on critical.",
+      "expectations": [
+        { "id": "has_monitor", "kind": "resource_present", "value": "datadog_monitor" },
+        { "id": "valid_args", "kind": "manifest_check", "value": "all required_args present" },
+        { "id": "cites_card", "kind": "cites_card", "value": "datadog-monitor-v2-syntax" }
+      ],
+      "tags": ["datadog", "monitor", "scaffold"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A2-eks-cluster-encryption-config",
+      "archetype": "A2",
+      "title": "Args of aws_eks_cluster.encryption_config",
+      "prompt": "What arguments does the encryption_config block on aws_eks_cluster accept? List required vs optional, the type of each, and any enum values.",
+      "expectations": [
+        { "id": "names_resources", "kind": "resource_present", "value": "aws_eks_cluster" },
+        { "id": "no_extra_args", "kind": "manifest_check", "value": "no extra args beyond required+optional+blocks" },
+        { "id": "cites_path", "kind": "cites_path", "value": "aws/r/eks_cluster" }
+      ],
+      "tags": ["aws", "eks", "args"],
+      "max_tool_calls_with_skill": 2,
+      "max_tool_calls_baseline": 6
+    },
+    {
+      "id": "A2-cloudflare-ruleset-args",
+      "archetype": "A2",
+      "title": "Args of cloudflare_ruleset",
+      "prompt": "What arguments does cloudflare_ruleset accept at the top level? Specifically I want to know what 'phase' values are valid and what 'kind' values are valid.",
+      "expectations": [
+        { "id": "names_ruleset", "kind": "resource_present", "value": "cloudflare_ruleset" },
+        { "id": "no_extra_args", "kind": "manifest_check", "value": "no extra args beyond required+optional+blocks" },
+        { "id": "cites_path", "kind": "cites_path", "value": "cloudflare/r/ruleset" }
+      ],
+      "tags": ["cloudflare", "ruleset", "args"],
+      "max_tool_calls_with_skill": 2,
+      "max_tool_calls_baseline": 6
+    },
+    {
+      "id": "A2-gcp-container-cluster-args",
+      "archetype": "A2",
+      "title": "Args of google_container_cluster",
+      "prompt": "What are the required arguments for google_container_cluster? Show me the top-level required ones only — I'll handle blocks separately.",
+      "expectations": [
+        { "id": "names_cluster", "kind": "resource_present", "value": "google_container_cluster" },
+        { "id": "no_extra_args", "kind": "manifest_check", "value": "no extra args beyond required+optional+blocks" },
+        { "id": "cites_path", "kind": "cites_path", "value": "gcp/r/container_cluster" }
+      ],
+      "tags": ["gcp", "gke", "args"],
+      "max_tool_calls_with_skill": 2,
+      "max_tool_calls_baseline": 6
+    },
+    {
+      "id": "A2-mongodbatlas-advanced-cluster-args",
+      "archetype": "A2",
+      "title": "Args of mongodbatlas_advanced_cluster",
+      "prompt": "What arguments does mongodbatlas_advanced_cluster accept? Use the new resource, not the deprecated mongodbatlas_cluster.",
+      "expectations": [
+        { "id": "uses_advanced", "kind": "resource_present", "value": "mongodbatlas_advanced_cluster" },
+        { "id": "no_legacy", "kind": "no_resource", "value": "mongodbatlas_cluster" },
+        { "id": "cites_card", "kind": "cites_card", "value": "mongodb-atlas-cluster-vs-advanced" }
+      ],
+      "tags": ["mongodb-atlas", "args"],
+      "max_tool_calls_with_skill": 2,
+      "max_tool_calls_baseline": 6
+    },
+    {
+      "id": "A3-import-cloudflare-dns-record",
+      "archetype": "A3",
+      "title": "Import a Cloudflare DNS record",
+      "prompt": "I have an existing Cloudflare DNS A record for foo.example.com (zone example.com, zone_id 023e105f4ecef8ad9ca31a8372d0c353, record_id 372e67954025e0ba6aaa6d586b9e0b59). Give me the exact `terraform import` command and a matching resource block.",
+      "expectations": [
+        { "id": "has_record", "kind": "resource_present", "value": "cloudflare_dns_record" },
+        { "id": "no_legacy_record", "kind": "no_resource", "value": "cloudflare_record" },
+        { "id": "import_syntax", "kind": "import_syntax_match", "value": "cloudflare_dns_record" },
+        { "id": "cites_card", "kind": "cites_card", "value": "cloudflare-resource-renames-v5" }
+      ],
+      "tags": ["cloudflare", "import"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A3-import-aws-s3-bucket",
+      "archetype": "A3",
+      "title": "Import an AWS S3 bucket",
+      "prompt": "I have an existing S3 bucket called 'legacy-data-2018' I want to bring into Terraform. Give me the import command and a starter resource block that matches its current configuration (versioning enabled, SSE-S3).",
+      "expectations": [
+        { "id": "has_bucket", "kind": "resource_present", "value": "aws_s3_bucket" },
+        { "id": "has_versioning", "kind": "resource_present", "value": "aws_s3_bucket_versioning" },
+        { "id": "import_syntax", "kind": "import_syntax_match", "value": "aws_s3_bucket" },
+        { "id": "cites_card", "kind": "cites_card", "value": "aws-s3-versioning-split" }
+      ],
+      "tags": ["aws", "s3", "import"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A3-import-azurerm-resource-group",
+      "archetype": "A3",
+      "title": "Import an Azure resource group",
+      "prompt": "Import an existing Azure resource group named 'rg-legacy-prod' in subscription 00000000-0000-0000-0000-000000000000 into Terraform.",
+      "expectations": [
+        { "id": "has_rg", "kind": "resource_present", "value": "azurerm_resource_group" },
+        { "id": "import_syntax", "kind": "import_syntax_match", "value": "azurerm_resource_group" },
+        { "id": "cites_path", "kind": "cites_path", "value": "azure/r/resource_group" }
+      ],
+      "tags": ["azure", "import"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A3-import-github-repository",
+      "archetype": "A3",
+      "title": "Import a GitHub repository",
+      "prompt": "Bring our existing GitHub repository 'vegastack/website' under Terraform management with the github provider.",
+      "expectations": [
+        { "id": "has_repo", "kind": "resource_present", "value": "github_repository" },
+        { "id": "import_syntax", "kind": "import_syntax_match", "value": "github_repository" },
+        { "id": "cites_path", "kind": "cites_path", "value": "github/r/repository" }
+      ],
+      "tags": ["github", "import"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A4-s3-versioning-migrate-split",
+      "archetype": "A4",
+      "title": "Migrate inline S3 versioning to split resources",
+      "prompt": "We have aws_s3_bucket resources using the deprecated inline `versioning {}`, `server_side_encryption_configuration {}`, and `lifecycle_rule {}` blocks. Show me how to migrate to the modern split-resource pattern, including state moves where applicable.",
+      "expectations": [
+        { "id": "split_versioning", "kind": "resource_present", "value": "aws_s3_bucket_versioning" },
+        { "id": "split_sse", "kind": "resource_present", "value": "aws_s3_bucket_server_side_encryption_configuration" },
+        { "id": "split_lifecycle", "kind": "resource_present", "value": "aws_s3_bucket_lifecycle_configuration" },
+        { "id": "cites_card", "kind": "cites_card", "value": "aws-s3-versioning-split" }
+      ],
+      "tags": ["aws", "s3", "migrate"],
+      "max_tool_calls_with_skill": 4,
+      "max_tool_calls_baseline": 10
+    },
+    {
+      "id": "A4-cloudflare-v5-rename-migration",
+      "archetype": "A4",
+      "title": "Migrate Cloudflare provider v4 → v5 renames",
+      "prompt": "We're upgrading from cloudflare provider v4 to v5. We have cloudflare_record, cloudflare_access_application, and cloudflare_teams_account resources. Show me the renames and state-mv commands.",
+      "expectations": [
+        { "id": "new_dns", "kind": "resource_present", "value": "cloudflare_dns_record" },
+        { "id": "new_zta", "kind": "resource_present", "value": "cloudflare_zero_trust_access_application" },
+        { "id": "no_legacy_record", "kind": "no_resource", "value": "cloudflare_record" },
+        { "id": "no_legacy_access", "kind": "no_resource", "value": "cloudflare_access_application" },
+        { "id": "cites_card", "kind": "cites_card", "value": "cloudflare-resource-renames-v5" }
+      ],
+      "tags": ["cloudflare", "migrate", "v5"],
+      "max_tool_calls_with_skill": 4,
+      "max_tool_calls_baseline": 10
+    },
+    {
+      "id": "A4-cloud-run-v1-to-v2",
+      "archetype": "A4",
+      "title": "Migrate Cloud Run v1 → v2",
+      "prompt": "We have google_cloud_run_service resources. Migrate them to the v2 equivalent — show the new resource and what changes in the args.",
+      "expectations": [
+        { "id": "uses_v2", "kind": "resource_present", "value": "google_cloud_run_v2_service" },
+        { "id": "no_v1", "kind": "no_resource", "value": "google_cloud_run_service" },
+        { "id": "cites_card", "kind": "cites_card", "value": "gcp-cloud-run-v2-default" }
+      ],
+      "tags": ["gcp", "cloud-run", "migrate"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A4-mongodb-cluster-to-advanced",
+      "archetype": "A4",
+      "title": "Migrate mongodbatlas_cluster → advanced_cluster",
+      "prompt": "We have mongodbatlas_cluster resources. Migrate them to mongodbatlas_advanced_cluster — what changes structurally?",
+      "expectations": [
+        { "id": "uses_advanced", "kind": "resource_present", "value": "mongodbatlas_advanced_cluster" },
+        { "id": "no_legacy", "kind": "no_resource", "value": "mongodbatlas_cluster" },
+        { "id": "cites_card", "kind": "cites_card", "value": "mongodb-atlas-cluster-vs-advanced" }
+      ],
+      "tags": ["mongodb-atlas", "migrate"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A5-ec2-instance-soft-deps",
+      "archetype": "A5",
+      "title": "Spin up an EC2 instance",
+      "prompt": "Spin up a single t3.small EC2 instance running Amazon Linux 2023 in us-east-1. Make it actually usable — I should be able to SSH in.",
+      "expectations": [
+        { "id": "has_instance", "kind": "resource_present", "value": "aws_instance" },
+        { "id": "has_vpc", "kind": "resource_present", "value": "aws_vpc" },
+        { "id": "has_subnet", "kind": "resource_present", "value": "aws_subnet" },
+        { "id": "has_sg", "kind": "resource_present", "value": "aws_security_group" },
+        { "id": "has_keypair_or_igw", "kind": "resource_present", "value": "aws_internet_gateway" },
+        { "id": "no_lb_v2", "kind": "no_resource", "value": "aws_lb_v2" },
+        { "id": "valid_args", "kind": "manifest_check", "value": "all required_args present" }
+      ],
+      "tags": ["aws", "ec2", "soft-deps"],
+      "max_tool_calls_with_skill": 4,
+      "max_tool_calls_baseline": 12
+    },
+    {
+      "id": "A5-eks-soft-deps",
+      "archetype": "A5",
+      "title": "Spin up a dev EKS cluster",
+      "prompt": "Stand up a small dev EKS cluster in us-east-1 — single node group, public endpoint OK for dev.",
+      "expectations": [
+        { "id": "has_cluster", "kind": "resource_present", "value": "aws_eks_cluster" },
+        { "id": "has_node_group", "kind": "resource_present", "value": "aws_eks_node_group" },
+        { "id": "has_oidc", "kind": "resource_present", "value": "aws_iam_openid_connect_provider" },
+        { "id": "has_iam_role", "kind": "resource_present", "value": "aws_iam_role" },
+        { "id": "has_sg", "kind": "resource_present", "value": "aws_security_group" },
+        { "id": "no_lb_v2", "kind": "no_resource", "value": "aws_lb_v2" },
+        { "id": "valid_args", "kind": "manifest_check", "value": "all required_args present" }
+      ],
+      "tags": ["aws", "eks", "soft-deps"],
+      "max_tool_calls_with_skill": 5,
+      "max_tool_calls_baseline": 12
+    },
+    {
+      "id": "A5-lambda-soft-deps",
+      "archetype": "A5",
+      "title": "Stand up a Lambda function",
+      "prompt": "Create an AWS Lambda function called 'web-handler' (Node.js 20, hello-world handler). Make it actually deployable end-to-end.",
+      "expectations": [
+        { "id": "has_lambda", "kind": "resource_present", "value": "aws_lambda_function" },
+        { "id": "has_iam_role", "kind": "resource_present", "value": "aws_iam_role" },
+        { "id": "has_log_group", "kind": "resource_present", "value": "aws_cloudwatch_log_group" },
+        { "id": "valid_args", "kind": "manifest_check", "value": "all required_args present" }
+      ],
+      "tags": ["aws", "lambda", "soft-deps"],
+      "max_tool_calls_with_skill": 4,
+      "max_tool_calls_baseline": 10
+    },
+    {
+      "id": "A5-rds-soft-deps",
+      "archetype": "A5",
+      "title": "Stand up an RDS Postgres",
+      "prompt": "Provision an RDS Postgres 16 db.t4g.medium instance for production. Encrypted, in private subnets, deletion protection on.",
+      "expectations": [
+        { "id": "has_db", "kind": "resource_present", "value": "aws_db_instance" },
+        { "id": "has_subnet_group", "kind": "resource_present", "value": "aws_db_subnet_group" },
+        { "id": "has_sg", "kind": "resource_present", "value": "aws_security_group" },
+        { "id": "valid_args", "kind": "manifest_check", "value": "all required_args present" }
+      ],
+      "tags": ["aws", "rds", "soft-deps"],
+      "max_tool_calls_with_skill": 4,
+      "max_tool_calls_baseline": 10
+    },
+    {
+      "id": "A5-cloudflare-zta-soft-deps",
+      "archetype": "A5",
+      "title": "Stand up a Cloudflare Zero Trust app",
+      "prompt": "Set up a Cloudflare Zero Trust application protecting internal.vegastack.com behind Okta SSO.",
+      "expectations": [
+        { "id": "has_app", "kind": "resource_present", "value": "cloudflare_zero_trust_access_application" },
+        { "id": "has_policy", "kind": "resource_present", "value": "cloudflare_zero_trust_access_policy" },
+        { "id": "has_idp", "kind": "resource_present", "value": "cloudflare_zero_trust_access_identity_provider" },
+        { "id": "no_legacy_access", "kind": "no_resource", "value": "cloudflare_access_application" },
+        { "id": "cites_card", "kind": "cites_card", "value": "cloudflare-resource-renames-v5" }
+      ],
+      "tags": ["cloudflare", "zero-trust", "soft-deps"],
+      "max_tool_calls_with_skill": 4,
+      "max_tool_calls_baseline": 10
+    },
+    {
+      "id": "A6-eks-with-irsa",
+      "archetype": "A6",
+      "title": "EKS cluster with IRSA",
+      "prompt": "Stand up an EKS cluster with IAM Roles for Service Accounts (IRSA) configured — include the OIDC provider, the trust policy, and an example service-account-bound IAM role.",
+      "expectations": [
+        { "id": "has_cluster", "kind": "resource_present", "value": "aws_eks_cluster" },
+        { "id": "has_oidc", "kind": "resource_present", "value": "aws_iam_openid_connect_provider" },
+        { "id": "has_role", "kind": "resource_present", "value": "aws_iam_role" },
+        { "id": "has_node_group", "kind": "resource_present", "value": "aws_eks_node_group" },
+        { "id": "valid_args", "kind": "manifest_check", "value": "all required_args present" }
+      ],
+      "tags": ["aws", "eks", "irsa", "topology"],
+      "max_tool_calls_with_skill": 5,
+      "max_tool_calls_baseline": 12
+    },
+    {
+      "id": "A6-rds-aurora-cluster",
+      "archetype": "A6",
+      "title": "RDS Aurora Postgres cluster",
+      "prompt": "Stand up an Aurora Postgres 16 cluster for production: 2 instances (1 writer, 1 reader), encrypted, multi-AZ, in private subnets, with a parameter group tuned for OLTP.",
+      "expectations": [
+        { "id": "has_cluster", "kind": "resource_present", "value": "aws_rds_cluster" },
+        { "id": "has_instance", "kind": "resource_present", "value": "aws_rds_cluster_instance" },
+        { "id": "has_subnet_group", "kind": "resource_present", "value": "aws_db_subnet_group" },
+        { "id": "has_param_group", "kind": "resource_present", "value": "aws_rds_cluster_parameter_group" },
+        { "id": "valid_args", "kind": "manifest_check", "value": "all required_args present" }
+      ],
+      "tags": ["aws", "aurora", "topology"],
+      "max_tool_calls_with_skill": 5,
+      "max_tool_calls_baseline": 12
+    },
+    {
+      "id": "A6-ecs-fargate-alb",
+      "archetype": "A6",
+      "title": "ECS Fargate behind ALB",
+      "prompt": "Run a containerized API service on ECS Fargate behind an Application Load Balancer, with auto-scaling on CPU.",
+      "expectations": [
+        { "id": "has_cluster", "kind": "resource_present", "value": "aws_ecs_cluster" },
+        { "id": "has_service", "kind": "resource_present", "value": "aws_ecs_service" },
+        { "id": "has_task_def", "kind": "resource_present", "value": "aws_ecs_task_definition" },
+        { "id": "has_lb", "kind": "resource_present", "value": "aws_lb" },
+        { "id": "has_tg", "kind": "resource_present", "value": "aws_lb_target_group" },
+        { "id": "has_listener", "kind": "resource_present", "value": "aws_lb_listener" },
+        { "id": "has_autoscaling", "kind": "resource_present", "value": "aws_appautoscaling_target" },
+        { "id": "no_lb_v2", "kind": "no_resource", "value": "aws_lb_v2" }
+      ],
+      "tags": ["aws", "ecs", "topology"],
+      "max_tool_calls_with_skill": 5,
+      "max_tool_calls_baseline": 12
+    },
+    {
+      "id": "A6-azurerm-aks",
+      "archetype": "A6",
+      "title": "Azure AKS cluster",
+      "prompt": "Stand up an Azure Kubernetes Service cluster in eastus2 with a system node pool of 3 D2s_v5 nodes, Azure CNI networking, and a user-assigned managed identity.",
+      "expectations": [
+        { "id": "has_aks", "kind": "resource_present", "value": "azurerm_kubernetes_cluster" },
+        { "id": "has_uai", "kind": "resource_present", "value": "azurerm_user_assigned_identity" },
+        { "id": "has_rg", "kind": "resource_present", "value": "azurerm_resource_group" },
+        { "id": "cites_card", "kind": "cites_card", "value": "azure-azurerm-v4-renames" }
+      ],
+      "tags": ["azure", "aks", "topology"],
+      "max_tool_calls_with_skill": 5,
+      "max_tool_calls_baseline": 12
+    },
+    {
+      "id": "A6-gcp-gke-private",
+      "archetype": "A6",
+      "title": "GCP GKE private cluster",
+      "prompt": "Stand up a private GKE cluster in us-central1 with Workload Identity enabled, a single private node pool, and a regional control plane.",
+      "expectations": [
+        { "id": "has_cluster", "kind": "resource_present", "value": "google_container_cluster" },
+        { "id": "has_node_pool", "kind": "resource_present", "value": "google_container_node_pool" },
+        { "id": "has_network", "kind": "resource_present", "value": "google_compute_network" },
+        { "id": "cites_card", "kind": "cites_card", "value": "gcp-google-beta-split" }
+      ],
+      "tags": ["gcp", "gke", "topology"],
+      "max_tool_calls_with_skill": 5,
+      "max_tool_calls_baseline": 12
+    },
+    {
+      "id": "A7-github-oidc-aws-deploy",
+      "archetype": "A7",
+      "title": "GitHub Actions OIDC → AWS deploy role",
+      "prompt": "Wire up GitHub Actions OIDC to assume an AWS deploy role, scoped to the 'main' branch of vegastack/infra. Include the OIDC provider, the IAM role with sub-claim restriction, and an example IAM policy granting Terraform plan/apply.",
+      "expectations": [
+        { "id": "has_oidc", "kind": "resource_present", "value": "aws_iam_openid_connect_provider" },
+        { "id": "has_role", "kind": "resource_present", "value": "aws_iam_role" },
+        { "id": "has_role_policy", "kind": "resource_present", "value": "aws_iam_role_policy" },
+        { "id": "has_secret", "kind": "resource_present", "value": "github_actions_secret" },
+        { "id": "cites_card", "kind": "cites_card", "value": "aws-iam-oidc-github" },
+        { "id": "cites_recipe", "kind": "cites_recipe", "value": "github-oidc-to-aws-deploy-role" }
+      ],
+      "tags": ["aws", "github", "oidc", "topology"],
+      "max_tool_calls_with_skill": 5,
+      "max_tool_calls_baseline": 12
+    },
+    {
+      "id": "A7-cloudflare-aws-okta-zta",
+      "archetype": "A7",
+      "title": "Zero-trust internal app: Cloudflare + AWS + Okta",
+      "prompt": "I want a zero-trust internal app: Cloudflare Access in front of an internal ALB, with Okta as the IdP. Build the whole topology.",
+      "expectations": [
+        { "id": "has_zta_app", "kind": "resource_present", "value": "cloudflare_zero_trust_access_application" },
+        { "id": "has_zta_policy", "kind": "resource_present", "value": "cloudflare_zero_trust_access_policy" },
+        { "id": "has_zta_idp", "kind": "resource_present", "value": "cloudflare_zero_trust_access_identity_provider" },
+        { "id": "has_alb", "kind": "resource_present", "value": "aws_lb" },
+        { "id": "has_okta_app", "kind": "resource_present", "value": "okta_app_oauth" },
+        { "id": "cites_recipe", "kind": "cites_recipe", "value": "zero-trust-cloudflare-aws-okta" }
+      ],
+      "tags": ["cloudflare", "aws", "okta", "topology"],
+      "max_tool_calls_with_skill": 6,
+      "max_tool_calls_baseline": 14
+    },
+    {
+      "id": "A7-gke-cloudflare-dns-waf",
+      "archetype": "A7",
+      "title": "GKE app + Cloudflare DNS + WAF",
+      "prompt": "Expose a GKE-hosted app via Cloudflare DNS with a WAF ruleset blocking common bot patterns.",
+      "expectations": [
+        { "id": "has_gke", "kind": "resource_present", "value": "google_container_cluster" },
+        { "id": "has_cf_dns", "kind": "resource_present", "value": "cloudflare_dns_record" },
+        { "id": "has_cf_ruleset", "kind": "resource_present", "value": "cloudflare_ruleset" },
+        { "id": "cites_recipe", "kind": "cites_recipe", "value": "gke-cloudflare-dns-and-waf" }
+      ],
+      "tags": ["gcp", "cloudflare", "topology"],
+      "max_tool_calls_with_skill": 5,
+      "max_tool_calls_baseline": 12
+    },
+    {
+      "id": "A7-ecs-fargate-rds-datadog",
+      "archetype": "A7",
+      "title": "Scalable backend: ECS + RDS + Datadog",
+      "prompt": "Set up a scalable backend on AWS — ECS Fargate behind ALB, autoscaling, RDS Postgres in private subnets — and a Datadog monitor on ECS service CPU > 80% for 10m.",
+      "expectations": [
+        { "id": "has_ecs_service", "kind": "resource_present", "value": "aws_ecs_service" },
+        { "id": "has_lb", "kind": "resource_present", "value": "aws_lb" },
+        { "id": "has_db", "kind": "resource_present", "value": "aws_db_instance" },
+        { "id": "has_dd_monitor", "kind": "resource_present", "value": "datadog_monitor" },
+        { "id": "tg_target_type_ip", "kind": "resource_present", "value": "aws_lb_target_group" },
+        { "id": "cites_recipe", "kind": "cites_recipe", "value": "scalable-backend-aws-ecs-fargate-rds-datadog" }
+      ],
+      "tags": ["aws", "datadog", "topology"],
+      "max_tool_calls_with_skill": 6,
+      "max_tool_calls_baseline": 14
+    },
+    {
+      "id": "A7-mongo-atlas-aws-privatelink",
+      "archetype": "A7",
+      "title": "MongoDB Atlas via AWS PrivateLink",
+      "prompt": "Set up a MongoDB Atlas advanced cluster reachable from our AWS VPC via PrivateLink.",
+      "expectations": [
+        { "id": "has_advanced_cluster", "kind": "resource_present", "value": "mongodbatlas_advanced_cluster" },
+        { "id": "has_pl_endpoint", "kind": "resource_present", "value": "mongodbatlas_privatelink_endpoint" },
+        { "id": "has_vpc_endpoint", "kind": "resource_present", "value": "aws_vpc_endpoint" },
+        { "id": "no_legacy_cluster", "kind": "no_resource", "value": "mongodbatlas_cluster" },
+        { "id": "cites_recipe", "kind": "cites_recipe", "value": "mongo-atlas-aws-privatelink" }
+      ],
+      "tags": ["aws", "mongodb-atlas", "topology"],
+      "max_tool_calls_with_skill": 5,
+      "max_tool_calls_baseline": 12
+    },
+    {
+      "id": "A8-s3-soc2-hardening",
+      "archetype": "A8",
+      "title": "Make S3 bucket SOC2-ready",
+      "prompt": "Make this S3 bucket SOC2-ready: block all public access, server-side encryption with a customer-managed KMS key, versioning, bucket logging, and a retention lifecycle.",
+      "expectations": [
+        { "id": "has_bpa", "kind": "resource_present", "value": "aws_s3_bucket_public_access_block" },
+        { "id": "has_versioning", "kind": "resource_present", "value": "aws_s3_bucket_versioning" },
+        { "id": "has_sse", "kind": "resource_present", "value": "aws_s3_bucket_server_side_encryption_configuration" },
+        { "id": "has_logging", "kind": "resource_present", "value": "aws_s3_bucket_logging" },
+        { "id": "has_lifecycle", "kind": "resource_present", "value": "aws_s3_bucket_lifecycle_configuration" },
+        { "id": "cites_card", "kind": "cites_card", "value": "aws-s3-bpa-default-on" }
+      ],
+      "tags": ["aws", "s3", "compliance"],
+      "max_tool_calls_with_skill": 4,
+      "max_tool_calls_baseline": 10
+    },
+    {
+      "id": "A8-iam-policy-least-priv",
+      "archetype": "A8",
+      "title": "Lock down an over-permissive IAM policy",
+      "prompt": "Replace this `iam:*` policy with a least-privilege policy that only allows reading from a specific S3 bucket and writing CloudWatch logs.",
+      "expectations": [
+        { "id": "has_policy", "kind": "resource_present", "value": "aws_iam_policy" },
+        { "id": "has_doc", "kind": "resource_present", "value": "aws_iam_policy_document" }
+      ],
+      "tags": ["aws", "iam", "compliance"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A8-vpc-flow-logs",
+      "archetype": "A8",
+      "title": "Enable VPC flow logs to CloudWatch",
+      "prompt": "Enable VPC flow logs on our production VPC, sending all rejects to CloudWatch with 90-day retention.",
+      "expectations": [
+        { "id": "has_flow_log", "kind": "resource_present", "value": "aws_flow_log" },
+        { "id": "has_log_group", "kind": "resource_present", "value": "aws_cloudwatch_log_group" },
+        { "id": "has_iam_role", "kind": "resource_present", "value": "aws_iam_role" }
+      ],
+      "tags": ["aws", "vpc", "compliance"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A8-ebs-encrypt-default",
+      "archetype": "A8",
+      "title": "Enforce EBS encryption-by-default",
+      "prompt": "Enforce EBS encryption-by-default at the account level using a KMS key, and ensure all new aws_ebs_volume resources will inherit it.",
+      "expectations": [
+        { "id": "has_default", "kind": "resource_present", "value": "aws_ebs_encryption_by_default" },
+        { "id": "has_kms", "kind": "resource_present", "value": "aws_kms_key" },
+        { "id": "cites_card", "kind": "cites_card", "value": "aws-ebs-encryption-default" }
+      ],
+      "tags": ["aws", "ebs", "compliance"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A9-rds-cost-cut",
+      "archetype": "A9",
+      "title": "Cut RDS Postgres bill in half",
+      "prompt": "Our prod RDS Postgres is db.r6g.4xlarge multi-AZ. Cut the cost roughly in half — what concrete changes (instance class, storage, multi-AZ, reserved instances, gp3) should I make in Terraform?",
+      "expectations": [
+        { "id": "has_db", "kind": "resource_present", "value": "aws_db_instance" }
+      ],
+      "tags": ["aws", "rds", "cost"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A9-ec2-rightsize",
+      "archetype": "A9",
+      "title": "Right-size EC2 fleet",
+      "prompt": "Our fleet is 50× m5.large at 15% CPU avg. Move them to t3.small/t4g.small with EBS gp3 — provide the Terraform changes.",
+      "expectations": [
+        { "id": "has_instance", "kind": "resource_present", "value": "aws_instance" },
+        { "id": "cites_card", "kind": "cites_card", "value": "aws-ebs-encryption-default" }
+      ],
+      "tags": ["aws", "ec2", "cost"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A9-s3-lifecycle-glacier",
+      "archetype": "A9",
+      "title": "S3 lifecycle to Glacier for cold data",
+      "prompt": "Add an S3 lifecycle that transitions objects in 'cold/' prefix to Glacier Deep Archive after 90 days and expires them after 7 years.",
+      "expectations": [
+        { "id": "has_lifecycle", "kind": "resource_present", "value": "aws_s3_bucket_lifecycle_configuration" },
+        { "id": "cites_card", "kind": "cites_card", "value": "aws-s3-versioning-split" }
+      ],
+      "tags": ["aws", "s3", "cost"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A10-atlantis-on-eks",
+      "archetype": "A10",
+      "title": "Atlantis on EKS for TF monorepo",
+      "prompt": "Stand up Atlantis on our EKS cluster to handle PR-based Terraform plan/apply for the vegastack/infra monorepo. Webhook secret in GH, helm-installed Atlantis.",
+      "expectations": [
+        { "id": "has_eks", "kind": "resource_present", "value": "aws_eks_cluster" },
+        { "id": "has_helm", "kind": "resource_present", "value": "helm_release" },
+        { "id": "has_gh_webhook", "kind": "resource_present", "value": "github_repository_webhook" },
+        { "id": "cites_recipe", "kind": "cites_recipe", "value": "gitops-atlantis-on-eks" }
+      ],
+      "tags": ["aws", "github", "helm", "gitops"],
+      "max_tool_calls_with_skill": 6,
+      "max_tool_calls_baseline": 14
+    },
+    {
+      "id": "A10-github-actions-deploy",
+      "archetype": "A10",
+      "title": "GitHub Actions OIDC deploy pipeline",
+      "prompt": "Wire GitHub Actions to deploy our infra via OIDC to AWS — full setup including trust policy with sub-claim restriction.",
+      "expectations": [
+        { "id": "has_oidc", "kind": "resource_present", "value": "aws_iam_openid_connect_provider" },
+        { "id": "has_role", "kind": "resource_present", "value": "aws_iam_role" },
+        { "id": "cites_recipe", "kind": "cites_recipe", "value": "github-oidc-to-aws-deploy-role" },
+        { "id": "cites_card", "kind": "cites_card", "value": "aws-iam-oidc-github" }
+      ],
+      "tags": ["aws", "github", "gitops"],
+      "max_tool_calls_with_skill": 4,
+      "max_tool_calls_baseline": 10
+    },
+    {
+      "id": "A10-grafana-dashboards-as-code",
+      "archetype": "A10",
+      "title": "Grafana dashboards-as-code + PagerDuty",
+      "prompt": "Push our Grafana dashboards as code via Terraform to Grafana Cloud, and route critical alerts to PagerDuty.",
+      "expectations": [
+        { "id": "has_dashboard", "kind": "resource_present", "value": "grafana_dashboard" },
+        { "id": "has_contact_point", "kind": "resource_present", "value": "grafana_contact_point" },
+        { "id": "has_pd_service", "kind": "resource_present", "value": "pagerduty_service" },
+        { "id": "cites_recipe", "kind": "cites_recipe", "value": "observability-grafana-cloud-dashboards-as-code" }
+      ],
+      "tags": ["grafana", "pagerduty", "gitops"],
+      "max_tool_calls_with_skill": 5,
+      "max_tool_calls_baseline": 12
+    },
+    {
+      "id": "A10-eks-irsa-alb-controller",
+      "archetype": "A10",
+      "title": "EKS + IRSA + ALB Controller via Helm",
+      "prompt": "Stand up EKS, configure IRSA for the AWS Load Balancer Controller, and helm-install the controller into kube-system.",
+      "expectations": [
+        { "id": "has_eks", "kind": "resource_present", "value": "aws_eks_cluster" },
+        { "id": "has_oidc", "kind": "resource_present", "value": "aws_iam_openid_connect_provider" },
+        { "id": "has_role", "kind": "resource_present", "value": "aws_iam_role" },
+        { "id": "has_helm", "kind": "resource_present", "value": "helm_release" },
+        { "id": "cites_recipe", "kind": "cites_recipe", "value": "eks-with-irsa-and-alb-controller" }
+      ],
+      "tags": ["aws", "helm", "eks", "gitops"],
+      "max_tool_calls_with_skill": 5,
+      "max_tool_calls_baseline": 12
+    },
+    {
+      "id": "A11-rotate-vault-secret",
+      "archetype": "A11",
+      "title": "Rotate a Vault KV v2 secret",
+      "prompt": "Rotate the password field in our vault_kv_secret_v2 at path 'apps/web/db'. Show me the Terraform-side change and the order of operations.",
+      "expectations": [
+        { "id": "has_secret_v2", "kind": "resource_present", "value": "vault_kv_secret_v2" },
+        { "id": "no_legacy", "kind": "no_resource", "value": "vault_kv_secret" },
+        { "id": "cites_card", "kind": "cites_card", "value": "vault-kv-v2-mount" }
+      ],
+      "tags": ["vault", "day2"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A11-rds-snapshot-restore",
+      "archetype": "A11",
+      "title": "Restore RDS from a snapshot",
+      "prompt": "Restore our RDS Postgres prod database from snapshot 'rds:prod-2026-04-15-03-00' into a new instance called 'prod-restore'.",
+      "expectations": [
+        { "id": "has_db", "kind": "resource_present", "value": "aws_db_instance" }
+      ],
+      "tags": ["aws", "rds", "day2"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A11-eks-node-group-rotate",
+      "archetype": "A11",
+      "title": "Rotate EKS node group AMIs",
+      "prompt": "Roll our EKS managed node group to the latest Amazon EKS-optimized AMI without dropping the cluster. Show how to express that in Terraform.",
+      "expectations": [
+        { "id": "has_node_group", "kind": "resource_present", "value": "aws_eks_node_group" },
+        { "id": "has_cluster", "kind": "resource_present", "value": "aws_eks_cluster" }
+      ],
+      "tags": ["aws", "eks", "day2"],
+      "max_tool_calls_with_skill": 3,
+      "max_tool_calls_baseline": 8
+    },
+    {
+      "id": "A12-cloudflare-record-deprecated",
+      "archetype": "A12",
+      "title": "Is cloudflare_record still a thing?",
+      "prompt": "Is the cloudflare_record resource still supported? I see some old examples using it.",
+      "expectations": [
+        { "id": "uses_dns_record", "kind": "resource_present", "value": "cloudflare_dns_record" },
+        { "id": "no_legacy", "kind": "no_resource", "value": "cloudflare_record" },
+        { "id": "cites_card", "kind": "cites_card", "value": "cloudflare-resource-renames-v5" }
+      ],
+      "tags": ["cloudflare", "deprecation"],
+      "max_tool_calls_with_skill": 2,
+      "max_tool_calls_baseline": 6
+    },
+    {
+      "id": "A12-do-i-need-dynamodb-for-locks",
+      "archetype": "A12",
+      "title": "Do I still need DynamoDB for S3 backend locks?",
+      "prompt": "I'm setting up the S3 remote backend for terraform state. Do I still need a DynamoDB table for state locks?",
+      "expectations": [
+        { "id": "cites_card", "kind": "cites_card", "value": "aws-s3-native-state-locking" }
+      ],
+      "tags": ["aws", "s3", "deprecation"],
+      "max_tool_calls_with_skill": 2,
+      "max_tool_calls_baseline": 6
+    },
+    {
+      "id": "A12-azurerm-v4-default-node-pool",
+      "archetype": "A12",
+      "title": "What changed in azurerm v4 default_node_pool?",
+      "prompt": "We're upgrading to azurerm provider v4. What changed about the default_node_pool block on azurerm_kubernetes_cluster that I need to fix?",
+      "expectations": [
+        { "id": "names_aks", "kind": "resource_present", "value": "azurerm_kubernetes_cluster" },
+        { "id": "cites_card", "kind": "cites_card", "value": "azure-azurerm-v4-renames" }
+      ],
+      "tags": ["azure", "aks", "deprecation"],
+      "max_tool_calls_with_skill": 2,
+      "max_tool_calls_baseline": 6
+    }
+  ]
+}

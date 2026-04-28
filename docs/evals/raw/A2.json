@@ -1,0 +1,77 @@
+{
+  "status": "ok",
+  "query": "Cloudflare DNS A record api.acme.com not proxied",
+  "provider": "cloudflare",
+  "tokens": [
+    "dns",
+    "record",
+    "api",
+    "acme",
+    "com",
+    "not",
+    "proxied"
+  ],
+  "tiers_used": [
+    "manifest"
+  ],
+  "files": [
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/dns_record.md",
+      "score": 130,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:cloudflare_dns_record",
+        "name_partial:cloudflare_dns_record",
+        "argument_index:proxied",
+        "example_token:proxied"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/data-sources/dns_records.md",
+      "score": 116,
+      "tier": "manifest",
+      "reasons": [
+        "synthetic_subcat:dns",
+        "argument_index:proxied",
+        "attribute_index:proxied"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/api_shield_discovery_operation.md",
+      "score": 100,
+      "tier": "manifest",
+      "reasons": [
+        "synthetic_subcat:api",
+        "name_partial:cloudflare_api_shield_discovery_operation"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/data-sources/dns_record.md",
+      "score": 84,
+      "tier": "manifest",
+      "reasons": [
+        "synthetic_subcat:dns",
+        "attribute_index:proxied"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/email_routing_dns.md",
+      "score": 75,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:cloudflare_email_routing_dns",
+        "attribute_index:record"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/load_balancer.md",
+      "score": 60,
+      "tier": "manifest",
+      "reasons": [
+        "argument_index:proxied",
+        "example_token:proxied"
+      ]
+    }
+  ],
+  "count": 6
+}

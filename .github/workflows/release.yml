@@ -1,0 +1,173 @@
+name: Release
+
+# Triggered by tag pushes (vX.Y.Z) cut by the changesets workflow.
+# Publishes @vegastack/cli to npm using OIDC trusted publishing
+# (no NPM_TOKEN; --provenance is automatic when OIDC is in use as of npm 11+).
+# Also generates SLSA build provenance attestations for the npm tarball.
+#
+# v0.1 scope: per task brief, we do NOT cosign-sign the CLI tarball
+# (only the bundle is cosign-signed). npm provenance + SLSA attestations
+# are sufficient for the npm package itself.
+
+on:
+  # v0.1 INTERNAL ship goes through publish-internal.yml (GitHub Packages).
+  # This workflow stays dormant for v0.1 — only fires via manual dispatch.
+  # Re-enable the tag-push trigger when we're ready to ship publicly to npm:
+  #   push:
+  #     tags:
+  #       - "v[0-9]+.[0-9]+.[0-9]+*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish to public npm (e.g. v0.1.0). Manual only — auto tag-trigger disabled for v0.1 internal phase."
+        required: true
+        type: string
+
+permissions:
+  contents: write   # GitHub release notes
+  id-token: write   # OIDC for npm trusted publishing + SLSA attestations
+  attestations: write  # actions/attest-build-provenance writes attestations
+
+jobs:
+  verify-bundle:
+    name: Verify bundle artifact exists for tag
+    runs-on: ubuntu-latest
+    outputs:
+      bundle-url: ${{ steps.bundle.outputs.url }}
+      tag: ${{ steps.bundle.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve bundle URL for this tag
+        id: bundle
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          TAG="${INPUT_TAG:-$GITHUB_REF_NAME}"
+          VER="${TAG#v}"
+          URL="https://github.com/vegastack/vegastack-cli/releases/download/${TAG}/vegastack-bundle-v${VER}.tar.gz"
+          SHA_URL="${URL}.sha256"
+          {
+            echo "tag=$TAG"
+            echo "url=$URL"
+            echo "sha_url=$SHA_URL"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: HEAD-check the tarball
+        env:
+          BUNDLE_URL: ${{ steps.bundle.outputs.url }}
+        run: |
+          STATUS=$(curl -sIL --connect-timeout 30 --max-time 120 -o /dev/null -w "%{http_code}" "$BUNDLE_URL")
+          echo "HEAD $BUNDLE_URL => $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Bundle artifact missing at $BUNDLE_URL"
+            echo "::error::Build the bundle in vegastack/engg-vegastack-agent-tf-providers and upload it to this tag's release BEFORE publishing the npm package, or the postinstall will 404 for every user."
+            exit 1
+          fi
+
+      - name: HEAD-check the .sha256 sidecar
+        env:
+          SHA_URL: ${{ steps.bundle.outputs.sha_url }}
+        run: |
+          STATUS=$(curl -sIL --connect-timeout 30 --max-time 120 -o /dev/null -w "%{http_code}" "$SHA_URL")
+          echo "HEAD $SHA_URL => $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Bundle SHA256 sidecar missing at $SHA_URL"
+            exit 1
+          fi
+
+  publish-npm:
+    name: Publish to npm (OIDC trusted publishing)
+    needs: verify-bundle
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write       # required for npm trusted publishing + Sigstore
+      attestations: write   # for actions/attest-build-provenance
+    steps:
+      - uses: actions/checkout@v4
+
+      # setup-node@v6 is the current major as of April 2026 (supports
+      # automatic dependency caching from packageManager field).
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      # npm 11+ is required for OIDC trusted publishing without --provenance flag.
+      - name: Pin npm to a version that speaks OIDC trusted publishing
+        run: npm install -g npm@latest
+
+      - run: npm ci
+        env:
+          VEGA_SKIP_POSTINSTALL: "1"
+
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+      - name: Verify version matches tag
+        env:
+          TAG: ${{ needs.verify-bundle.outputs.tag }}
+        run: |
+          PKG_VER=$(node -p "require('./package.json').version")
+          TAG_VER="${TAG#v}"
+          if [ "$PKG_VER" != "$TAG_VER" ]; then
+            echo "::error::version mismatch: package.json=$PKG_VER, tag=$TAG_VER"
+            exit 1
+          fi
+
+      - name: Pack tarball (so we can attest it before publish)
+        id: pack
+        run: |
+          npm pack --json > /tmp/pack.json
+          TARBALL=$(node -e "console.log(JSON.parse(require('fs').readFileSync('/tmp/pack.json','utf8'))[0].filename)")
+          echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
+
+      # SLSA Level 3 build provenance for the npm tarball itself.
+      # actions/attest-build-provenance@v2 is the documented stable major
+      # for Sigstore-backed in-toto SLSA v1 attestations. (v4 is also
+      # available as of April 2026 but is a thin wrapper over actions/attest;
+      # v2 is still maintained and is the path the brief explicitly asked for.)
+      - name: Attest build provenance (SLSA Level 3)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{ steps.pack.outputs.tarball }}
+
+      # Trusted publishing: no NODE_AUTH_TOKEN, no NPM_TOKEN.
+      # npm CLI 11+ detects the GitHub OIDC token via id-token: write
+      # and publishes provenance automatically. Package must be configured
+      # with a trusted publisher entry on npmjs.com first (one-time setup).
+      - name: Publish to npm via OIDC trusted publishing
+        run: npm publish "${{ steps.pack.outputs.tarball }}" --access public
+
+  github-release:
+    name: GitHub release notes
+    needs: publish-npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        run: |
+          if [ -f CHANGELOG.md ]; then
+            VER="${GITHUB_REF_NAME#v}"
+            awk "/^## \\[?${VER//./\\.}\\]?( |$)/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md > /tmp/notes.md || true
+          fi
+          if [ ! -s /tmp/notes.md ]; then
+            echo "Release ${GITHUB_REF_NAME}" > /tmp/notes.md
+          fi
+
+      # softprops/action-gh-release pinned to a commit SHA (Dependabot keeps current).
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.4.0
+        with:
+          name: ${{ github.ref_name }}
+          body_path: /tmp/notes.md
+          generate_release_notes: true
+          fail_on_unmatched_files: false

@@ -1,0 +1,105 @@
+---
+import {
+  formatLiftPct,
+  formatPct,
+  type EvalReport,
+} from "~/lib/parse-report";
+
+interface Props {
+  report: EvalReport;
+  /** Last 30 daily lifts (oldest → newest) for the inline sparkline. */
+  trend: number[];
+}
+
+const { report, trend } = Astro.props;
+const liftLabel = formatLiftPct(report.lift);
+
+// Sparkline geometry — pure SVG, server-rendered, no client JS.
+const W = 320;
+const H = 56;
+const PAD = 4;
+const points = trend.length > 1 ? trend : [report.lift, report.lift];
+const min = Math.min(0, ...points);
+const max = Math.max(0.6, ...points);
+const span = Math.max(0.0001, max - min);
+
+const coords = points
+  .map((v, i) => {
+    const x = PAD + (i / Math.max(1, points.length - 1)) * (W - PAD * 2);
+    const y = H - PAD - ((v - min) / span) * (H - PAD * 2);
+    return [x, y] as const;
+  });
+
+const polyline = coords.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" ");
+const lastX = coords[coords.length - 1][0];
+const lastY = coords[coords.length - 1][1];
+---
+
+<section class="container-prose pb-12">
+  <div
+    class="surface-card p-7 md:p-12 grid md:grid-cols-[1.4fr_1fr] gap-8 md:gap-12 items-center reveal"
+  >
+    <div>
+      <p class="mono text-xs uppercase tracking-widest text-subtle mb-4">
+        Headline lift · remaining error closed
+      </p>
+      <p class="display-num text-[clamp(4.5rem,16vw,9rem)] font-medium">
+        {liftLabel}
+      </p>
+      <p class="text-muted mt-3 max-w-md leading-relaxed">
+        Baseline {formatPct(report.baseline_pass_rate)} ·
+        with skill {formatPct(report.with_skill_pass_rate)} ·
+        averaged across {report.prompt_count} prompts ·
+        run on {report.model}.
+      </p>
+    </div>
+
+    <div>
+      <p class="mono text-xs uppercase tracking-widest text-subtle mb-4">
+        30-day trend
+      </p>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        width="100%"
+        height={H}
+        role="img"
+        aria-label={`30-day lift trend, latest ${liftLabel}`}
+        style="overflow: visible;"
+      >
+        <defs>
+          <linearGradient id="spark-fill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="var(--color-accent-400)" stop-opacity="0.35" />
+            <stop offset="100%" stop-color="var(--color-accent-400)" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+
+        <polygon
+          points={`${PAD},${H - PAD} ${polyline} ${W - PAD},${H - PAD}`}
+          fill="url(#spark-fill)"
+        />
+
+        <polyline
+          points={polyline}
+          fill="none"
+          stroke="var(--color-accent-400)"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+
+        <circle
+          cx={lastX}
+          cy={lastY}
+          r="3.5"
+          fill="var(--color-accent-400)"
+          stroke="var(--bg-card)"
+          stroke-width="2"
+        />
+      </svg>
+
+      <p class="mono text-xs text-subtle mt-3">
+        {points.length} data point{points.length === 1 ? "" : "s"}
+      </p>
+    </div>
+  </div>
+</section>

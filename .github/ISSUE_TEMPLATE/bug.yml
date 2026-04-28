@@ -1,0 +1,80 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly.
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug! Please run `vega doctor --json` and paste the output below — it captures
+        most of the env detail we'd otherwise have to ask for.
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `vega doctor --json`
+      description: |
+        Run `vega doctor --json` and paste the entire output. If `vega` isn't on PATH or doctor crashes,
+        paste the error here and proceed without the doctor block.
+      render: json
+    validations:
+      required: false
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Describe the actual behavior you observed.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: |
+        Minimal command sequence that reproduces the issue. Include the exact `vega …` invocation
+        and any relevant environment variables (`VEGA_BUNDLE_URL`, `HTTP_PROXY`, etc.).
+      placeholder: |
+        1. `npm i -g @vegastack/cli@0.1.0`
+        2. `vega skills install --agent cursor --scope project`
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: cli-version
+    attributes:
+      label: CLI version
+      placeholder: e.g. 0.1.0 (or `vega --version`)
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS (Intel)
+        - macOS (Apple Silicon)
+        - Linux (glibc)
+        - Linux (musl / Alpine)
+        - Windows 11
+        - Windows 10
+        - WSL2
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      placeholder: e.g. 20.10.0 (`node -v`)
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Logs, screenshots, related issues — anything we should know.

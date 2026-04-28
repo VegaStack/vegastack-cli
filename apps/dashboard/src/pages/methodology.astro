@@ -1,0 +1,135 @@
+---
+import Base from "~/layouts/Base.astro";
+---
+
+<Base
+  title="Methodology · vegastack-cli evals"
+  description="How the vegastack-cli public eval dashboard is computed: lift formula, baseline-vs-skill methodology, expectation kinds."
+>
+  <article class="container-prose py-16 md:py-24 max-w-3xl">
+    <p class="mono text-xs uppercase tracking-widest text-subtle">Methodology</p>
+    <h1
+      class="display-num text-[clamp(2.25rem,5vw,3.5rem)] font-medium mt-4 reveal"
+    >
+      How we measure lift.
+    </h1>
+
+    <p class="text-muted text-lg mt-6 leading-relaxed reveal reveal-delay-1">
+      Every claim on this site reduces to one number: the fraction of the
+      remaining error that the skill closes versus a clean baseline run of
+      the same model on the same prompt with the same scoring.
+    </p>
+
+    <section class="mt-12 reveal reveal-delay-2">
+      <h2 class="text-2xl font-medium tracking-tight">The lift formula</h2>
+      <pre
+        class="surface-card mono text-sm p-5 mt-4 overflow-x-auto"
+        style="color: var(--fg-default);"
+      >
+lift = (with_skill_pass_rate - baseline_pass_rate)
+       / (1 - baseline_pass_rate)</pre>
+      <p class="text-muted mt-4 leading-relaxed">
+        A baseline that already passes 80% has only 20% of error left to
+        close — closing 10pp more of total counts as 50% lift, not 10%.
+        This formula keeps the headline meaningful as the model improves.
+      </p>
+    </section>
+
+    <section class="mt-12 reveal reveal-delay-3">
+      <h2 class="text-2xl font-medium tracking-tight">
+        Baseline vs with-skill
+      </h2>
+      <ol class="mt-4 flex flex-col gap-4 text-muted leading-relaxed">
+        <li>
+          <span class="text-[color:var(--fg-default)] font-medium">Baseline.</span>
+          Claude Sonnet 4.7 sees only the prompt — no <code class="mono text-sm">vega tf</code>
+          tool, no skill files, no Terraform-specific context.
+        </li>
+        <li>
+          <span class="text-[color:var(--fg-default)] font-medium">With skill.</span>
+          The same model + same prompt + the vegastack-cli skill mounted
+          in the harness. The model decides when to call the
+          <code class="mono text-sm">vega tf</code> bash tool, reads the
+          four-channel envelope, and writes its answer.
+        </li>
+        <li>
+          <span class="text-[color:var(--fg-default)] font-medium">Scoring.</span>
+          Each prompt has 3-7 hand-authored expectations. Each is graded
+          independently by an LLM judge with a yes/no rubric. We run the
+          judge three times and take the median to dampen variance.
+        </li>
+      </ol>
+    </section>
+
+    <section class="mt-12 reveal reveal-delay-4">
+      <h2 class="text-2xl font-medium tracking-tight">Expectation kinds</h2>
+      <p class="text-muted mt-3 leading-relaxed">
+        Every expectation declares its kind so the judge prompt can be
+        tightened — most are deterministic regex/AST checks, only a few
+        are open-ended.
+      </p>
+      <ul class="mt-4 grid gap-2.5 mono text-sm">
+        <li class="surface-card p-3">
+          <span class="text-accent">resource_present</span>
+          <span class="text-subtle"> — HCL contains the named resource</span>
+        </li>
+        <li class="surface-card p-3">
+          <span class="text-accent">no_resource</span>
+          <span class="text-subtle"> — catches hallucinated resource names</span>
+        </li>
+        <li class="surface-card p-3">
+          <span class="text-accent">argument_present / argument_absent</span>
+          <span class="text-subtle"> — validates a specific arg or its absence</span>
+        </li>
+        <li class="surface-card p-3">
+          <span class="text-accent">import_syntax_match</span>
+          <span class="text-subtle">
+             — composite-ID format matches the manifest entry
+          </span>
+        </li>
+        <li class="surface-card p-3">
+          <span class="text-accent">cites_card / cites_recipe / cites_path</span>
+          <span class="text-subtle">
+             — the skill surfaced the right knowledge artifact
+          </span>
+        </li>
+        <li class="surface-card p-3">
+          <span class="text-accent">manifest_check</span>
+          <span class="text-subtle">
+             — a custom rule (e.g. "all required_args present")
+          </span>
+        </li>
+      </ul>
+    </section>
+
+    <section class="mt-12 reveal">
+      <h2 class="text-2xl font-medium tracking-tight">Why we publish failures</h2>
+      <p class="text-muted mt-3 leading-relaxed">
+        The public dashboard shows three failure exemplars from each run.
+        Failed expectations directly drive next quarter's content authoring
+        — if A12 lift drops, we audit the deprecation cards. If A5 lift
+        drops, the soft-dep companion graph gets a review. Public failures
+        are how we keep ourselves honest.
+      </p>
+    </section>
+
+    <section class="mt-12 reveal">
+      <h2 class="text-2xl font-medium tracking-tight">Honest caveats</h2>
+      <ul class="mt-4 flex flex-col gap-3 text-muted leading-relaxed list-disc pl-5">
+        <li>
+          The baseline is one model on one day. We don't claim general lift
+          over every coding model — only over the specific baseline named
+          in each run.
+        </li>
+        <li>
+          LLM-judge scoring is noisy. Single-prompt deltas are meaningless;
+          rolling 4-week medians are what we promote on.
+        </li>
+        <li>
+          Prompts are author-curated to match the 12-archetype taxonomy.
+          They are not a random sample from production traffic.
+        </li>
+      </ul>
+    </section>
+  </article>
+</Base>

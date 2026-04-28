@@ -1,0 +1,42 @@
+version: 2
+
+updates:
+  # npm runtime + dev deps
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "npm"]
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      # Bundle types-only patch bumps together to reduce noise.
+      types:
+        patterns:
+          - "@types/*"
+        update-types: ["patch", "minor"]
+      # Bundle eslint + plugins together.
+      eslint:
+        patterns:
+          - "eslint"
+          - "@eslint/*"
+          - "@typescript-eslint/*"
+      # Bundle test-tooling together.
+      test-tooling:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+
+  # GitHub Actions workflow versions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels: ["dependencies", "ci"]
+    commit-message:
+      prefix: "chore(ci)"

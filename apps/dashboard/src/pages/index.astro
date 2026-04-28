@@ -1,0 +1,145 @@
+---
+import Base from "~/layouts/Base.astro";
+import Hero from "~/components/Hero.astro";
+import Headline from "~/components/Headline.astro";
+import LiftLineChart from "~/components/LiftLineChart.astro";
+import ArchetypeBars from "~/components/ArchetypeBars.astro";
+import PromptCard from "~/components/PromptCard.astro";
+import { getEnv, getLatestReport, getRecentReports } from "~/lib/r2";
+import { formatLiftPct, formatPct } from "~/lib/parse-report";
+
+const env = await getEnv();
+const report = await getLatestReport(env);
+
+if (!report) {
+  return new Response("No eval data available", { status: 503 });
+}
+
+const recent = await getRecentReports(env, 30);
+const trend = recent
+  .map((r) => ({ date: r.date, lift: r.lift }))
+  .sort((a, b) => a.date.localeCompare(b.date));
+const sparklineSeries = trend.map((p) => p.lift);
+
+const failingPrompts = report.prompts
+  .filter((p) => p.failure_excerpt)
+  .slice(0, 3);
+const showcasePrompts = report.prompts.slice(0, 3);
+const cardsHit = report.knowledge_cards.filter((c) => c.cited_in_prompts > 0).length;
+const cardsTotal = report.knowledge_cards.length;
+const recipesHit = report.recipes.filter((r) => r.cited_in_prompts > 0).length;
+const recipesTotal = report.recipes.length;
+---
+
+<Base
+  title={`vegastack-cli evals · ${formatLiftPct(report.lift)} lift on ${report.prompt_count} prompts`}
+  description={`Public eval dashboard for vegastack-cli. Closes ${formatLiftPct(report.lift)} of remaining error vs baseline ${report.model} on a ${report.prompt_count}-prompt Terraform suite. Updated ${report.date}.`}
+>
+  <Hero report={report} />
+  <Headline report={report} trend={sparklineSeries} />
+  <LiftLineChart points={trend} />
+  <ArchetypeBars rows={report.archetypes} />
+
+  <section class="container-prose pb-12">
+    <div class="grid gap-4 md:grid-cols-3">
+      <div class="surface-card p-6 reveal reveal-delay-1">
+        <p class="mono text-xs uppercase tracking-widest text-subtle">
+          Knowledge cards
+        </p>
+        <p class="display-num text-4xl mt-3">
+          {cardsHit}<span class="text-subtle text-2xl"> / {cardsTotal}</span>
+        </p>
+        <p class="text-muted text-sm mt-2 leading-relaxed">
+          Cards cited at least once in this run. The skill loads cards on
+          demand — non-cites are not always misses.
+        </p>
+      </div>
+      <div class="surface-card p-6 reveal reveal-delay-2">
+        <p class="mono text-xs uppercase tracking-widest text-subtle">
+          Recipes
+        </p>
+        <p class="display-num text-4xl mt-3">
+          {recipesHit}<span class="text-subtle text-2xl"> / {recipesTotal}</span>
+        </p>
+        <p class="text-muted text-sm mt-2 leading-relaxed">
+          Cross-provider scaffolds surfaced for at least one prompt.
+        </p>
+      </div>
+      <div class="surface-card p-6 reveal reveal-delay-3">
+        <p class="mono text-xs uppercase tracking-widest text-subtle">
+          Run length
+        </p>
+        <p class="display-num text-4xl mt-3">
+          {Math.round(report.duration_s / 60)}<span class="text-subtle text-2xl"> min</span>
+        </p>
+        <p class="text-muted text-sm mt-2 leading-relaxed">
+          Wall clock for the full {report.prompt_count}-prompt suite, dual mode.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-prose pb-12">
+    <header class="flex items-baseline justify-between mb-6 flex-wrap gap-2">
+      <div>
+        <h2 class="text-xl md:text-2xl font-medium tracking-tight">
+          Latest run · sample prompts
+        </h2>
+        <p class="text-subtle text-sm mt-1">
+          A handful from this run.
+          <a class="text-muted hover:text-[color:var(--fg-default)] transition-colors" href={`/reports/${report.date}`}>
+            See all {report.prompt_count} →
+          </a>
+        </p>
+      </div>
+      <span class="pill mono">{report.date}</span>
+    </header>
+
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {showcasePrompts.map((p) => (
+        <PromptCard prompt={p} />
+      ))}
+    </div>
+  </section>
+
+  {failingPrompts.length > 0 && (
+    <section class="container-prose pb-12">
+      <header class="flex items-baseline justify-between mb-6 flex-wrap gap-2">
+        <div>
+          <h2 class="text-xl md:text-2xl font-medium tracking-tight">
+            Failure exemplars
+          </h2>
+          <p class="text-subtle text-sm mt-1">
+            Where the skill still leaves error on the table — the next
+            content-authoring round picks from this list.
+          </p>
+        </div>
+        <span class="pill mono">{failingPrompts.length} shown</span>
+      </header>
+
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {failingPrompts.map((p) => (
+          <PromptCard prompt={p} />
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="container-prose pb-20">
+    <div class="surface-card p-7 md:p-10 reveal">
+      <p class="mono text-xs uppercase tracking-widest text-subtle">
+        Reproducibility
+      </p>
+      <h2 class="text-xl md:text-2xl font-medium tracking-tight mt-2">
+        Run it yourself.
+      </h2>
+      <p class="text-muted mt-3 max-w-2xl leading-relaxed">
+        The eval harness, prompts, expectations, and judge are all open.
+        Bundle {report.bundle_version} and CLI {report.cli_version} produced
+        the headline {formatPct(report.with_skill_pass_rate)} pass rate
+        above. Run <code class="mono text-sm" style="color: var(--fg-default);">npm run eval</code>
+        in the CLI repo to verify locally.
+      </p>
+    </div>
+  </section>
+</Base>

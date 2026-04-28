@@ -1,0 +1,38 @@
+---
+description: |
+  Use when the user asks to write, debug, import, or migrate Terraform / HCL,
+  or names any cloud / SaaS provider in a "deploy / provision / configure"
+  context. Provides per-resource argument schemas (top-level + per-block),
+  import-ID formats, deprecation flags, recent-change knowledge cards,
+  cross-provider recipes, and recommended-companion expansion — all from a
+  local doc bundle, no network calls.
+
+  Do NOT use for: pure shell / bash / Python questions; non-IaC cloud
+  questions ("what's the cheapest EC2 size?"); CDK / Pulumi / Crossplane
+  (different DSLs); Terraform Cloud workspace administration.
+globs: ["**/*.tf", "**/*.tfvars", "**/*.hcl", "**/main.tf", "**/variables.tf", "**/terraform.tfvars"]
+alwaysApply: false
+---
+
+# vegastack-terraform (Cursor rule)
+
+This rule mirrors the SKILL.md shipped at `<plugin-root>/skills/terraform-docs/SKILL.md`. After installing `@vegastack/cli`, run `vega skills install --agent cursor` to drop this `.mdc` into `<project>/.cursor/rules/`.
+
+## How to use
+
+1. Run `vega tf "<user request>"` (one call; the harness auto-detects the provider). Output is one JSON envelope with `files[]`, `knowledge[]`, `recipes[]`, `concept_aliases_used[]`.
+2. Read `knowledge[]` first — those cards override stale training memory when `overrides_training: true`.
+3. The top-K `files[]` arrive **enriched** with `manifest_entry` (top-level args, `blocks: {}`, `import_syntax`, `deprecated`, `recommended_companions`) and the inline `example_usage` block. No follow-up `jq` or `grep` needed for ~95% of tasks.
+4. Cite `citations[]` (file paths + knowledge-card IDs + recipe IDs) in your reply.
+
+## Hard rules
+
+- Never invent resource names or arguments. The manifest is the source of truth.
+- Never fabricate import IDs. Use `manifest_entry.import_syntax.command` verbatim.
+- Respect `deprecated: true` — tell the user before generating code.
+- One provider per `vega tf` call. Multi-provider work uses `recipes[]`.
+- Never write to `~/.config/vegastack/bundle/` from a tool call — the bundle is read-only.
+
+## Full reference
+
+For the complete workflow, examples, and reference files, read `<plugin-root>/skills/terraform-docs/SKILL.md` and the files in `<plugin-root>/skills/terraform-docs/references/`.

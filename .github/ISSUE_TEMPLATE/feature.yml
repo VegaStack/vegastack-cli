@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest a capability or improvement.
+title: "[feature] "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! Before filing, please check whether this is already covered by
+        [PORT-ROADMAP.md](https://github.com/vegastack/vegastack-cli/blob/main/PORT-ROADMAP.md)
+        (which lists planned v0.2+ work).
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the use case in concrete terms — what task were you trying to do, and where did the CLI fall short?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: A concrete sketch of the API / command / option you have in mind. CLI examples welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you tried, or other approaches that might solve the same problem.
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      description: Roughly how big is this?
+      options:
+        - Tiny — single flag or message
+        - Small — new option on an existing command
+        - Medium — new command or per-agent installer
+        - Large — touches the harness / bundle format / CI
+    validations:
+      required: true
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Are you willing to contribute?
+      options:
+        - label: I'd be willing to open a PR for this.
+        - label: I can help with testing / reviewing.

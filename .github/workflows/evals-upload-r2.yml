@@ -1,0 +1,160 @@
+name: Evals — upload single report + maintain INDEX.json
+
+# Reusable workflow. Called by .github/workflows/evals.yml after the eval
+# runner produces a single JSON report. Uploads it to R2 at the path the
+# dashboard (apps/dashboard/) expects, and maintains the rolling
+# INDEX.json so the homepage's `latest` lookup keeps working.
+#
+# R2 layout (matches apps/dashboard/src/lib/r2.ts):
+#   cli/evals/reports/<YYYY-MM-DD>.json     — one file per nightly run
+#   cli/evals/reports/INDEX.json            — { dates: string[], latest, generated_at }
+#
+# The dashboard fetches the index first to find the latest date, then
+# fetches the matching <date>.json. CORS is configured in the bucket
+# settings (see bundle/docs/RELEASE.md).
+
+on:
+  workflow_call:
+    inputs:
+      report-path:
+        description: "Local path to the SINGLE eval-report JSON file (E6's runner output)."
+        required: true
+        type: string
+      report-date:
+        description: "ISO date stamp YYYY-MM-DD that names the R2 object. Defaults to the date inside the report JSON, then today UTC."
+        required: false
+        type: string
+        default: ""
+      bundle-domain:
+        description: "Public R2 hostname (defaults to bundles.vegastack.com)."
+        required: false
+        default: "bundles.vegastack.com"
+        type: string
+
+jobs:
+  upload:
+    name: Upload eval report + update INDEX.json
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sanity-check report file
+        env:
+          REPORT_PATH: ${{ inputs.report-path }}
+        run: |
+          set -euo pipefail
+          if [ ! -f "$REPORT_PATH" ]; then
+            echo "::error::report-path '$REPORT_PATH' is not a file"
+            exit 1
+          fi
+          # Validate it parses as JSON and has a `date` field (matches the
+          # canonical EvalReport shape from docs/contracts/eval-report.ts).
+          DATE_IN_REPORT=$(python3 -c "import json,sys; r=json.load(open('$REPORT_PATH')); print(r.get('date',''))")
+          if [ -z "$DATE_IN_REPORT" ]; then
+            echo "::error::report missing required 'date' field"
+            exit 1
+          fi
+          echo "report date field: $DATE_IN_REPORT"
+
+      - name: Resolve report date
+        id: stamp
+        env:
+          INPUT_DATE: ${{ inputs.report-date }}
+          REPORT_PATH: ${{ inputs.report-path }}
+        run: |
+          set -euo pipefail
+          if [ -n "$INPUT_DATE" ]; then
+            DATE="$INPUT_DATE"
+          else
+            # Prefer the date INSIDE the report JSON over wall-clock so a
+            # backfilled run for a past date still lands at the right key.
+            DATE=$(python3 -c "import json; print(json.load(open('$REPORT_PATH'))['date'])")
+          fi
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+          echo "Eval report date: $DATE"
+
+      # R2 speaks the S3 API; the AWS CLI v2 (preinstalled on ubuntu-latest)
+      # is the cleanest path. The aws-actions/configure-aws-credentials action
+      # does not work cleanly with R2 (it tries to call sts.auto.amazonaws.com)
+      # — set env vars directly per Cloudflare's recommendation.
+      - name: Upload single report at cli/evals/reports/<DATE>.json
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          REPORT_PATH: ${{ inputs.report-path }}
+          DATE: ${{ steps.stamp.outputs.date }}
+        run: |
+          set -euo pipefail
+          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          KEY="cli/evals/reports/${DATE}.json"
+          aws s3 cp \
+            --endpoint-url "$ENDPOINT" \
+            --cache-control "public, max-age=300" \
+            --content-type "application/json" \
+            "$REPORT_PATH" \
+            "s3://${R2_BUCKET_NAME}/${KEY}"
+          echo "✓ uploaded s3://${R2_BUCKET_NAME}/${KEY}"
+
+      - name: Update cli/evals/reports/INDEX.json
+        # Pull existing index (if any), insert the new date in order, write
+        # back. Newest-first order matches dashboard's getRecentReports().
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          DATE: ${{ steps.stamp.outputs.date }}
+        run: |
+          set -euo pipefail
+          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          INDEX_KEY="cli/evals/reports/INDEX.json"
+
+          # Try to fetch the existing INDEX.json. 404 is fine (first run).
+          if aws s3 cp \
+              --endpoint-url "$ENDPOINT" \
+              "s3://${R2_BUCKET_NAME}/${INDEX_KEY}" \
+              ./old-index.json 2>/dev/null; then
+            echo "Found existing INDEX.json"
+          else
+            echo '{"dates":[],"latest":"","generated_at":""}' > ./old-index.json
+            echo "No existing INDEX.json — initializing empty"
+          fi
+
+          DATE="$DATE" python3 - <<'PY' > new-index.json
+          import json, os
+          from datetime import datetime, timezone
+          old = json.load(open("old-index.json"))
+          dates = set(old.get("dates", []))
+          dates.add(os.environ["DATE"])
+          # Newest-first sort (lexicographic works because YYYY-MM-DD).
+          sorted_dates = sorted(dates, reverse=True)
+          out = {
+            "dates": sorted_dates,
+            "latest": sorted_dates[0] if sorted_dates else "",
+            "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+          }
+          print(json.dumps(out, indent=2))
+          PY
+
+          aws s3 cp \
+            --endpoint-url "$ENDPOINT" \
+            --cache-control "public, max-age=60" \
+            --content-type "application/json" \
+            ./new-index.json \
+            "s3://${R2_BUCKET_NAME}/${INDEX_KEY}"
+          echo "✓ updated s3://${R2_BUCKET_NAME}/${INDEX_KEY}"
+          cat new-index.json
+
+      - name: Print public URLs
+        env:
+          DOMAIN: ${{ inputs.bundle-domain }}
+          DATE: ${{ steps.stamp.outputs.date }}
+        run: |
+          echo "Report:  https://${DOMAIN}/cli/evals/reports/${DATE}.json"
+          echo "Index:   https://${DOMAIN}/cli/evals/reports/INDEX.json"

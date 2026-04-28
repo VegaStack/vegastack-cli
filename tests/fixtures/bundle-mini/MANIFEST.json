@@ -1,0 +1,5 @@
+{
+  "bundle_version": "2026.04.28",
+  "providers": ["aws", "cloudflare"],
+  "counts": { "knowledge_cards": 1, "recipes": 1 }
+}

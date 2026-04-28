@@ -1,0 +1,52 @@
+name: Sync skills (placeholder)
+
+# This workflow becomes meaningful once Phase H content (recipes/, knowledge/,
+# concept-aliases/) is populated and `npm run generate-skills` produces real
+# index files. For now it runs the generator (which is a no-op against empty
+# registries) and verifies that the working tree is clean — i.e., contributors
+# committed any regenerated files.
+#
+# When real content lands, swap workflow_dispatch out for a cron schedule
+# (something like '0 * * * *' to mirror gws-cli) and have it open a PR.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "recipes/**"
+      - "knowledge/**"
+      - "concept-aliases/**"
+      - "scripts/generate-skills.ts"
+      - "skills/**"
+
+permissions:
+  contents: read
+
+jobs:
+  determinism:
+    name: Skill regeneration is deterministic (no diff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        env:
+          VEGA_SKIP_POSTINSTALL: "1"
+      - run: npm run build
+
+      - name: Regenerate skills
+        run: npm run generate-skills
+
+      - name: Fail if the regeneration produced any diff
+        run: |
+          if ! git diff --quiet -- skills/ recipes/INDEX.json knowledge/INDEX.json 2>/dev/null; then
+            echo "::error::Skill regeneration produced unexpected diffs."
+            echo "::error::Run 'npm run generate-skills' locally and commit the changes."
+            git diff --stat -- skills/ recipes/INDEX.json knowledge/INDEX.json || true
+            exit 1
+          fi
+          echo "Skills are deterministic — no diffs."

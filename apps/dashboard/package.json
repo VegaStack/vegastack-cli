@@ -1,0 +1,33 @@
+{
+  "name": "@vegastack/dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Public eval dashboard for vegastack-cli — Astro on Cloudflare Workers.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro build && wrangler dev --config dist/server/wrangler.json",
+    "deploy": "astro build && wrangler deploy --config dist/server/wrangler.json",
+    "lint": "astro check",
+    "test": "vitest run",
+    "test:smoke": "vitest run tests/smoke.test.ts"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^13.0.0",
+    "@tailwindcss/vite": "^4.1.0",
+    "astro": "^6.1.8",
+    "tailwindcss": "^4.1.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.8",
+    "@cloudflare/workers-types": "^4.20260101.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0",
+    "wrangler": "^4.85.0"
+  },
+  "engines": {
+    "node": ">=20.10.0"
+  }
+}

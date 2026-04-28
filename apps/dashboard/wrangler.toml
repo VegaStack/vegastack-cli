@@ -1,0 +1,47 @@
+# Cloudflare Workers deployment for the vegastack-cli eval dashboard.
+#
+# Astro 6 + @astrojs/cloudflare v13 use a unified entrypoint and
+# auto-generate the [assets] binding from the build output. We only
+# declare what the adapter cannot infer: the worker name, custom
+# bindings (R2, KV), env vars, and routing.
+#
+# See https://developers.cloudflare.com/workers/static-assets/binding/
+
+name = "vegastack-evals"
+compatibility_date = "2025-09-23"
+compatibility_flags = ["nodejs_compat"]
+main = "./node_modules/@astrojs/cloudflare/dist/entrypoints/server.js"
+
+# R2 binding to E4's bundle bucket. Eval reports live at:
+#   bundles.vegastack.com/evals/reports/<YYYY-MM-DD>.json
+# Reads are cached in KV with a 1h TTL (see src/lib/r2.ts).
+[[r2_buckets]]
+binding = "BUNDLES"
+bucket_name = "vegastack-agent-kb"
+preview_bucket_name = "vegastack-agent-kb-preview"
+
+# KV namespace caches R2 fetches and the rolling 30-day report index.
+# Create with:
+#   wrangler kv namespace create REPORTS_CACHE
+#   wrangler kv namespace create REPORTS_CACHE --preview
+# Then paste the returned IDs below.
+[[kv_namespaces]]
+binding = "REPORTS_CACHE"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+preview_id = "REPLACE_WITH_PREVIEW_KV_NAMESPACE_ID"
+
+[vars]
+PUBLIC_SITE_URL = "https://cli-evals.vegastack.com"
+PUBLIC_GITHUB_REPO = "https://github.com/vegastack/vegastack-cli"
+PUBLIC_NPM_PACKAGE = "@vegastack/cli"
+
+# Custom domain — uncomment after first successful deploy + DNS setup.
+# [[routes]]
+# pattern = "cli-evals.vegastack.com/*"
+# zone_name = "vegastack.com"
+
+[observability]
+enabled = true
+
+[placement]
+mode = "smart"

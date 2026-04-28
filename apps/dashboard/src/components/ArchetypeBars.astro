@@ -1,0 +1,68 @@
+---
+import {
+  ARCHETYPE_LABELS,
+  formatLiftPct,
+  sortArchetypes,
+  type ArchetypeRollup,
+} from "~/lib/parse-report";
+
+interface Props {
+  rows: ArchetypeRollup[];
+}
+
+const sorted = sortArchetypes(Astro.props.rows);
+const maxAbs = Math.max(0.4, ...sorted.map((r) => Math.abs(r.lift)));
+---
+
+<section class="container-prose pb-12">
+  <div class="surface-card p-7 md:p-10 reveal reveal-delay-1">
+    <header class="flex items-baseline justify-between mb-6 flex-wrap gap-2">
+      <div>
+        <h2 class="text-xl md:text-2xl font-medium tracking-tight">
+          Lift by task archetype
+        </h2>
+        <p class="text-subtle text-sm mt-1">
+          The 12 task shapes derived from real Terraform user prompts.
+        </p>
+      </div>
+      <span class="pill mono">{sorted.length} categories</span>
+    </header>
+
+    <ul class="flex flex-col gap-2.5">
+      {sorted.map((row, i) => {
+        const widthPct = (Math.abs(row.lift) / maxAbs) * 100;
+        const positive = row.lift >= 0;
+        return (
+          <li
+            class="grid grid-cols-[3rem_1fr_4rem] md:grid-cols-[3rem_minmax(12rem,18rem)_1fr_4rem] gap-3 md:gap-4 items-center text-sm group"
+          >
+            <span class="mono text-subtle text-xs">{row.archetype}</span>
+            <span class="text-muted truncate">
+              {ARCHETYPE_LABELS[row.archetype]}
+            </span>
+            <span
+              class="hidden md:block relative h-3 rounded-full overflow-hidden"
+              style="background: color-mix(in srgb, var(--bg-card-hover) 60%, transparent);"
+              aria-hidden="true"
+            >
+              <span
+                class="absolute inset-y-0 left-0 bar-grow rounded-full"
+                style={`width: ${widthPct.toFixed(1)}%; background: ${
+                  positive
+                    ? "linear-gradient(90deg, var(--color-accent-600), var(--color-accent-400))"
+                    : "linear-gradient(90deg, var(--color-warn-500), var(--color-warn-400))"
+                }; animation-delay: ${(i * 40).toString()}ms;`}
+              ></span>
+            </span>
+            <span
+              class="mono text-right tabular-nums font-medium"
+              style={`color: ${positive ? "var(--color-accent-300)" : "var(--color-warn-400)"};`}
+            >
+              {formatLiftPct(row.lift)}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  </div>
+</section>

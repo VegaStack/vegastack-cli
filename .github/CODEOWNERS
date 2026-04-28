@@ -1,0 +1,19 @@
+# Code owners for vegastack-cli.
+#
+# Lines are processed in order; later matches override earlier ones. PRs
+# touching matched paths require approval from the listed owner(s).
+
+# Default owner — every PR pings the engineering org.
+*                                       @vegastack/engineering
+
+# Security-sensitive paths require an additional security review.
+/SECURITY.md                            @vegastack/engineering @vegastack/security
+/npm/install.js                         @vegastack/engineering @vegastack/security
+/npm/safe-tar.js                        @vegastack/engineering @vegastack/security
+/src/lib/validate.ts                    @vegastack/engineering @vegastack/security
+/src/lib/errors.ts                      @vegastack/engineering @vegastack/security
+
+# Release pipeline.
+/.github/workflows/release.yml          @vegastack/engineering @vegastack/release
+/.github/workflows/release-changesets.yml @vegastack/engineering @vegastack/release
+/.changeset/                            @vegastack/engineering @vegastack/release

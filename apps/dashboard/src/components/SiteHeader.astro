@@ -1,0 +1,42 @@
+---
+import ThemeToggle from "./ThemeToggle.astro";
+---
+
+<header
+  class="sticky top-0 z-40 backdrop-blur-md"
+  style="background: color-mix(in srgb, var(--bg-base) 78%, transparent); border-bottom: 1px solid var(--border-subtle);"
+>
+  <div class="container-prose flex items-center justify-between h-14">
+    <a
+      href="/"
+      class="flex items-center gap-2.5 group"
+      aria-label="vegastack-cli evals home"
+    >
+      <span
+        class="inline-block w-5 h-5 rounded-sm"
+        style="background: linear-gradient(135deg, var(--color-accent-500), var(--color-accent-700));"
+        aria-hidden="true"
+      ></span>
+      <span class="font-medium tracking-tight text-sm md:text-base">
+        vegastack-cli
+      </span>
+      <span class="mono text-xs text-subtle">/ evals</span>
+    </a>
+
+    <nav class="flex items-center gap-2 md:gap-3">
+      <a
+        href="/methodology"
+        class="mono text-xs text-subtle hover:text-[color:var(--fg-default)] transition-colors hidden sm:inline"
+      >
+        Methodology
+      </a>
+      <a
+        href="https://github.com/vegastack/vegastack-cli"
+        class="mono text-xs text-subtle hover:text-[color:var(--fg-default)] transition-colors"
+      >
+        GitHub
+      </a>
+      <ThemeToggle />
+    </nav>
+  </div>
+</header>

@@ -1,0 +1,69 @@
+{
+  "status": "ok",
+  "query": "Okta OIDC application IdP",
+  "provider": "okta",
+  "tokens": [
+    "oidc",
+    "application",
+    "idp"
+  ],
+  "tiers_used": [
+    "manifest"
+  ],
+  "files": [
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/okta/resources/idp_saml_key.md",
+      "score": 100,
+      "tier": "manifest",
+      "reasons": [
+        "synthetic_subcat:idp",
+        "name_partial:okta_idp_saml_key"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/okta/resources/idp_oidc.md",
+      "score": 85,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:okta_idp_oidc",
+        "name_partial:okta_idp_oidc",
+        "description:oidc"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/okta/data-sources/idp_oidc.md",
+      "score": 64,
+      "tier": "manifest",
+      "reasons": [
+        "synthetic_subcat:idp",
+        "description:oidc"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/okta/resources/policy_rule_idp_discovery.md",
+      "score": 55,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:okta_policy_rule_idp_discovery",
+        "example_token:OIDC"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/okta/data-sources/idp_saml.md",
+      "score": 52,
+      "tier": "manifest",
+      "reasons": [
+        "synthetic_subcat:idp"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/okta/data-sources/idp_social.md",
+      "score": 52,
+      "tier": "manifest",
+      "reasons": [
+        "synthetic_subcat:idp"
+      ]
+    }
+  ],
+  "count": 6
+}

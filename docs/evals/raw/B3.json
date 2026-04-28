@@ -1,0 +1,154 @@
+{
+  "status": "ok",
+  "query": "Vault PKI engine root intermediate CA role TTL",
+  "provider": "vault",
+  "tokens": [
+    "pki",
+    "engine",
+    "root",
+    "intermediate",
+    "ca",
+    "role",
+    "ttl",
+    "mount",
+    "backend"
+  ],
+  "tiers_used": [
+    "manifest"
+  ],
+  "files": [
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/vault/r/pki_secret_backend_root_sign_intermediate.html.md",
+      "score": 195,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:vault_pki_secret_backend_root_sign_intermediate",
+        "name_partial:vault_pki_secret_backend_root_sign_intermediate",
+        "name_partial:vault_pki_secret_backend_root_sign_intermediate",
+        "name_partial:vault_pki_secret_backend_root_sign_intermediate"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/vault/r/mount.html.md",
+      "score": 185,
+      "tier": "manifest",
+      "reasons": [
+        "exact_resource:vault_mount",
+        "name_partial:vault_mount",
+        "example_token:PKI",
+        "description:mount"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/vault/r/database_secret_backend_role.md",
+      "score": 150,
+      "tier": "manifest",
+      "reasons": [
+        "hcl_back_ref:vault_database_secret_backend_role",
+        "name_partial:vault_database_secret_backend_role",
+        "name_partial:vault_database_secret_backend_role",
+        "example_token:ROLE"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/vault/r/pki_secret_backend_acme_eab.html.md",
+      "score": 145,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:vault_pki_secret_backend_acme_eab",
+        "name_partial:vault_pki_secret_backend_acme_eab",
+        "argument_index:role",
+        "example_token:PKI"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/vault/r/pki_secret_backend_intermediate_set_signed.html.md",
+      "score": 145,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:vault_pki_secret_backend_intermediate_set_signed",
+        "name_partial:vault_pki_secret_backend_intermediate_set_signed",
+        "name_partial:vault_pki_secret_backend_intermediate_set_signed",
+        "example_token:root"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/vault/r/alicloud_auth_backend_role.md",
+      "score": 140,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:vault_alicloud_auth_backend_role",
+        "name_partial:vault_alicloud_auth_backend_role",
+        "argument_index:role",
+        "description:role"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/vault/r/aws_auth_backend_role.html.md",
+      "score": 140,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:vault_aws_auth_backend_role",
+        "name_partial:vault_aws_auth_backend_role",
+        "argument_index:role",
+        "description:role"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/vault/r/aws_auth_backend_role_tag.html.md",
+      "score": 140,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:vault_aws_auth_backend_role_tag",
+        "name_partial:vault_aws_auth_backend_role_tag",
+        "argument_index:role",
+        "description:role"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/vault/r/azure_auth_backend_role.html.md",
+      "score": 140,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:vault_azure_auth_backend_role",
+        "name_partial:vault_azure_auth_backend_role",
+        "argument_index:role",
+        "description:role"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/vault/r/azure_secret_backend_role.html.md",
+      "score": 140,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:vault_azure_secret_backend_role",
+        "name_partial:vault_azure_secret_backend_role",
+        "argument_index:role",
+        "description:role"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/vault/r/azure_secret_backend_static_role.html.md",
+      "score": 140,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:vault_azure_secret_backend_static_role",
+        "name_partial:vault_azure_secret_backend_static_role",
+        "argument_index:role",
+        "description:engine"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/vault/r/gcp_auth_backend_role.html.md",
+      "score": 140,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:vault_gcp_auth_backend_role",
+        "name_partial:vault_gcp_auth_backend_role",
+        "argument_index:role",
+        "description:role"
+      ]
+    }
+  ],
+  "count": 12
+}

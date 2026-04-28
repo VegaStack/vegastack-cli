@@ -1,0 +1,115 @@
+{
+  "name": "@vegastack/cli",
+  "version": "0.1.0",
+  "description": "vega — a deterministic, offline knowledge harness for coding agents (Claude Code, Codex, Cursor, Gemini). Ships 31 Terraform providers' upstream docs + manifests + recipes + knowledge cards as one installable CLI.",
+  "expectedBundleVersion": "0.0.0",
+  "expectedBundleSha": "sha256-PENDING-FIRST-RELEASE",
+  "license": "MIT",
+  "author": {
+    "name": "Vegastack Inc.",
+    "email": "cli@vegastack.com",
+    "url": "https://vegastack.com"
+  },
+  "homepage": "https://github.com/VegaStack/vegastack-cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VegaStack/vegastack-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/VegaStack/vegastack-cli/issues"
+  },
+  "keywords": [
+    "terraform",
+    "claude-code",
+    "codex",
+    "cursor",
+    "agent-skills",
+    "iac",
+    "devops",
+    "knowledge-harness",
+    "agents",
+    "anthropic",
+    "agent-skill",
+    "skill",
+    "skill-md",
+    "hashicorp",
+    "mcp",
+    "openclaw",
+    "hermes",
+    "gemini-cli",
+    "continue-dev",
+    "aider"
+  ],
+  "type": "module",
+  "bin": {
+    "vega": "npm/run.js"
+  },
+  "files": [
+    "npm/",
+    "dist/",
+    "skills/",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTEXT.md",
+    "cursor-rule.mdc",
+    "gemini-extension.json",
+    ".claude-plugin/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "watch": "tsc -p tsconfig.build.json --watch",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "lint": "eslint 'src/**/*.ts' 'tests/**/*.ts'",
+    "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts' 'npm/*.js'",
+    "format:check": "prettier --check 'src/**/*.ts' 'tests/**/*.ts' 'npm/*.js'",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "version-sync": "changeset version",
+    "tag-release": "node scripts/tag-release.js",
+    "prepack": "npm run build",
+    "prepublishOnly": "node scripts/check-bundle-pin.js",
+    "postinstall": "node npm/install.js || true",
+    "generate-skills": "tsx scripts/generate-skills.ts",
+    "generate-skills:check": "npm run generate-skills && git diff --quiet -- skills/recipes skills/personas recipes/INDEX.json personas/INDEX.json",
+    "generate-skill": "tsx scripts/generate-skill-from-bundle.ts",
+    "generate-skill:check": "tsx scripts/generate-skill-from-bundle.ts --check"
+  },
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "commander": "^12.1.0",
+    "gray-matter": "^4.0.3",
+    "js-yaml": "^4.1.1",
+    "kleur": "^4.1.5",
+    "prompts": "^2.4.2",
+    "proper-lockfile": "^4.1.2"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
+    "@changesets/changelog-github": "^0.6.0",
+    "@changesets/cli": "^2.27.1",
+    "@eslint/js": "^9.39.4",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.11.0",
+    "@types/prompts": "^2.4.9",
+    "@types/proper-lockfile": "^4.1.4",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "globals": "^15.15.0",
+    "prettier": "^3.2.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.5.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  }
+}

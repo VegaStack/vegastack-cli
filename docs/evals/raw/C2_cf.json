@@ -1,0 +1,88 @@
+{
+  "status": "ok",
+  "query": "Cloudflare Access application policy",
+  "provider": "cloudflare",
+  "tokens": [
+    "access",
+    "application",
+    "policy"
+  ],
+  "tiers_used": [
+    "manifest"
+  ],
+  "files": [
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/zero_trust_access_application.md",
+      "score": 70,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:cloudflare_zero_trust_access_application",
+        "name_partial:cloudflare_zero_trust_access_application"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/zero_trust_access_policy.md",
+      "score": 70,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:cloudflare_zero_trust_access_policy",
+        "name_partial:cloudflare_zero_trust_access_policy"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/user_group.md",
+      "score": 60,
+      "tier": "manifest",
+      "reasons": [
+        "attribute_index:access",
+        "example_token:access"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/zero_trust_tunnel_cloudflared_config.md",
+      "score": 60,
+      "tier": "manifest",
+      "reasons": [
+        "attribute_index:access",
+        "example_token:access"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/custom_ssl.md",
+      "score": 60,
+      "tier": "manifest",
+      "reasons": [
+        "argument_index:policy",
+        "example_token:policy"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/load_balancer_pool.md",
+      "score": 60,
+      "tier": "manifest",
+      "reasons": [
+        "attribute_index:policy",
+        "example_token:policy"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/notification_policy.md",
+      "score": 55,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:cloudflare_notification_policy",
+        "example_token:policy"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/page_shield_policy.md",
+      "score": 55,
+      "tier": "manifest",
+      "reasons": [
+        "name_partial:cloudflare_page_shield_policy",
+        "example_token:policy"
+      ]
+    }
+  ],
+  "count": 8
+}

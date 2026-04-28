@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or troubleshooting help
+    url: https://github.com/vegastack/vegastack-cli/discussions/categories/q-a
+    about: Use Discussions for usage questions and how-tos.
+  - name: Security vulnerability report
+    url: https://github.com/vegastack/vegastack-cli/blob/main/SECURITY.md
+    about: Please report security issues privately per SECURITY.md, not as a public issue.

@@ -1,0 +1,156 @@
+// Resolve canonical filesystem paths for the bundle, the user's home, and per-agent install locations.
+// Centralized so commands and agent installers stay in sync.
+
+import * as os from "node:os";
+import * as path from "node:path";
+import * as fs from "node:fs";
+
+export const HOME = os.homedir();
+
+/** Where the docs bundle lives after `vega install` / postinstall. */
+export function bundleDir(): string {
+  if (process.env.VEGA_BUNDLE_DIR) return process.env.VEGA_BUNDLE_DIR;
+  return path.join(HOME, ".config", "vegastack", "bundle");
+}
+
+/** Path to the bundle's root MANIFEST.json. */
+export function bundleManifestPath(): string {
+  return path.join(bundleDir(), "MANIFEST.json");
+}
+
+/** Path to the bundle's bin/tf-discover (Python harness for v0.1; TS port lands in v0.2). */
+export function bundleDiscoverPython(): string {
+  return path.join(bundleDir(), "scripts", "discover.py");
+}
+
+/** Path to the file written after a successful bundle install. */
+export function bundleVersionFile(): string {
+  return path.join(bundleDir(), ".version");
+}
+
+/** Resolve the package root (where this CLI was installed). */
+export function pkgRoot(): string {
+  // dist/lib/paths.js → dist/ → package root
+  // node:url import.meta.url unavailable here at compile-time without ESM gymnastics; use process.argv[1]
+  const cliPath = process.argv[1] ?? "";
+  // walk up until we find package.json with our name
+  let cur = path.dirname(cliPath);
+  for (let i = 0; i < 6; i++) {
+    const pj = path.join(cur, "package.json");
+    if (fs.existsSync(pj)) {
+      try {
+        const json = JSON.parse(fs.readFileSync(pj, "utf8")) as { name?: string };
+        if (json.name === "@vegastack/cli") return cur;
+      } catch (_e) {
+        /* keep walking */
+      }
+    }
+    cur = path.dirname(cur);
+  }
+  return path.resolve(path.dirname(cliPath), "..");
+}
+
+// ── Per-agent install destinations ───────────────────────────────
+
+export type AgentScope = "global" | "project";
+
+/** Claude Code: plugin install dir. Global only — Claude Code doesn't have a project scope for plugins. */
+export function claudePluginDir(): string {
+  return path.join(HOME, ".claude", "plugins", "terraform-providers-kit");
+}
+
+/** Codex: skill install dir. Global is `~/.agents/skills/`; project is `<cwd>/.agents/skills/`. */
+export function codexSkillDir(scope: AgentScope, cwd: string): string {
+  const root =
+    scope === "global" ? path.join(HOME, ".agents", "skills") : path.join(cwd, ".agents", "skills");
+  return path.join(root, "terraform-docs");
+}
+
+/** Codex: AGENTS.md target. Global goes to ~/.codex/AGENTS.md (per Codex docs). Project to cwd/AGENTS.md. */
+export function codexAgentsMdPath(scope: AgentScope, cwd: string): string {
+  return scope === "global" ? path.join(HOME, ".codex", "AGENTS.md") : path.join(cwd, "AGENTS.md");
+}
+
+/** Cursor: rule file destination. Cursor rules are project-scoped; global isn't meaningful. */
+export function cursorRulePath(cwd: string): string {
+  return path.join(cwd, ".cursor", "rules", "terraform-providers-kit.mdc");
+}
+
+/** Gemini: extension config + context. Project-scoped (Gemini Code Assist reads them from cwd). */
+export function geminiExtensionPath(cwd: string): string {
+  return path.join(cwd, "gemini-extension.json");
+}
+export function geminiContextPath(cwd: string): string {
+  return path.join(cwd, "CONTEXT.md");
+}
+
+/**
+ * Gemini CLI extensions (Apr-2026 docs format):
+ * `~/.gemini-extensions/<name>/{gemini-extension.json, skills/, commands/}`
+ * (global) or `<cwd>/.gemini-extensions/<name>/...` (project).
+ *
+ * The extension dir contains both the extension config and the per-extension
+ * SKILL.md + commands TOML. Project mode is rare — usually this is global.
+ */
+export function geminiExtensionRoot(scope: AgentScope, cwd: string): string {
+  const root =
+    scope === "global"
+      ? path.join(HOME, ".gemini-extensions")
+      : path.join(cwd, ".gemini-extensions");
+  return path.join(root, "vegastack");
+}
+
+// ── Continue (Apr-2026 docs: prefer YAML config) ───────────────────
+
+/** Continue: global mcpServers config.
+ *  Continue reads `~/.continue/mcpServers/*.yaml` (or .json) and merges all
+ *  servers into the running session. Writing one file per integration
+ *  (instead of patching `config.yaml`) is the idempotent path. */
+export function continueMcpServerPath(scope: AgentScope, cwd: string): string {
+  const root =
+    scope === "global"
+      ? path.join(HOME, ".continue", "mcpServers")
+      : path.join(cwd, ".continue", "mcpServers");
+  return path.join(root, "vegastack-tf.yaml");
+}
+
+// ── Aider ──────────────────────────────────────────────────────────
+
+/** Aider: home-level YAML config. Aider walks home → repo root → cwd. */
+export function aiderConfPath(scope: AgentScope, cwd: string): string {
+  return scope === "global" ? path.join(HOME, ".aider.conf.yml") : path.join(cwd, ".aider.conf.yml");
+}
+/** Aider: where we drop our CONVENTIONS.md. */
+export function aiderConventionsPath(scope: AgentScope, cwd: string): string {
+  return scope === "global"
+    ? path.join(HOME, ".aider", "CONVENTIONS.vegastack.md")
+    : path.join(cwd, "CONVENTIONS.vegastack.md");
+}
+
+// ── Bundle skill source (canonical input for renderers) ────────────
+
+/** The canonical SKILL.md the renderers read from inside the package. */
+export function pkgCanonicalSkillMd(): string {
+  return path.join(pkgRoot(), "skills", "terraform-docs", "SKILL.md");
+}
+
+// ── Source-of-truth paths inside the package ─────────────────────
+
+export function pkgSkillDir(): string {
+  return path.join(pkgRoot(), "skills", "terraform-docs");
+}
+export function pkgAgentsMd(): string {
+  return path.join(pkgRoot(), "AGENTS.md");
+}
+export function pkgClaudePluginManifest(): string {
+  return path.join(pkgRoot(), ".claude-plugin", "plugin.json");
+}
+export function pkgCursorRule(): string {
+  return path.join(pkgRoot(), "cursor-rule.mdc");
+}
+export function pkgGeminiExtension(): string {
+  return path.join(pkgRoot(), "gemini-extension.json");
+}
+export function pkgGeminiContext(): string {
+  return path.join(pkgRoot(), "CONTEXT.md");
+}

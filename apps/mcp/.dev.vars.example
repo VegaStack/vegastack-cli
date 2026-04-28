@@ -1,0 +1,16 @@
+# vegastack-mcp local dev secrets.
+#
+# v0.1 ships an anonymous public read MCP server — there are no required
+# secrets. This file exists so contributors know where to put things if/when
+# v0.2 adds auth.
+#
+# Copy to `.dev.vars` (NOT checked in) before `wrangler dev` if you need to
+# override anything.
+
+# Override the public CDN bundle base URL (defaults to vars.BUNDLE_PUBLIC_BASE_URL)
+# BUNDLE_PUBLIC_BASE_URL=https://bundles-staging.vegastack.com
+
+# Override the cache TTL while iterating
+# CACHE_TTL_SECONDS=60
+
+# LOG_LEVEL=debug

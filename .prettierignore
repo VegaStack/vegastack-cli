@@ -1,0 +1,10 @@
+dist/
+node_modules/
+references/terraform-providers/
+npm/bundle/
+npm/.version
+package-lock.json
+*.tar.gz
+*.tsbuildinfo
+.changeset/CHANGELOG.md
+CHANGELOG.md

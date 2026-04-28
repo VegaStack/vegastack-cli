@@ -1,0 +1,110 @@
+{
+  "status": "ok",
+  "query": "S3 bucket acme-data versioning AES256 server-side encryption",
+  "provider": "aws",
+  "tokens": [
+    "s3",
+    "bucket",
+    "acme",
+    "data",
+    "versioning",
+    "aes256",
+    "server",
+    "side",
+    "encryption"
+  ],
+  "tiers_used": [
+    "manifest"
+  ],
+  "files": [
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/s3_bucket.html.markdown",
+      "score": 360,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:s3→S3 (Simple Storage)",
+        "primary_resource:aws_s3_bucket",
+        "primary_resource:aws_s3_bucket",
+        "name_partial:aws_s3_bucket"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+      "score": 270,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:s3→S3 (Simple Storage)",
+        "name_partial:aws_s3_bucket_server_side_encryption_configuration",
+        "name_partial:aws_s3_bucket_server_side_encryption_configuration",
+        "name_partial:aws_s3_bucket_server_side_encryption_configuration"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/s3_bucket_versioning.html.markdown",
+      "score": 170,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:s3→S3 (Simple Storage)",
+        "name_partial:aws_s3_bucket_versioning",
+        "name_partial:aws_s3_bucket_versioning",
+        "description:bucket"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/s3_bucket_inventory.html.markdown",
+      "score": 160,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:s3→S3 (Simple Storage)",
+        "name_partial:aws_s3_bucket_inventory",
+        "argument_index:encryption",
+        "description:bucket"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/s3_bucket_object.html.markdown",
+      "score": 145,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:s3→S3 (Simple Storage)",
+        "name_partial:aws_s3_bucket_object",
+        "example_token:versioning",
+        "example_token:AES256"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/s3_bucket_lifecycle_configuration.html.markdown",
+      "score": 140,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:s3→S3 (Simple Storage)",
+        "name_partial:aws_s3_bucket_lifecycle_configuration",
+        "example_token:versioning",
+        "description:bucket"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/s3_bucket_replication_configuration.html.markdown",
+      "score": 140,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:s3→S3 (Simple Storage)",
+        "name_partial:aws_s3_bucket_replication_configuration",
+        "example_token:versioning",
+        "description:bucket"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/s3_bucket_logging.html.markdown",
+      "score": 135,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:s3→S3 (Simple Storage)",
+        "name_partial:aws_s3_bucket_logging",
+        "description:bucket",
+        "description:server"
+      ]
+    }
+  ],
+  "count": 8
+}

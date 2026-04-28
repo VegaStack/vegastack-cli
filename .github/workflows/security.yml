@@ -1,0 +1,59 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run weekly on Mondays at 06:00 UTC so we catch new CVEs against the same
+    # locked deps even if no one has pushed.
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  npm-audit:
+    name: npm audit (production deps)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        env:
+          VEGA_SKIP_POSTINSTALL: "1"
+      - run: npm audit --audit-level=moderate --omit=dev
+
+  osv-scanner:
+    name: OSV-Scanner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Pin to commit SHA — never trust a floating tag for a security tool.
+      - name: Run OSV-Scanner
+        uses: google/osv-scanner-action/osv-scanner-action@5b7b9b7e7b96e80a0fdf7a7f8d2c8b6f1d4f0e3c # v1.9.0
+        with:
+          scan-args: |-
+            --recursive
+            --skip-git
+            --lockfile=package-lock.json
+            ./
+
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@012739e5082ff0c22ca6d6ab32e07c36df03c4a4 # v3.27.0
+        with:
+          languages: javascript-typescript
+          queries: security-and-quality
+      - uses: github/codeql-action/analyze@012739e5082ff0c22ca6d6ab32e07c36df03c4a4 # v3.27.0

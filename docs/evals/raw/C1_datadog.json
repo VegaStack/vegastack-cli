@@ -1,0 +1,75 @@
+{
+  "status": "ok",
+  "query": "ECS service CPU monitor 80% 10 minutes alert",
+  "provider": "datadog",
+  "tokens": [
+    "ecs",
+    "service",
+    "cpu",
+    "monitor",
+    "80",
+    "10",
+    "minutes",
+    "alert"
+  ],
+  "tiers_used": [
+    "manifest"
+  ],
+  "files": [
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/datadog/resources/monitor.md",
+      "score": 190,
+      "tier": "manifest",
+      "reasons": [
+        "exact_resource:datadog_monitor",
+        "name_partial:datadog_monitor",
+        "example_token:monitor",
+        "example_token:alert"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/datadog/resources/monitor_json.md",
+      "score": 175,
+      "tier": "manifest",
+      "reasons": [
+        "synthetic_subcat:monitor",
+        "name_partial:datadog_monitor_json",
+        "argument_index:monitor",
+        "example_token:monitor"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/datadog/data-sources/monitor.md",
+      "score": 152,
+      "tier": "manifest",
+      "reasons": [
+        "exact_datasource:datadog_monitor",
+        "synthetic_subcat:monitor",
+        "example_token:monitor",
+        "description:monitor"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/datadog/resources/service_account_application_key.md",
+      "score": 135,
+      "tier": "manifest",
+      "reasons": [
+        "synthetic_subcat:service",
+        "name_partial:datadog_service_account_application_key",
+        "example_token:monitor",
+        "description:service"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/datadog/resources/service_definition_yaml.md",
+      "score": 115,
+      "tier": "manifest",
+      "reasons": [
+        "synthetic_subcat:service",
+        "name_partial:datadog_service_definition_yaml",
+        "description:service"
+      ]
+    }
+  ],
+  "count": 5
+}

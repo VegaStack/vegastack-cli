@@ -1,0 +1,51 @@
+---
+// Minimalist theme toggle — dark by default, light on click. State persists
+// in localStorage and is read inline before paint to avoid a flash.
+---
+
+<button
+  type="button"
+  id="theme-toggle"
+  class="pill"
+  aria-label="Toggle theme"
+  data-theme-toggle
+>
+  <span data-theme-icon-dark aria-hidden="true">●</span>
+  <span data-theme-icon-light aria-hidden="true" hidden>○</span>
+  <span data-theme-label>Dark</span>
+</button>
+
+<script is:inline>
+  // Inline so it runs before paint — no FOUC.
+  (function () {
+    const stored = localStorage.getItem("vega-theme");
+    const initial = stored === "light" ? "light" : "dark";
+    document.documentElement.dataset.theme = initial;
+  })();
+</script>
+
+<script>
+  const btn = document.querySelector<HTMLButtonElement>("[data-theme-toggle]");
+  const label = btn?.querySelector<HTMLSpanElement>("[data-theme-label]");
+  const dark = btn?.querySelector<HTMLSpanElement>("[data-theme-icon-dark]");
+  const light = btn?.querySelector<HTMLSpanElement>("[data-theme-icon-light]");
+
+  function apply(theme: "dark" | "light") {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("vega-theme", theme);
+    if (label) label.textContent = theme === "dark" ? "Dark" : "Light";
+    if (dark) dark.hidden = theme !== "dark";
+    if (light) light.hidden = theme !== "light";
+  }
+
+  // Sync UI to inline-bootstrapped theme.
+  apply(
+    (document.documentElement.dataset.theme as "dark" | "light") ?? "dark",
+  );
+
+  btn?.addEventListener("click", () => {
+    const next =
+      document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    apply(next);
+  });
+</script>

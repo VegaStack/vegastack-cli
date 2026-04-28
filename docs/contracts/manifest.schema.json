@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vegastack.com/schemas/manifest-v1.json",
+  "title": "Vegastack provider MANIFEST.json (v1)",
+  "type": "object",
+  "required": [
+    "manifest_schema_version",
+    "provider",
+    "bundle_version",
+    "synced_at",
+    "resources",
+    "data_sources"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "manifest_schema_version": { "const": 1 },
+    "provider": {
+      "type": "string",
+      "description": "Canonical provider name, e.g. aws, cloudflare, mongodb-atlas",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "bundle_version": {
+      "type": "string",
+      "description": "CalVer YYYY.MM.DD[.N]",
+      "pattern": "^[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}(\\.[0-9]+)?$"
+    },
+    "upstream_sha": { "type": "string", "description": "git SHA from upstream provider repo" },
+    "synced_at": { "type": "string", "format": "date-time" },
+    "resources": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/ResourceEntry" }
+    },
+    "data_sources": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/ResourceEntry" }
+    },
+    "guides": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/Guide" }
+    },
+    "subcategory_useful": { "type": "boolean" },
+    "subcategory_trust": {
+      "type": "object",
+      "description": "Per-subcategory trustworthiness 0..1 — replaces binary subcategory_useful",
+      "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
+    },
+    "subcategories": {
+      "type": "object",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    },
+    "synthetic_subcategories": {
+      "type": "object",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    },
+    "argument_index": {
+      "type": "object",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    },
+    "attribute_index": {
+      "type": "object",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    },
+    "description_token_index": {
+      "type": "object",
+      "description": "Pre-built reverse index token → resource[]; closes F21",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    },
+    "example_tokens": {
+      "type": "object",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    },
+    "resource_bigrams": {
+      "type": "object",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    },
+    "hcl_references": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/HclRefs" }
+    },
+    "service_aliases": {
+      "type": "object",
+      "description": "Per-provider service name aliases (externalised from constants.ts)",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    },
+    "primary_resources": {
+      "type": "object",
+      "description": "Per-token primary-resource hint (e.g. dns -> cloudflare_dns_record)",
+      "additionalProperties": { "type": "string" }
+    },
+    "subcat_keywords": {
+      "type": "object",
+      "description": "Per-keyword subcategory hint (e.g. s3 -> S3 (Simple Storage))",
+      "additionalProperties": { "type": "string" }
+    },
+    "generic_args_downweight": {
+      "type": "object",
+      "description": "Per-arg multiplier <=1; replaces GENERIC_ARGS drop set",
+      "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
+    },
+    "distinctive_tokens": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Top-15 tokens that are distinctive for this provider (appear in >=3 own resources, <2 other providers). Closes C6 prereq.",
+      "maxItems": 15
+    }
+  },
+  "$defs": {
+    "ManifestArg": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "enum_values": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "ManifestBlock": {
+      "type": "object",
+      "required": ["nesting", "required_args", "optional_args"],
+      "additionalProperties": false,
+      "properties": {
+        "nesting": { "enum": ["single", "list", "set", "map"] },
+        "required_args": { "type": "array", "items": { "$ref": "#/$defs/ManifestArg" } },
+        "optional_args": { "type": "array", "items": { "$ref": "#/$defs/ManifestArg" } }
+      }
+    },
+    "ImportSyntax": {
+      "type": "object",
+      "required": ["command", "id_format"],
+      "additionalProperties": false,
+      "properties": {
+        "command": { "type": "string" },
+        "id_format": { "type": "string" }
+      }
+    },
+    "ResourceEntry": {
+      "type": "object",
+      "required": [
+        "type",
+        "file",
+        "description",
+        "required_args",
+        "optional_args",
+        "computed_attrs",
+        "blocks",
+        "enum_values",
+        "import_syntax",
+        "deprecated",
+        "recommended_companions",
+        "schema_origin",
+        "sections",
+        "sha1_prefix"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["resource", "data_source"] },
+        "file": { "type": "string", "description": "Path relative to provider dir, e.g. r/s3_bucket.html.markdown" },
+        "description": { "type": "string" },
+        "subcategory": { "type": ["string", "null"] },
+        "required_args": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ManifestArg" },
+          "description": "TOP-LEVEL ONLY — nested-block requireds belong in `blocks`. Closes F1, F2."
+        },
+        "optional_args": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ManifestArg" },
+          "description": "TOP-LEVEL ONLY"
+        },
+        "computed_attrs": { "type": "array", "items": { "$ref": "#/$defs/ManifestArg" } },
+        "blocks": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/ManifestBlock" }
+        },
+        "enum_values": {
+          "type": "object",
+          "additionalProperties": { "type": "array", "items": { "type": "string" } }
+        },
+        "import_syntax": {
+          "anyOf": [
+            { "$ref": "#/$defs/ImportSyntax" },
+            { "type": "null" }
+          ]
+        },
+        "deprecated": { "type": "boolean" },
+        "suggested_alternative": { "type": ["string", "null"] },
+        "recommended_companions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Curated soft-deps from companions.yaml; closes F10"
+        },
+        "schema_origin": { "enum": ["sdkv2", "plugin_framework", "mixed"] },
+        "sections": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "sha1_prefix": { "type": "string", "pattern": "^[0-9a-f]{8}$" }
+      }
+    },
+    "HclRefs": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "Guide": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "status": "ok",
+  "query": "Cloudflare Browser Rendering headless screenshot",
+  "provider": "cloudflare",
+  "tokens": [
+    "browser",
+    "rendering",
+    "headless",
+    "screenshot"
+  ],
+  "tiers_used": [
+    "manifest",
+    "grep"
+  ],
+  "files": [
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/r2_bucket_cors.md",
+      "score": 40,
+      "tier": "grep",
+      "reasons": [
+        "content_grep:browser|rendering|headless|screenshot"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/filter.md",
+      "score": 40,
+      "tier": "grep",
+      "reasons": [
+        "content_grep:browser|rendering|headless|screenshot"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/pages_project.md",
+      "score": 40,
+      "tier": "grep",
+      "reasons": [
+        "content_grep:browser|rendering|headless|screenshot"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/ai_search_instance.md",
+      "score": 40,
+      "tier": "grep",
+      "reasons": [
+        "content_grep:browser|rendering|headless|screenshot"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/zero_trust_access_policy.md",
+      "score": 40,
+      "tier": "grep",
+      "reasons": [
+        "content_grep:browser|rendering|headless|screenshot"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/cloudflare/resources/zone_setting.md",
+      "score": 40,
+      "tier": "grep",
+      "reasons": [
+        "content_grep:browser|rendering|headless|screenshot"
+      ]
+    }
+  ],
+  "count": 6
+}

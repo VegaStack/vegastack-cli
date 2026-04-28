@@ -1,0 +1,59 @@
+# vegastack-cli — recipe registry
+#
+# Each [[recipes]] entry becomes:
+#   - skills/recipes/<id>/SKILL.md   (rendered by `npm run generate-skills`)
+#   - one row in recipes/INDEX.json  (consumed by discover at query time)
+#
+# Schema (all fields required unless noted):
+#
+#   id                    kebab-case stable identifier
+#   intent                short classifier (e.g. "zero_trust_app", "scalable_backend")
+#   providers             sorted list of providers the recipe declares resources in
+#   keywords              lowercase trigger tokens (we match on substring)
+#   title                 one-line headline
+#   description           1-2 sentence summary
+#   required_resources    table { provider = ["resource_a", "resource_b", ...] }
+#   data_sources          (optional) table { provider = ["data_x", ...] }
+#   authoritative_sources (optional) URLs the user can verify the pattern against
+#   last_verified         YYYY-MM-DD when the body was last reconciled
+#   owner                 maintainer email
+#   body                  multi-line markdown — the actual recipe text
+#
+# When this file is empty (or contains only commented examples), the generator
+# emits an empty INDEX.json and no skill files. That's the v0.1 ground state.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EXAMPLE — uncomment when M3 work begins to ship the first recipe.
+# ─────────────────────────────────────────────────────────────────────────────
+# [[recipes]]
+# id          = "zero-trust-cloudflare-aws-okta"
+# intent      = "zero_trust_internal_app"
+# providers   = ["aws", "cloudflare", "okta"]
+# keywords    = ["zero-trust", "access", "alb", "okta", "internal", "cloudflare-access"]
+# title       = "Cloudflare Access + AWS ALB + Okta — zero-trust internal app"
+# description = """
+# Three-provider topology that fronts an AWS ALB-backed app with Cloudflare
+# Access policies and Okta as the identity provider. Replaces a public ALB +
+# self-managed auth.
+# """
+#
+# [recipes.required_resources]
+# cloudflare = ["cloudflare_access_application", "cloudflare_access_policy", "cloudflare_access_identity_provider"]
+# aws        = ["aws_lb", "aws_lb_listener", "aws_security_group"]
+# okta       = ["okta_app_oauth"]
+#
+# [recipes.data_sources]
+# cloudflare = ["cloudflare_ip_ranges"]
+#
+# authoritative_sources = [
+#   "https://developers.cloudflare.com/cloudflare-one/applications/",
+#   "https://docs.aws.amazon.com/elasticloadbalancing/",
+#   "https://developer.okta.com/docs/",
+# ]
+# last_verified         = "2026-04-27"
+# owner                 = "engg@vegastack.com"
+#
+# body = """
+# ## Overview
+# ...
+# """

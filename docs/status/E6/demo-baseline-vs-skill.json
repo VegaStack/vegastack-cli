@@ -1,0 +1,388 @@
+{
+  "generated_at": "2026-04-27T21:15:03.704Z",
+  "model": "claude-opus-4-7",
+  "mode": "both",
+  "eval_count": 5,
+  "summary": {
+    "baseline_pct": 0.2631578947368421,
+    "with_skill_pct": 1,
+    "lift_pct": 1,
+    "per_archetype": {
+      "A1": {
+        "baseline_pct": 0.36363636363636365,
+        "with_skill_pct": 1,
+        "lift_pct": 1
+      },
+      "A3": {
+        "baseline_pct": 0,
+        "with_skill_pct": 1,
+        "lift_pct": 1
+      },
+      "A12": {
+        "baseline_pct": 0.25,
+        "with_skill_pct": 1,
+        "lift_pct": 1
+      }
+    }
+  },
+  "baseline": [
+    {
+      "id": "A1-s3-versioning-modern",
+      "archetype": "A1",
+      "passed": 3,
+      "total": 7,
+      "pct": 0.42857142857142855,
+      "expectations": [
+        {
+          "passed": true,
+          "detail": "found aws_s3_bucket",
+          "id": "has_bucket",
+          "kind": "resource_present",
+          "value": "aws_s3_bucket"
+        },
+        {
+          "passed": false,
+          "detail": "missing aws_s3_bucket_versioning; saw aws_s3_bucket",
+          "id": "has_versioning",
+          "kind": "resource_present",
+          "value": "aws_s3_bucket_versioning"
+        },
+        {
+          "passed": false,
+          "detail": "missing aws_s3_bucket_server_side_encryption_configuration; saw aws_s3_bucket",
+          "id": "has_sse",
+          "kind": "resource_present",
+          "value": "aws_s3_bucket_server_side_encryption_configuration"
+        },
+        {
+          "passed": false,
+          "detail": "missing aws_kms_key; saw aws_s3_bucket",
+          "id": "has_kms_key",
+          "kind": "resource_present",
+          "value": "aws_kms_key"
+        },
+        {
+          "passed": true,
+          "detail": "confirmed absent: aws_s3_bucket_inline_versioning",
+          "id": "no_inline_versioning",
+          "kind": "no_resource",
+          "value": "aws_s3_bucket_inline_versioning"
+        },
+        {
+          "passed": true,
+          "detail": "skipped (no manifest)",
+          "id": "valid_args",
+          "kind": "manifest_check",
+          "value": "all required_args present"
+        },
+        {
+          "passed": false,
+          "detail": "did not cite aws-s3-versioning-split",
+          "id": "cites_card",
+          "kind": "cites_card",
+          "value": "aws-s3-versioning-split"
+        }
+      ]
+    },
+    {
+      "id": "A1-cloudflare-dns-record",
+      "archetype": "A1",
+      "passed": 1,
+      "total": 4,
+      "pct": 0.25,
+      "expectations": [
+        {
+          "passed": false,
+          "detail": "missing cloudflare_dns_record; saw cloudflare_record",
+          "id": "has_dns_record",
+          "kind": "resource_present",
+          "value": "cloudflare_dns_record"
+        },
+        {
+          "passed": false,
+          "detail": "unexpected cloudflare_record present",
+          "id": "no_legacy_record",
+          "kind": "no_resource",
+          "value": "cloudflare_record"
+        },
+        {
+          "passed": true,
+          "detail": "skipped (no manifest)",
+          "id": "valid_args",
+          "kind": "manifest_check",
+          "value": "all required_args present"
+        },
+        {
+          "passed": false,
+          "detail": "did not cite cloudflare-resource-renames-v5",
+          "id": "cites_card",
+          "kind": "cites_card",
+          "value": "cloudflare-resource-renames-v5"
+        }
+      ]
+    },
+    {
+      "id": "A3-import-cloudflare-dns-record",
+      "archetype": "A3",
+      "passed": 0,
+      "total": 4,
+      "pct": 0,
+      "expectations": [
+        {
+          "passed": false,
+          "detail": "missing cloudflare_dns_record; saw cloudflare_record",
+          "id": "has_record",
+          "kind": "resource_present",
+          "value": "cloudflare_dns_record"
+        },
+        {
+          "passed": false,
+          "detail": "unexpected cloudflare_record present",
+          "id": "no_legacy_record",
+          "kind": "no_resource",
+          "value": "cloudflare_record"
+        },
+        {
+          "passed": false,
+          "detail": "no `terraform import cloudflare_dns_record.X ID` line found",
+          "id": "import_syntax",
+          "kind": "import_syntax_match",
+          "value": "cloudflare_dns_record"
+        },
+        {
+          "passed": false,
+          "detail": "did not cite cloudflare-resource-renames-v5",
+          "id": "cites_card",
+          "kind": "cites_card",
+          "value": "cloudflare-resource-renames-v5"
+        }
+      ]
+    },
+    {
+      "id": "A12-cloudflare-record-deprecated",
+      "archetype": "A12",
+      "passed": 1,
+      "total": 3,
+      "pct": 0.3333333333333333,
+      "expectations": [
+        {
+          "passed": false,
+          "detail": "missing cloudflare_dns_record; saw <none>",
+          "id": "uses_dns_record",
+          "kind": "resource_present",
+          "value": "cloudflare_dns_record"
+        },
+        {
+          "passed": true,
+          "detail": "confirmed absent: cloudflare_record",
+          "id": "no_legacy",
+          "kind": "no_resource",
+          "value": "cloudflare_record"
+        },
+        {
+          "passed": false,
+          "detail": "did not cite cloudflare-resource-renames-v5",
+          "id": "cites_card",
+          "kind": "cites_card",
+          "value": "cloudflare-resource-renames-v5"
+        }
+      ]
+    },
+    {
+      "id": "A12-do-i-need-dynamodb-for-locks",
+      "archetype": "A12",
+      "passed": 0,
+      "total": 1,
+      "pct": 0,
+      "expectations": [
+        {
+          "passed": false,
+          "detail": "did not cite aws-s3-native-state-locking",
+          "id": "cites_card",
+          "kind": "cites_card",
+          "value": "aws-s3-native-state-locking"
+        }
+      ]
+    }
+  ],
+  "with_skill": [
+    {
+      "id": "A1-s3-versioning-modern",
+      "archetype": "A1",
+      "passed": 7,
+      "total": 7,
+      "pct": 1,
+      "expectations": [
+        {
+          "passed": true,
+          "detail": "found aws_s3_bucket",
+          "id": "has_bucket",
+          "kind": "resource_present",
+          "value": "aws_s3_bucket"
+        },
+        {
+          "passed": true,
+          "detail": "found aws_s3_bucket_versioning",
+          "id": "has_versioning",
+          "kind": "resource_present",
+          "value": "aws_s3_bucket_versioning"
+        },
+        {
+          "passed": true,
+          "detail": "found aws_s3_bucket_server_side_encryption_configuration",
+          "id": "has_sse",
+          "kind": "resource_present",
+          "value": "aws_s3_bucket_server_side_encryption_configuration"
+        },
+        {
+          "passed": true,
+          "detail": "found aws_kms_key",
+          "id": "has_kms_key",
+          "kind": "resource_present",
+          "value": "aws_kms_key"
+        },
+        {
+          "passed": true,
+          "detail": "confirmed absent: aws_s3_bucket_inline_versioning",
+          "id": "no_inline_versioning",
+          "kind": "no_resource",
+          "value": "aws_s3_bucket_inline_versioning"
+        },
+        {
+          "passed": true,
+          "detail": "skipped (no manifest)",
+          "id": "valid_args",
+          "kind": "manifest_check",
+          "value": "all required_args present"
+        },
+        {
+          "passed": true,
+          "detail": "cited \"aws-s3-versioning-split\" by id",
+          "id": "cites_card",
+          "kind": "cites_card",
+          "value": "aws-s3-versioning-split"
+        }
+      ]
+    },
+    {
+      "id": "A1-cloudflare-dns-record",
+      "archetype": "A1",
+      "passed": 4,
+      "total": 4,
+      "pct": 1,
+      "expectations": [
+        {
+          "passed": true,
+          "detail": "found cloudflare_dns_record",
+          "id": "has_dns_record",
+          "kind": "resource_present",
+          "value": "cloudflare_dns_record"
+        },
+        {
+          "passed": true,
+          "detail": "confirmed absent: cloudflare_record",
+          "id": "no_legacy_record",
+          "kind": "no_resource",
+          "value": "cloudflare_record"
+        },
+        {
+          "passed": true,
+          "detail": "skipped (no manifest)",
+          "id": "valid_args",
+          "kind": "manifest_check",
+          "value": "all required_args present"
+        },
+        {
+          "passed": true,
+          "detail": "cited \"cloudflare-resource-renames-v5\" by id",
+          "id": "cites_card",
+          "kind": "cites_card",
+          "value": "cloudflare-resource-renames-v5"
+        }
+      ]
+    },
+    {
+      "id": "A3-import-cloudflare-dns-record",
+      "archetype": "A3",
+      "passed": 4,
+      "total": 4,
+      "pct": 1,
+      "expectations": [
+        {
+          "passed": true,
+          "detail": "found cloudflare_dns_record",
+          "id": "has_record",
+          "kind": "resource_present",
+          "value": "cloudflare_dns_record"
+        },
+        {
+          "passed": true,
+          "detail": "confirmed absent: cloudflare_record",
+          "id": "no_legacy_record",
+          "kind": "no_resource",
+          "value": "cloudflare_record"
+        },
+        {
+          "passed": true,
+          "detail": "import line present for cloudflare_dns_record",
+          "id": "import_syntax",
+          "kind": "import_syntax_match",
+          "value": "cloudflare_dns_record"
+        },
+        {
+          "passed": true,
+          "detail": "cited \"cloudflare-resource-renames-v5\" by id",
+          "id": "cites_card",
+          "kind": "cites_card",
+          "value": "cloudflare-resource-renames-v5"
+        }
+      ]
+    },
+    {
+      "id": "A12-cloudflare-record-deprecated",
+      "archetype": "A12",
+      "passed": 3,
+      "total": 3,
+      "pct": 1,
+      "expectations": [
+        {
+          "passed": true,
+          "detail": "found cloudflare_dns_record",
+          "id": "uses_dns_record",
+          "kind": "resource_present",
+          "value": "cloudflare_dns_record"
+        },
+        {
+          "passed": true,
+          "detail": "confirmed absent: cloudflare_record",
+          "id": "no_legacy",
+          "kind": "no_resource",
+          "value": "cloudflare_record"
+        },
+        {
+          "passed": true,
+          "detail": "cited \"cloudflare-resource-renames-v5\" by id",
+          "id": "cites_card",
+          "kind": "cites_card",
+          "value": "cloudflare-resource-renames-v5"
+        }
+      ]
+    },
+    {
+      "id": "A12-do-i-need-dynamodb-for-locks",
+      "archetype": "A12",
+      "passed": 1,
+      "total": 1,
+      "pct": 1,
+      "expectations": [
+        {
+          "passed": true,
+          "detail": "cited \"aws-s3-native-state-locking\" by id",
+          "id": "cites_card",
+          "kind": "cites_card",
+          "value": "aws-s3-native-state-locking"
+        }
+      ]
+    }
+  ]
+}

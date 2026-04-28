@@ -1,0 +1,140 @@
+---
+import Base from "~/layouts/Base.astro";
+import ArchetypeBars from "~/components/ArchetypeBars.astro";
+import PromptCard from "~/components/PromptCard.astro";
+import { getEnv, getReport, knownDatesFromFixture } from "~/lib/r2";
+import {
+  ARCHETYPE_LABELS,
+  formatLiftPct,
+  formatPct,
+  type Archetype,
+} from "~/lib/parse-report";
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  // Prerender every date the fixture knows about. R2-backed dates are
+  // served on-demand via the Worker (the rest of the site is static).
+  return knownDatesFromFixture().map((date) => ({ params: { date } }));
+}
+
+const { date } = Astro.params;
+if (typeof date !== "string") {
+  return new Response("Invalid date", { status: 400 });
+}
+
+const env = await getEnv();
+const report = await getReport(env, date);
+
+if (!report) {
+  return new Response("Report not found", { status: 404 });
+}
+
+const grouped = new Map<Archetype, typeof report.prompts>();
+for (const p of report.prompts) {
+  const arr = grouped.get(p.archetype) ?? [];
+  arr.push(p);
+  grouped.set(p.archetype, arr);
+}
+
+const orderedArchetypes = [
+  "A1", "A2", "A3", "A4", "A5", "A6",
+  "A7", "A8", "A9", "A10", "A11", "A12",
+] as const;
+---
+
+<Base
+  title={`Report · ${report.date} · ${formatLiftPct(report.lift)} lift`}
+  description={`Full eval report for vegastack-cli on ${report.date}. ${report.prompt_count} prompts, ${formatLiftPct(report.lift)} headline lift.`}
+>
+  <section class="container-prose pt-16 pb-8">
+    <p class="mono text-xs uppercase tracking-widest text-subtle">Report</p>
+    <div class="flex items-baseline justify-between gap-4 flex-wrap mt-2">
+      <h1 class="display-num text-[clamp(2rem,4vw,3.25rem)] font-medium">
+        {report.date}
+      </h1>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="pill mono">bundle {report.bundle_version}</span>
+        <span class="pill mono">cli {report.cli_version}</span>
+        <span class="pill mono">{report.model}</span>
+      </div>
+    </div>
+
+    <p class="text-muted mt-4 max-w-2xl leading-relaxed">
+      Headline lift <span class="text-accent font-medium">{formatLiftPct(report.lift)}</span>.
+      Baseline {formatPct(report.baseline_pass_rate)} → with skill
+      {formatPct(report.with_skill_pass_rate)}, across {report.prompt_count} prompts.
+    </p>
+  </section>
+
+  <ArchetypeBars rows={report.archetypes} />
+
+  {orderedArchetypes.map((arch) => {
+    const prompts = grouped.get(arch) ?? [];
+    if (prompts.length === 0) return null;
+    const rollup = report.archetypes.find((r) => r.archetype === arch);
+    return (
+      <section class="container-prose pb-12">
+        <header class="flex items-baseline justify-between mb-5 flex-wrap gap-2">
+          <h2 class="text-lg md:text-xl font-medium tracking-tight">
+            <span class="mono text-subtle text-base mr-2">{arch}</span>
+            {ARCHETYPE_LABELS[arch]}
+          </h2>
+          {rollup && (
+            <span
+              class="mono text-sm tabular-nums"
+              style={`color: ${rollup.lift >= 0 ? "var(--color-accent-300)" : "var(--color-warn-400)"};`}
+            >
+              {formatLiftPct(rollup.lift)} lift · {prompts.length} prompt{prompts.length === 1 ? "" : "s"}
+            </span>
+          )}
+        </header>
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {prompts.map((p) => (
+            <PromptCard prompt={p} />
+          ))}
+        </div>
+      </section>
+    );
+  })}
+
+  <section class="container-prose pb-12">
+    <div class="surface-card p-7 md:p-10">
+      <h2 class="text-xl md:text-2xl font-medium tracking-tight">
+        Knowledge card hits
+      </h2>
+      <table class="mt-6 w-full text-sm">
+        <thead>
+          <tr class="text-subtle mono text-xs uppercase tracking-widest">
+            <th class="text-left font-normal pb-3">Card</th>
+            <th class="text-right font-normal pb-3">Expected</th>
+            <th class="text-right font-normal pb-3">Cited</th>
+            <th class="text-right font-normal pb-3">Hit rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          {report.knowledge_cards.map((c) => (
+            <tr style="border-top: 1px solid var(--border-subtle);">
+              <td class="py-2.5 pr-3">
+                <span class="text-muted">{c.title}</span>
+                <span class="block mono text-xs text-subtle">{c.id}</span>
+              </td>
+              <td class="text-right mono tabular-nums text-muted">
+                {c.expected_in_prompts}
+              </td>
+              <td class="text-right mono tabular-nums text-muted">
+                {c.cited_in_prompts}
+              </td>
+              <td
+                class="text-right mono tabular-nums"
+                style={`color: ${c.hit_rate >= 0.7 ? "var(--color-accent-300)" : c.hit_rate > 0 ? "var(--fg-default)" : "var(--color-warn-400)"};`}
+              >
+                {formatPct(c.hit_rate)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</Base>

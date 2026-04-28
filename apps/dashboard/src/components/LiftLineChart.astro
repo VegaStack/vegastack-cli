@@ -1,0 +1,150 @@
+---
+interface TrendPoint {
+  date: string;
+  lift: number;
+}
+
+interface Props {
+  points: TrendPoint[];
+}
+
+const { points } = Astro.props;
+
+// Pure-SVG line chart. No client JS, no chart lib — server-rendered geometry.
+const W = 760;
+const H = 240;
+const PAD_L = 44;
+const PAD_R = 16;
+const PAD_T = 16;
+const PAD_B = 32;
+const innerW = W - PAD_L - PAD_R;
+const innerH = H - PAD_T - PAD_B;
+
+const series = points.length > 1
+  ? points
+  : points.length === 1
+    ? [points[0], points[0]]
+    : [{ date: "2026-04-28", lift: 0 }, { date: "2026-04-28", lift: 0 }];
+
+const lifts = series.map((p) => p.lift);
+const yMax = Math.max(0.7, ...lifts);
+const yMin = Math.min(0, ...lifts);
+const ySpan = Math.max(0.0001, yMax - yMin);
+
+const coords = series.map((p, i) => {
+  const x = PAD_L + (i / Math.max(1, series.length - 1)) * innerW;
+  const y = PAD_T + innerH - ((p.lift - yMin) / ySpan) * innerH;
+  return { x, y, ...p };
+});
+
+const path = coords
+  .map((c, i) => `${i === 0 ? "M" : "L"}${c.x.toFixed(2)},${c.y.toFixed(2)}`)
+  .join(" ");
+
+const areaPath = `${path} L${coords[coords.length - 1].x.toFixed(2)},${(PAD_T + innerH).toFixed(2)} L${coords[0].x.toFixed(2)},${(PAD_T + innerH).toFixed(2)} Z`;
+
+const yTicks = [0, 0.25, 0.5, 0.75].filter((t) => t <= yMax + 0.05);
+
+function yPos(v: number) {
+  return PAD_T + innerH - ((v - yMin) / ySpan) * innerH;
+}
+
+const labelEvery = Math.max(1, Math.ceil(series.length / 6));
+---
+
+<section class="container-prose pb-12">
+  <div class="surface-card p-7 md:p-10 reveal reveal-delay-2">
+    <header class="flex items-baseline justify-between mb-6 flex-wrap gap-2">
+      <div>
+        <h2 class="text-xl md:text-2xl font-medium tracking-tight">
+          Lift over time
+        </h2>
+        <p class="text-subtle text-sm mt-1">
+          Headline lift, one nightly run per day. Higher is better.
+        </p>
+      </div>
+      <span class="pill mono">{series.length} run{series.length === 1 ? "" : "s"}</span>
+    </header>
+
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      width="100%"
+      height="auto"
+      role="img"
+      aria-label="Headline lift over the last 30 days"
+      style="display: block; max-width: 100%;"
+    >
+      <defs>
+        <linearGradient id="line-fill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="var(--color-accent-400)" stop-opacity="0.28" />
+          <stop offset="100%" stop-color="var(--color-accent-400)" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+
+      {yTicks.map((tick) => {
+        const y = yPos(tick);
+        return (
+          <g>
+            <line
+              x1={PAD_L}
+              x2={W - PAD_R}
+              y1={y}
+              y2={y}
+              stroke="var(--grid-line)"
+              stroke-width="1"
+            />
+            <text
+              x={PAD_L - 8}
+              y={y + 3}
+              text-anchor="end"
+              font-size="10"
+              font-family="var(--font-mono)"
+              fill="var(--fg-subtle)"
+            >
+              {Math.round(tick * 100)}%
+            </text>
+          </g>
+        );
+      })}
+
+      <path d={areaPath} fill="url(#line-fill)" />
+      <path
+        d={path}
+        fill="none"
+        stroke="var(--color-accent-400)"
+        stroke-width="1.75"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+
+      {coords.map((c, i) => (
+        <circle
+          cx={c.x}
+          cy={c.y}
+          r={i === coords.length - 1 ? 4 : 2}
+          fill="var(--color-accent-400)"
+          stroke="var(--bg-card)"
+          stroke-width="2"
+        >
+          <title>{c.date} · {Math.round(c.lift * 100)}%</title>
+        </circle>
+      ))}
+
+      {coords.map((c, i) => {
+        if (i % labelEvery !== 0 && i !== coords.length - 1) return null;
+        return (
+          <text
+            x={c.x}
+            y={H - 8}
+            text-anchor="middle"
+            font-size="10"
+            font-family="var(--font-mono)"
+            fill="var(--fg-subtle)"
+          >
+            {c.date.slice(5)}
+          </text>
+        );
+      })}
+    </svg>
+  </div>
+</section>

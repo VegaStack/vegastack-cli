@@ -1,0 +1,75 @@
+---
+import { formatLiftPct, formatPct, type PromptResult } from "~/lib/parse-report";
+
+interface Props {
+  prompt: PromptResult;
+}
+
+const { prompt } = Astro.props;
+const passed = prompt.expectations.filter((e) => e.passed).length;
+const total = prompt.expectations.length;
+const fullPass = passed === total;
+---
+
+<article
+  class="surface-card p-5 md:p-6 flex flex-col gap-4"
+  data-prompt-id={prompt.id}
+>
+  <header class="flex items-start justify-between gap-3 flex-wrap">
+    <div class="min-w-0">
+      <p class="mono text-xs text-subtle uppercase tracking-widest">
+        {prompt.archetype} · {prompt.id}
+      </p>
+      <h3 class="text-base md:text-lg font-medium mt-1 leading-snug">
+        {prompt.title}
+      </h3>
+    </div>
+    <span
+      class="mono text-sm tabular-nums shrink-0"
+      style={`color: ${prompt.lift >= 0 ? "var(--color-accent-300)" : "var(--color-warn-400)"};`}
+    >
+      {formatLiftPct(prompt.lift)}
+    </span>
+  </header>
+
+  <p class="text-muted text-sm leading-relaxed line-clamp-3">
+    {prompt.prompt}
+  </p>
+
+  <div class="flex items-center gap-2 flex-wrap">
+    <span
+      class={`pill mono ${fullPass ? "pill-accent" : ""}`}
+      title="Expectations passed with the skill enabled"
+    >
+      {passed}/{total} passed
+    </span>
+    <span class="pill mono">
+      baseline {formatPct(prompt.baseline.pass_rate)}
+    </span>
+    <span class="pill mono">
+      with skill {formatPct(prompt.with_skill.pass_rate)}
+    </span>
+    {prompt.with_skill.cited_cards.length > 0 && (
+      <span class="pill mono" title="Knowledge cards cited by the skill">
+        {prompt.with_skill.cited_cards.length} card{prompt.with_skill.cited_cards.length === 1 ? "" : "s"}
+      </span>
+    )}
+    {prompt.with_skill.cited_recipes.length > 0 && (
+      <span class="pill mono" title="Recipes cited by the skill">
+        {prompt.with_skill.cited_recipes.length} recipe{prompt.with_skill.cited_recipes.length === 1 ? "" : "s"}
+      </span>
+    )}
+  </div>
+
+  {prompt.failure_excerpt && (
+    <p
+      class="text-sm leading-relaxed border-l-2 pl-3 py-1"
+      style="border-color: var(--color-warn-500); color: var(--fg-muted);"
+    >
+      <span class="mono text-xs uppercase tracking-widest text-subtle block mb-1">
+        Failure exemplar
+      </span>
+      {prompt.failure_excerpt}
+    </p>
+  )}
+</article>

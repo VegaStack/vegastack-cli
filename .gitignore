@@ -1,0 +1,31 @@
+node_modules/
+dist/
+*.log
+*.tsbuildinfo
+.DS_Store
+
+# Bundle staged for local dev — never commit, always download
+references/terraform-providers/
+npm/bundle/
+npm/.version
+
+# Build artifacts
+*.tar.gz
+*.tgz
+*.zip
+*.sha256
+
+# Editor state
+.vscode/
+.idea/
+
+# Test workspace
+tests/.workspace/
+tests/.cache/
+
+# Changeset draft state
+.changeset/_*.md
+
+# Local env
+.env
+.env.local

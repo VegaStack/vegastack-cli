@@ -1,0 +1,66 @@
+# Cloudflare Workers config for the vegastack-cli Remote MCP server.
+#
+# Web-research notes (2026-04-28):
+#   * agents@0.11.6 + @modelcontextprotocol/sdk@1.29.0 require a Durable Object
+#     binding for the McpAgent class ("MyMCP") and a `new_sqlite_classes`
+#     migration. Cloudflare recommends SQLite-backed DOs for all new namespaces.
+#   * compatibility_date pinned to today; nodejs_compat is required by the
+#     Agents SDK runtime.
+#   * R2 binding `BUNDLE` reads the canonical bundle published by E4 to
+#     `bundles.vegastack.com`. v0.1 reads MANIFEST.json files only — per-shard
+#     fetching is deferred to v0.2.
+#   * KV binding `MCP_CACHE` caches manifest blobs (5-min TTL) to keep cold
+#     starts fast. Optional — the worker degrades gracefully without it.
+#   * Custom domain `mcp.vegastack.com` is documented but commented out; the
+#     user provisions DNS + the route after first deploy.
+
+name = "vegastack-mcp"
+main = "src/index.ts"
+# wrangler@4.85.0 (latest stable on 2026-04-28) clamps compatibility_date to
+# the Workers runtime's published ceiling — bump to today only after upgrading
+# wrangler to a build that ships the matching runtime metadata.
+compatibility_date = "2026-04-15"
+compatibility_flags = ["nodejs_compat"]
+
+# ── Observability ─────────────────────────────────────────────────────────
+[observability]
+enabled = true
+head_sampling_rate = 1.0
+
+# ── Durable Object: McpAgent session state ────────────────────────────────
+# McpAgent.serve() / McpAgent.serveSSE() require a Durable Object binding so
+# each MCP session gets its own isolated, hibernating instance.
+[[durable_objects.bindings]]
+name = "MCP_OBJECT"
+class_name = "VegaMcp"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["VegaMcp"]
+
+# ── R2: bundle reader ─────────────────────────────────────────────────────
+# E4 publishes the bundle to this bucket. The worker reads `bundle/MANIFEST.json`
+# (root) and `<provider>/MANIFEST.json` files on demand.
+[[r2_buckets]]
+binding = "BUNDLE"
+bucket_name = "vegastack-agent-kb"
+preview_bucket_name = "vegastack-agent-kb-preview"
+
+# ── KV: warm cache for manifest blobs (optional) ──────────────────────────
+# Create with: wrangler kv namespace create MCP_CACHE
+# Then paste the returned id below. The worker tolerates an unbound KV (no-op).
+# [[kv_namespaces]]
+# binding = "MCP_CACHE"
+# id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# ── Public read-only configuration via vars ───────────────────────────────
+[vars]
+BUNDLE_PUBLIC_BASE_URL = "https://bundles.vegastack.com"
+BUNDLE_MANIFEST_KEY = "cli/bundle/MANIFEST.json"
+CACHE_TTL_SECONDS = "300"
+LOG_LEVEL = "info"
+
+# ── Custom domain (provision after first deploy) ──────────────────────────
+# [[routes]]
+# pattern = "mcp.vegastack.com/*"
+# custom_domain = true

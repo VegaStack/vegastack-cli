@@ -1,0 +1,81 @@
+name: Publish @vegastack/cli (internal — GitHub Packages)
+
+# v0.1 internal-only publish flow. Mirrors the vegastack-theme publish.yml
+# pattern: tag-triggered, GITHUB_TOKEN-authenticated (no NPM_TOKEN), publishes
+# to GitHub Packages with `access: "restricted"` so only the VegaStack org
+# can install. The npm-public release.yml is workflow_dispatch-only and stays
+# dormant until we're ready to ship publicly.
+#
+# Triggering: push a tag matching v* (e.g. `git tag v0.1.0 && git push --tags`).
+# OR fire workflow_dispatch from the Actions UI for first-time / debug runs.
+#
+# To consume the published package, contributors / CI need a GitHub PAT with
+# read:packages scope in their ~/.npmrc — see README "Install (internal)".
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-internal-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build, test & publish to GitHub Packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@vegastack"
+
+      - name: Install
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Skip the bundle postinstall during CI — the bundle isn't published
+          # yet to a release for v0.1, and the CLI is what we're shipping here.
+          # Internal testers run `vega install` (or set VEGA_BUNDLE_DIR) after
+          # `npm install @vegastack/cli`.
+          VEGA_SKIP_POSTINSTALL: "1"
+
+      - name: Build
+        run: npm run build
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      - name: Verify package.json version matches tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION=${GITHUB_REF_NAME#v}
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::package.json version ($PKG_VERSION) doesn't match tag ($TAG_VERSION)"
+            exit 1
+          fi
+          echo "Publishing version $PKG_VERSION (tag: $TAG_VERSION)"
+
+      - name: Publish to GitHub Packages
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The prepublishOnly guard (scripts/check-bundle-pin.js) refuses to
+          # publish when expectedBundleSha is the placeholder. For internal
+          # v0.1 testing we explicitly bypass — the placeholder is expected
+          # because the bundle release pipeline runs separately.
+          VEGA_ALLOW_PENDING_BUNDLE_SHA: "1"

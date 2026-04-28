@@ -1,0 +1,67 @@
+---
+import { formatLiftPct, type EvalReport } from "~/lib/parse-report";
+
+interface Props {
+  report: EvalReport;
+}
+
+const { report } = Astro.props;
+const liftLabel = formatLiftPct(report.lift);
+const promptCount = report.prompt_count;
+---
+
+<section class="container-prose pt-16 md:pt-24 pb-10 md:pb-16">
+  <div class="flex items-center gap-3 reveal">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="pill mono">
+      Last run · {report.date}
+    </span>
+    <span class="pill mono hidden md:inline-flex">
+      bundle · {report.bundle_version}
+    </span>
+    <span class="pill mono hidden md:inline-flex">
+      cli · {report.cli_version}
+    </span>
+  </div>
+
+  <h1
+    class="display-num text-[clamp(2.5rem,7vw,5.25rem)] font-medium mt-7 max-w-3xl reveal reveal-delay-1"
+  >
+    Measurably better
+    <span class="text-accent"> Terraform </span>
+    answers.
+  </h1>
+
+  <p
+    class="text-muted text-base md:text-lg mt-5 max-w-2xl leading-relaxed reveal reveal-delay-2"
+  >
+    vegastack-cli closes <span class="text-accent font-medium">{liftLabel}</span>
+    of the remaining error in baseline Claude on a {promptCount}-prompt
+    suite covering the twelve most common Terraform tasks. Numbers below
+    are unedited, refreshed nightly, and never cherry-picked.
+  </p>
+
+  <div class="flex flex-wrap items-center gap-3 mt-8 reveal reveal-delay-3">
+    <a
+      href="https://www.npmjs.com/package/@vegastack/cli"
+      class="pill mono"
+      style="border-color: var(--border-strong); color: var(--fg-default);"
+    >
+      npm i -g @vegastack/cli
+    </a>
+    <a
+      href="/methodology"
+      class="pill mono hover:text-[color:var(--fg-default)]"
+      style="transition: color 200ms ease;"
+    >
+      How we measure →
+    </a>
+    <a
+      href="https://github.com/vegastack/vegastack-cli"
+      class="pill mono hover:text-[color:var(--fg-default)]"
+      style="transition: color 200ms ease;"
+    >
+      GitHub
+    </a>
+  </div>
+</section>

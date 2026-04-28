@@ -1,0 +1,76 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer
+  class="mt-16 md:mt-24 pt-10 pb-12"
+  style="border-top: 1px solid var(--border-subtle);"
+>
+  <div class="container-prose grid gap-10 md:grid-cols-[2fr_1fr_1fr_1fr]">
+    <div>
+      <p class="font-medium tracking-tight">vegastack-cli</p>
+      <p class="text-subtle text-sm mt-2 max-w-sm leading-relaxed">
+        A deterministic, file-system-based knowledge harness for Terraform.
+        One npm install, six agents supported, no network calls at query time.
+      </p>
+    </div>
+
+    <div>
+      <p class="mono text-xs uppercase tracking-widest text-subtle">Install</p>
+      <ul class="mt-3 flex flex-col gap-2 text-sm">
+        <li>
+          <code
+            class="mono text-xs px-2 py-1 rounded"
+            style="background: var(--bg-card); border: 1px solid var(--border-subtle);"
+          >
+            npm i -g @vegastack/cli
+          </code>
+        </li>
+        <li>
+          <a
+            class="text-muted hover:text-[color:var(--fg-default)] transition-colors"
+            href="https://github.com/vegastack/vegastack-cli/releases"
+            >Releases</a
+          >
+        </li>
+      </ul>
+    </div>
+
+    <div>
+      <p class="mono text-xs uppercase tracking-widest text-subtle">Evals</p>
+      <ul class="mt-3 flex flex-col gap-2 text-sm">
+        <li>
+          <a class="text-muted hover:text-[color:var(--fg-default)] transition-colors" href="/methodology">
+            Methodology
+          </a>
+        </li>
+        <li>
+          <a class="text-muted hover:text-[color:var(--fg-default)] transition-colors" href="/api/latest.json">
+            JSON status feed
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div>
+      <p class="mono text-xs uppercase tracking-widest text-subtle">Project</p>
+      <ul class="mt-3 flex flex-col gap-2 text-sm">
+        <li>
+          <a class="text-muted hover:text-[color:var(--fg-default)] transition-colors" href="https://github.com/vegastack/vegastack-cli">
+            Source
+          </a>
+        </li>
+        <li>
+          <a class="text-muted hover:text-[color:var(--fg-default)] transition-colors" href="https://github.com/vegastack/vegastack-cli/blob/main/LICENSE">
+            License (MIT)
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="container-prose mt-10 flex items-center justify-between text-xs mono text-subtle">
+    <span>© {year} vegastack</span>
+    <span>Built with Astro on Cloudflare Workers</span>
+  </div>
+</footer>

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://raw.githubusercontent.com/hesreallyhim/claude-code-json-schema/main/plugin.schema.json",
+  "name": "terraform-providers-kit",
+  "version": "0.1.0",
+  "description": "Local, deterministic Terraform docs harness for 31 providers (AWS, Azure, GCP, Cloudflare, Kubernetes, Helm, Vault, DigitalOcean, GitHub, GitLab, Vercel, Netlify, Datadog, Grafana, Splunk, PagerDuty, Okta, Auth0, CrowdStrike, 1Password, MongoDB Atlas, Snowflake, Redis Cloud, ClickHouse, Pinecone, Ansible, and the standard utility providers). Gives Claude Code accurate resource names, argument schemas (top-level + per-block), import syntax, deprecation flags, HCL examples, recent-change knowledge cards, cross-provider recipes, and concept-alias resolution — without web search, MCPs, or model-knowledge gaps.",
+  "author": {
+    "name": "Vegastack Engineering",
+    "email": "engg@vegastack.com",
+    "url": "https://vegastack.com"
+  },
+  "homepage": "https://github.com/vegastack/vegastack-cli",
+  "repository": "https://github.com/vegastack/vegastack-cli",
+  "license": "MIT",
+  "keywords": [
+    "terraform",
+    "hcl",
+    "iac",
+    "aws",
+    "azure",
+    "gcp",
+    "cloudflare",
+    "kubernetes",
+    "helm",
+    "vault",
+    "knowledge-harness",
+    "agent-skills"
+  ],
+  "skills": "./skills/",
+  "commands": "./commands/",
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./mcp/mcp.json"
+}

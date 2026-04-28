@@ -1,0 +1,31 @@
+id        = "scalable-backend-aws-ecs-fargate-rds-datadog"
+providers = ["aws", "datadog"]
+triggers = [
+  { tokens = ["ecs", "fargate", "alb", "autoscaling"] },
+  { tokens = ["scalable", "backend", "aws"] },
+  { phrase = "ecs fargate behind alb with autoscaling" },
+]
+
+[scaffold]
+hcl = """
+resource "aws_ecs_cluster" "this" { name = var.name }
+
+resource "aws_ecs_service" "api" {
+  name            = "${var.name}-api"
+  cluster         = aws_ecs_cluster.this.id
+  desired_count   = 2
+  launch_type     = "FARGATE"
+}
+
+resource "aws_lb_target_group" "api" {
+  name        = "${var.name}-api"
+  port        = 8080
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = var.vpc_id
+}
+"""
+
+[[pitfalls]]
+note = "ALB target_type MUST be 'ip' for Fargate."
+severity = "error"

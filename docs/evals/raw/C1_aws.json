@@ -1,0 +1,215 @@
+{
+  "status": "ok",
+  "query": "ECS Fargate ALB target tracking auto scaling RDS Postgres",
+  "provider": "aws",
+  "tokens": [
+    "ecs",
+    "fargate",
+    "alb",
+    "lb",
+    "load_balancer",
+    "target",
+    "tracking",
+    "auto",
+    "scaling",
+    "rds",
+    "postgres"
+  ],
+  "tiers_used": [
+    "manifest"
+  ],
+  "files": [
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/lb.html.markdown",
+      "score": 395,
+      "tier": "manifest",
+      "reasons": [
+        "exact_resource:aws_lb",
+        "subcategory_peer:ELB (Elastic Load Balancing)",
+        "subcat_keyword:alb→ELB (Elastic Load Balancing)",
+        "primary_resource:aws_lb"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecs_cluster.html.markdown",
+      "score": 265,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:ecs→ECS (Elastic Container)",
+        "primary_resource:aws_ecs_cluster",
+        "subcategory:ECS (Elastic Container)",
+        "name_partial:aws_ecs_cluster"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/db_instance.html.markdown",
+      "score": 230,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:rds→RDS (Relational Database)",
+        "primary_resource:aws_db_instance",
+        "subcategory:RDS (Relational Database)",
+        "example_token:RDS"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecs_service.html.markdown",
+      "score": 205,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:ecs→ECS (Elastic Container)",
+        "subcategory:ECS (Elastic Container)",
+        "name_partial:aws_ecs_service",
+        "argument_index:load_balancer"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecs_task_set.html.markdown",
+      "score": 205,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:ecs→ECS (Elastic Container)",
+        "subcategory:ECS (Elastic Container)",
+        "name_partial:aws_ecs_task_set",
+        "argument_index:load_balancer"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecs_cluster_capacity_providers.html.markdown",
+      "score": 165,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:ecs→ECS (Elastic Container)",
+        "subcategory:ECS (Elastic Container)",
+        "name_partial:aws_ecs_cluster_capacity_providers",
+        "example_token:FARGATE"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecs_task_definition.html.markdown",
+      "score": 165,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:ecs→ECS (Elastic Container)",
+        "subcategory:ECS (Elastic Container)",
+        "name_partial:aws_ecs_task_definition",
+        "example_token:FARGATE"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/db_instance_automated_backups_replication.html.markdown",
+      "score": 165,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:rds→RDS (Relational Database)",
+        "subcategory:RDS (Relational Database)",
+        "example_token:auto",
+        "example_token:postgres"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/rds_cluster_parameter_group.html.markdown",
+      "score": 165,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:rds→RDS (Relational Database)",
+        "subcategory:RDS (Relational Database)",
+        "name_partial:aws_rds_cluster_parameter_group",
+        "example_token:RDS"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/rds_custom_db_engine_version.html.markdown",
+      "score": 165,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:rds→RDS (Relational Database)",
+        "subcategory:RDS (Relational Database)",
+        "name_partial:aws_rds_custom_db_engine_version",
+        "example_token:RDS"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/db_proxy_default_target_group.html.markdown",
+      "score": 160,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:rds→RDS (Relational Database)",
+        "subcategory:RDS (Relational Database)",
+        "name_partial:aws_db_proxy_default_target_group",
+        "description:target"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/db_proxy_target.html.markdown",
+      "score": 160,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:rds→RDS (Relational Database)",
+        "subcategory:RDS (Relational Database)",
+        "name_partial:aws_db_proxy_target",
+        "description:target"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/d/lb.html.markdown",
+      "score": 148,
+      "tier": "manifest",
+      "reasons": [
+        "subcategory_peer:ELB (Elastic Load Balancing)",
+        "exact_datasource:aws_lb",
+        "subcat_keyword:alb→ELB (Elastic Load Balancing)"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/lb_target_group.html.markdown",
+      "score": 145,
+      "tier": "manifest",
+      "reasons": [
+        "subcategory_peer:ELB (Elastic Load Balancing)",
+        "subcat_keyword:alb→ELB (Elastic Load Balancing)",
+        "name_partial:aws_lb_target_group",
+        "description:target"
+      ]
+    },
+    {
+      "path": "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecs_account_setting_default.html.markdown",
+      "score": 145,
+      "tier": "manifest",
+      "reasons": [
+        "subcat_keyword:ecs→ECS (Elastic Container)",
+        "subcategory:ECS (Elastic Container)",
+        "name_partial:aws_ecs_account_setting_default"
+      ]
+    }
+  ],
+  "count": 15,
+  "intents": [
+    {
+      "label": "ELB (Elastic Load Balancing)",
+      "keyword": "alb",
+      "top_files": [
+        "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/lb.html.markdown",
+        "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/lb_target_group.html.markdown"
+      ]
+    },
+    {
+      "label": "ECS (Elastic Container)",
+      "keyword": "ecs",
+      "top_files": [
+        "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecs_cluster.html.markdown",
+        "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecs_service.html.markdown",
+        "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/ecs_task_set.html.markdown"
+      ]
+    },
+    {
+      "label": "RDS (Relational Database)",
+      "keyword": "rds",
+      "top_files": [
+        "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/db_instance.html.markdown",
+        "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/db_instance_automated_backups_replication.html.markdown",
+        "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/aws/r/rds_cluster_parameter_group.html.markdown"
+      ]
+    }
+  ]
+}

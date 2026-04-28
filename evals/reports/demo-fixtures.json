@@ -1,0 +1,23 @@
+{
+  "_doc": "Demo mock-response fixtures keyed by eval id. Used to prove the runner pipeline end-to-end without burning Anthropic tokens. with-skill responses are crafted to satisfy the eval expectations; baseline responses simulate a model relying on training memory (gets the broad strokes but misses the modern resource names + cards).",
+  "A1-s3-versioning-modern": {
+    "baseline": "Here's an aws_s3_bucket with inline versioning:\n```hcl\nresource \"aws_s3_bucket\" \"prod\" {\n  bucket = \"vegastack-prod-uploads\"\n  versioning {\n    enabled = true\n  }\n  server_side_encryption_configuration {\n    rule {\n      apply_server_side_encryption_by_default {\n        sse_algorithm = \"aws:kms\"\n      }\n    }\n  }\n}\n```",
+    "with-skill": "Per knowledge card aws-s3-versioning-split, use the modern split-resource pattern:\n```hcl\nresource \"aws_s3_bucket\" \"prod\" {\n  bucket = \"vegastack-prod-uploads\"\n}\nresource \"aws_s3_bucket_versioning\" \"prod\" {\n  bucket = aws_s3_bucket.prod.id\n  versioning_configuration {\n    status = \"Enabled\"\n  }\n}\nresource \"aws_s3_bucket_server_side_encryption_configuration\" \"prod\" {\n  bucket = aws_s3_bucket.prod.id\n  rule {\n    apply_server_side_encryption_by_default {\n      sse_algorithm     = \"aws:kms\"\n      kms_master_key_id = aws_kms_key.s3.arn\n    }\n  }\n}\nresource \"aws_kms_key\" \"s3\" {\n  description = \"S3 SSE\"\n}\n```\nCites: aws-s3-versioning-split"
+  },
+  "A1-cloudflare-dns-record": {
+    "baseline": "```hcl\nresource \"cloudflare_record\" \"api\" {\n  zone_id = \"023e105f4ecef8ad9ca31a8372d0c353\"\n  name    = \"api\"\n  value   = \"203.0.113.42\"\n  type    = \"A\"\n  proxied = true\n  ttl     = 1\n}\n```",
+    "with-skill": "Per knowledge card cloudflare-resource-renames-v5, use cloudflare_dns_record (provider v5+):\n```hcl\nresource \"cloudflare_dns_record\" \"api\" {\n  zone_id = \"023e105f4ecef8ad9ca31a8372d0c353\"\n  name    = \"api\"\n  type    = \"A\"\n  content = \"203.0.113.42\"\n  ttl     = 1\n  proxied = true\n}\n```"
+  },
+  "A3-import-cloudflare-dns-record": {
+    "baseline": "```hcl\nresource \"cloudflare_record\" \"foo\" {\n  zone_id = \"023e105f4ecef8ad9ca31a8372d0c353\"\n  name    = \"foo\"\n  type    = \"A\"\n  value   = \"\"\n}\n```\n\nImport:\n```\nterraform import cloudflare_record.foo 372e67954025e0ba6aaa6d586b9e0b59\n```",
+    "with-skill": "Per knowledge card cloudflare-resource-renames-v5 — use cloudflare_dns_record:\n```hcl\nresource \"cloudflare_dns_record\" \"foo\" {\n  zone_id = \"023e105f4ecef8ad9ca31a8372d0c353\"\n  name    = \"foo\"\n  type    = \"A\"\n  content = \"203.0.113.42\"\n}\n```\n\nImport using composite ID `<zone_id>/<record_id>`:\n```\nterraform import cloudflare_dns_record.foo 023e105f4ecef8ad9ca31a8372d0c353/372e67954025e0ba6aaa6d586b9e0b59\n```"
+  },
+  "A12-cloudflare-record-deprecated": {
+    "baseline": "Yes, cloudflare_record is the standard resource for DNS records. You can keep using it.",
+    "with-skill": "No — per knowledge card cloudflare-resource-renames-v5, the legacy cloudflare_record was renamed to cloudflare_dns_record in CF provider v5 (Sep 2024). Migrate with `terraform state mv` and update your config to use cloudflare_dns_record.\n```hcl\nresource \"cloudflare_dns_record\" \"example\" {\n  zone_id = var.zone_id\n  name    = \"example\"\n  type    = \"A\"\n  content = \"203.0.113.10\"\n}\n```"
+  },
+  "A12-do-i-need-dynamodb-for-locks": {
+    "baseline": "Yes — for the S3 backend you need a DynamoDB table for state locking. Add a `dynamodb_table` arg pointing to your lock table.",
+    "with-skill": "No — per knowledge card aws-s3-native-state-locking, since AWS provider 5.55 / Terraform 1.10 (June 2024) the s3 backend supports `use_lockfile = true` for native state locking. A DynamoDB table is no longer required.\n```hcl\nterraform {\n  backend \"s3\" {\n    bucket       = \"my-tf-state\"\n    key          = \"prod/terraform.tfstate\"\n    region       = \"us-east-1\"\n    encrypt      = true\n    use_lockfile = true\n  }\n}\n```"
+  }
+}

@@ -1,0 +1,88 @@
+---
+name: terraform-docs
+description: |
+  Use when the user asks to write, debug, import, or migrate Terraform / HCL,
+  or names any cloud / SaaS provider in a "deploy / provision / configure"
+  context. Provides per-resource argument schemas, import-ID formats,
+  deprecation flags, recent-change knowledge cards, cross-provider recipes,
+  and recommended-companion expansion — all from a local doc bundle, no
+  network calls. Triggers on "create a <resource>", "import <resource>",
+  "what arguments does X accept", "is <resource> deprecated", "set up
+  <multi-service stack>", and `*.tf`/`*.hcl` file edits.
+
+  Do NOT use for: pure shell / bash / Python questions; non-IaC cloud
+  questions ("what's the cheapest EC2 size?"); CDK / Pulumi / Crossplane
+  (different DSLs); Terraform Cloud workspace administration (separate API).
+license: MIT
+compatibility: "Requires Node >=18; @vegastack/cli on PATH (npm i -g @vegastack/cli && vega install). Works in Claude Code, Codex CLI, Cursor, Gemini CLI, Continue, Aider; spec-compatible with Microsoft Agent Framework, OpenCode, Goose, OpenClaw, Hermes, atmos."
+allowed-tools: Bash(vega:*) Bash(jq:*) Read Grep Glob
+tags: [Terraform, IaC, Documentation, Multi-Provider, Deterministic]
+codex: [vegastack-cli]
+metadata:
+  homepage: https://github.com/vegastack/vegastack-cli
+  schema_version: "1"
+  bundle_version: "${BUNDLE_VERSION}"
+  providers_count: "${PROVIDERS_COUNT}"
+---
+
+# When to dispatch this skill
+
+1. Query mentions a specific resource/argument lookup → run `vega tf "<query>"` (single call)
+2. Query mentions importing an existing resource → load `references/import.md` first
+3. Query mentions migrating between provider versions → load `references/migrations.md` first
+4. Query spans multiple providers (zero-trust, GitOps, observability) → load `references/recipes.md` first
+5. Query mentions a recent rename / deprecation / "is X still valid?" → load `references/recent-changes.md` first
+6. Query is "what arguments does X accept?" → run `vega tf` directly; envelope's `manifest_entry` answers it
+7. Otherwise → run `vega tf` directly; the response envelope is sufficient
+
+The decision tree above costs ~150 tokens. Loading the matching reference adds ~200-400 more.
+The historical eager-load pattern was ~4,400 tokens per turn — avoid.
+
+# Terraform Providers Kit — v0.1
+
+You have local, deterministic, read-only access to documentation for ${PROVIDERS_COUNT} Terraform providers (${PROVIDER_LIST}). The single command is:
+
+```bash
+vega tf "<the user's request, in natural language>"
+```
+
+`vega` (npm: `@vegastack/cli`) auto-resolves the docs bundle at `~/.config/vegastack/bundle/`, auto-detects the provider, and returns one JSON envelope on stdout with **four channels** read in this order:
+
+1. `knowledge[]` — date-stamped recent-change cards; if `overrides_training: true`, trust the card over your training memory.
+2. `recipes[]` — multi-provider topology scaffolds (HCL fragments + pitfalls).
+3. `files[]` — ranked resource/data-source pages, each with `manifest_entry` (required/optional args, blocks, enum values, import syntax, recommended companions, deprecation flags) and `example_usage` inline.
+4. `concept_aliases_used[]` — natural-language → resource mapping, surface in your reply for transparency.
+
+The response is enriched: in the common case **one tool call answers the task** because `manifest_entry` and `example_usage` are inlined into `files[]`. Cite `citations[]` verbatim at the end of your reply.
+
+## One worked example
+
+```bash
+vega tf "S3 backend state locking dynamodb"
+```
+
+Read in order: `knowledge[]` first surfaces `aws-s3-native-state-locking` (`overrides_training: true`) — as of AWS provider 5.55 / Terraform 1.10 the s3 backend supports `use_lockfile = true` and DynamoDB is optional. Cite the card's `authoritative_source`. Then `files[0]` gives the `terraform_remote_state` / `s3` backend manifest. Total: one CLI call, one citation block.
+
+For multi-provider queries ("EKS plus Cloudflare DNS"), the envelope returns `recipes[]` if a topology matches; otherwise call `vega tf --provider <name>` once per provider.
+
+## Guardrails
+
+- **Never invent resource names.** If a name doesn't appear in `files[].manifest_entry`, it does not exist. Hallucinations like `aws_lb_v2` / `aws_load_balancer` are common — re-phrase and re-run instead of mutating names.
+- **Never quote arguments from memory.** If an arg isn't in `manifest_entry.required_args` / `optional_args` / `computed_attrs` / `blocks.*.{required,optional}_args`, it does not exist on this provider version.
+- **Never fabricate import IDs.** Use `manifest_entry.import_syntax.command` verbatim — composite IDs (`zone_id/record_id`, `region:name`) are easy to get wrong.
+- **Respect deprecation.** If `manifest_entry.deprecated: true`, tell the user before writing code; surface `suggested_alternative`.
+- **Honor knowledge-card timestamps over training.** When `overrides_training: true`, the card represents post-training-cutoff facts the maintainers explicitly verified.
+
+## References (load on demand per the decision tree)
+
+- [references/import.md](references/import.md) — import-ID formats, composite-ID gotchas, `terraform import` workflow
+- [references/migrations.md](references/migrations.md) — provider-version migration playbook (CF v5, azurerm v4, k8s v2, helm v3, mongodbatlas)
+- [references/recipes.md](references/recipes.md) — recipe schema + full inventory of 10 cross-provider topologies
+- [references/recent-changes.md](references/recent-changes.md) — full inventory of 16 knowledge cards by date_authored
+- [references/discover-cli.md](references/discover-cli.md) — full `vega tf` flag reference, output schema, scoring weights
+- [references/manifest-schema.md](references/manifest-schema.md) — every field in per-provider and root MANIFEST.json
+- [references/concept-aliases.md](references/concept-aliases.md) — per-provider table of 28 NL → resource aliases
+- [references/eval-baseline.md](references/eval-baseline.md) — methodology for the published lift numbers
+- [references/troubleshooting.md](references/troubleshooting.md) — `vega doctor` matrix and common failure modes
+
+This skill bundles all 3 progressive-disclosure phases (`load_skill` / `read_skill_resource` / `run_skill_script`) into one CLI call — the dispatch tree above is the equivalent of the decision Microsoft Agent Framework recommends agents make before invoking `load_skill`.

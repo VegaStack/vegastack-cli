@@ -1,0 +1,57 @@
+---
+import "~/styles/global.css";
+import SiteHeader from "~/components/SiteHeader.astro";
+import SiteFooter from "~/components/SiteFooter.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+  canonical?: string;
+}
+
+const {
+  title,
+  description = "Public eval dashboard for vegastack-cli — measurably better Terraform answers, refreshed nightly.",
+  canonical,
+} = Astro.props;
+
+const siteUrl = Astro.url.toString();
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={siteUrl} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" type="application/json" title="Latest eval" href="/api/latest.json" />
+
+    <link rel="preconnect" href="https://rsms.me" crossorigin />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+  </head>
+  <body>
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:p-2 focus:bg-[color:var(--bg-card)] focus:text-[color:var(--fg-default)] focus:rounded"
+    >
+      Skip to main content
+    </a>
+
+    <SiteHeader />
+    <main id="main">
+      <slot />
+    </main>
+    <SiteFooter />
+  </body>
+</html>

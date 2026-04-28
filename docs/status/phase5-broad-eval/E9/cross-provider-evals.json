@@ -1,0 +1,1016 @@
+{
+  "schema_version": 1,
+  "skill_name": "terraform-providers-kit",
+  "comment": "E9 Phase-5 cross-provider broad eval set. 65 prompts spanning all 31 providers, 12 archetypes (A1-A12), 5 personas (SRE/PE/SecEng/FinOps/JuniorDev). Designed to complement evals/evals.json (50 prompts, AWS/CF heavy) by covering under-represented providers (1password, ansible, auth0, clickhouse, crowdstrike, external, helm, local, netlify, pinecone, random, redis-cloud, splunk, time, tls) with realistic operational language.",
+  "evals": [
+    {
+      "id": "E9-A1-snowflake-warehouse",
+      "archetype": "A1",
+      "title": "Snowflake warehouse + database + role",
+      "persona": "PlatformEngineer",
+      "prompt": "Spin up a Snowflake warehouse named ANALYTICS_WH (X-SMALL, auto-suspend 60s) with a paired database ANALYTICS_DB and a functional role ANALYTICS_RW that has USAGE on the warehouse and ALL on the database for our analytics team.",
+      "expectations": [
+        { "id": "has_warehouse", "kind": "resource_present", "value": "snowflake_warehouse" },
+        { "id": "has_database",  "kind": "resource_present", "value": "snowflake_database" },
+        { "id": "has_role",      "kind": "resource_present", "value": "snowflake_account_role" },
+        { "id": "has_grant",     "kind": "resource_present", "value": "snowflake_grant_privileges_to_account_role" }
+      ],
+      "tags": ["snowflake", "data", "scaffold"],
+      "max_tool_calls": 4
+    },
+    {
+      "id": "E9-A1-clickhouse-service",
+      "archetype": "A1",
+      "title": "ClickHouse Cloud service for product analytics",
+      "persona": "PlatformEngineer",
+      "prompt": "Provision a ClickHouse Cloud service named 'product-analytics-prod' in AWS us-east-1, development tier, idle scaling enabled. We'll point our event pipeline at it.",
+      "expectations": [
+        { "id": "has_service", "kind": "resource_present", "value": "clickhouse_service" }
+      ],
+      "tags": ["clickhouse", "analytics", "scaffold"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A1-pinecone-rag-index",
+      "archetype": "A1",
+      "title": "Pinecone RAG index",
+      "persona": "PlatformEngineer",
+      "prompt": "Create a Pinecone serverless index 'rag-docs' in aws us-east-1, 1536 dimensions, cosine metric, for our internal docs RAG bot.",
+      "expectations": [
+        { "id": "has_index", "kind": "resource_present", "value": "pinecone_index" }
+      ],
+      "tags": ["pinecone", "ml", "scaffold"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A1-1password-item",
+      "archetype": "A1",
+      "title": "1Password vault item for shared API key",
+      "persona": "SecurityEngineer",
+      "prompt": "Store the Stripe restricted API key as a 1Password item in our 'Engineering' vault — type 'login', label 'Stripe Restricted Key (Backend)', so app servers can pull it via the 1Password Connect provider.",
+      "expectations": [
+        { "id": "has_item", "kind": "resource_present", "value": "onepassword_item" }
+      ],
+      "tags": ["1password", "secrets", "scaffold"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A1-helm-cert-manager",
+      "archetype": "A1",
+      "title": "Helm release: cert-manager on EKS",
+      "persona": "PlatformEngineer",
+      "prompt": "Helm-install cert-manager into the cert-manager namespace on our EKS cluster, version 1.16, with the CRDs installed and a values override enabling the prometheus servicemonitor.",
+      "expectations": [
+        { "id": "has_release", "kind": "resource_present", "value": "helm_release" }
+      ],
+      "tags": ["helm", "k8s", "scaffold"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A1-tls-self-signed",
+      "archetype": "A1",
+      "title": "TLS self-signed cert for internal service",
+      "persona": "PlatformEngineer",
+      "prompt": "Generate a 4096-bit RSA private key and a self-signed cert valid 1 year for internal-svc.vegastack.local, SAN includes both internal-svc.vegastack.local and 10.0.5.42.",
+      "expectations": [
+        { "id": "has_pk",   "kind": "resource_present", "value": "tls_private_key" },
+        { "id": "has_cert", "kind": "resource_present", "value": "tls_self_signed_cert" }
+      ],
+      "tags": ["tls", "scaffold"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A1-time-rotating",
+      "archetype": "A1",
+      "title": "Time-based rotation trigger for IAM access key",
+      "persona": "SecurityEngineer",
+      "prompt": "Use the time provider to rotate an IAM access key every 90 days — give me the trigger pattern.",
+      "expectations": [
+        { "id": "has_rotating", "kind": "resource_present", "value": "time_rotating" }
+      ],
+      "tags": ["time", "rotation", "scaffold"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A1-random-password",
+      "archetype": "A1",
+      "title": "Random password for RDS master user",
+      "persona": "PlatformEngineer",
+      "prompt": "Generate a random 32-char password (no special chars problematic for shells), and feed it into an aws_db_instance master_password and an aws_secretsmanager_secret_version.",
+      "expectations": [
+        { "id": "has_password", "kind": "resource_present", "value": "random_password" },
+        { "id": "has_db",       "kind": "resource_present", "value": "aws_db_instance" },
+        { "id": "has_secret",   "kind": "resource_present", "value": "aws_secretsmanager_secret_version" }
+      ],
+      "tags": ["random", "aws", "secrets", "cross-provider"],
+      "max_tool_calls": 4
+    },
+    {
+      "id": "E9-A1-local-file-render",
+      "archetype": "A1",
+      "title": "Render rendered manifest to local file",
+      "persona": "JuniorDev",
+      "prompt": "After templating my values, write the rendered output to ./out/values.rendered.yaml on disk so I can inspect before applying.",
+      "expectations": [
+        { "id": "has_local_file", "kind": "resource_present", "value": "local_file" }
+      ],
+      "tags": ["local", "scaffold", "junior"],
+      "max_tool_calls": 2
+    },
+    {
+      "id": "E9-A1-external-data",
+      "archetype": "A1",
+      "title": "External data source to call a script",
+      "persona": "PlatformEngineer",
+      "prompt": "I need to pull the current Git SHA into Terraform variables — use the external provider data source to shell out to `git rev-parse HEAD` and return it as JSON.",
+      "expectations": [
+        { "id": "has_external", "kind": "resource_present", "value": "external" }
+      ],
+      "tags": ["external", "scaffold"],
+      "max_tool_calls": 2
+    },
+    {
+      "id": "E9-A1-ansible-host",
+      "archetype": "A1",
+      "title": "Ansible inventory host record",
+      "persona": "PlatformEngineer",
+      "prompt": "Register a Terraform-provisioned EC2 instance as an Ansible inventory host (group 'app_servers', ansible_user=ec2-user, hostvars include instance_id and private_ip) so our Ansible playbook can find it.",
+      "expectations": [
+        { "id": "has_host",  "kind": "resource_present", "value": "ansible_host" },
+        { "id": "has_group", "kind": "resource_present", "value": "ansible_group" }
+      ],
+      "tags": ["ansible", "scaffold"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A1-auth0-action",
+      "archetype": "A1",
+      "title": "Auth0 Action: add custom claim from external API",
+      "persona": "PlatformEngineer",
+      "prompt": "Add an Auth0 Action on the post-login flow that calls our internal /entitlements API with the user's email and adds the returned plan tier as a custom claim 'https://vegastack.com/plan' on both id_token and access_token.",
+      "expectations": [
+        { "id": "has_action",      "kind": "resource_present", "value": "auth0_action" },
+        { "id": "has_trigger_act", "kind": "resource_present", "value": "auth0_trigger_actions" }
+      ],
+      "tags": ["auth0", "scaffold"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A1-okta-oidc-app",
+      "archetype": "A1",
+      "title": "Okta OIDC app for our SaaS",
+      "persona": "SecurityEngineer",
+      "prompt": "Register an Okta OIDC web app for app.vegastack.com — auth code + PKCE, redirect URIs https://app.vegastack.com/callback, post-logout https://app.vegastack.com/, group assignment 'Engineering' and 'Product'.",
+      "expectations": [
+        { "id": "has_oidc_app", "kind": "resource_present", "value": "okta_app_oauth" }
+      ],
+      "tags": ["okta", "scaffold"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A1-redis-cloud-subscription",
+      "archetype": "A1",
+      "title": "Redis Cloud subscription + DB",
+      "persona": "PlatformEngineer",
+      "prompt": "Spin up a Redis Cloud Pro subscription on AWS us-east-1 with a 5GB single-shard database 'sessions-prod' for our session store. Multi-AZ on, persistence aof-every-1-second.",
+      "expectations": [
+        { "id": "has_sub", "kind": "resource_present", "value": "rediscloud_subscription" },
+        { "id": "has_db",  "kind": "resource_present", "value": "rediscloud_subscription_database" }
+      ],
+      "tags": ["redis-cloud", "scaffold"],
+      "max_tool_calls": 4
+    },
+    {
+      "id": "E9-A1-splunk-index",
+      "archetype": "A1",
+      "title": "Splunk index for app logs",
+      "persona": "SRE",
+      "prompt": "Create a Splunk index 'app_prod_logs' with 90-day retention and frozen-time path on our cold tier.",
+      "expectations": [
+        { "id": "has_index", "kind": "resource_present", "value": "splunk_indexes" }
+      ],
+      "tags": ["splunk", "scaffold"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A1-netlify-dns-record",
+      "archetype": "A1",
+      "title": "Netlify DNS record for legacy site",
+      "persona": "JuniorDev",
+      "prompt": "Add a CNAME on our Netlify-managed zone for blog.vegastack.com pointing to ghost-pages.fly.dev.",
+      "expectations": [
+        { "id": "has_record", "kind": "resource_present", "value": "netlify_dns_record" }
+      ],
+      "tags": ["netlify", "dns", "junior"],
+      "max_tool_calls": 2
+    },
+    {
+      "id": "E9-A1-vercel-project",
+      "archetype": "A1",
+      "title": "Vercel project + env vars",
+      "persona": "JuniorDev",
+      "prompt": "Set up our Next.js app as a Vercel project linked to vegastack/website on the main branch, with NEXT_PUBLIC_API_URL set per environment (production/preview/development).",
+      "expectations": [
+        { "id": "has_project", "kind": "resource_present", "value": "vercel_project" },
+        { "id": "has_env",     "kind": "resource_present", "value": "vercel_project_environment_variable" }
+      ],
+      "tags": ["vercel", "scaffold", "junior"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A1-digitalocean-droplet",
+      "archetype": "A1",
+      "title": "DigitalOcean droplet for staging",
+      "persona": "JuniorDev",
+      "prompt": "Stand up a single s-2vcpu-4gb DigitalOcean droplet in nyc3 named 'staging-bastion' with SSH key and tag 'env:staging'.",
+      "expectations": [
+        { "id": "has_droplet", "kind": "resource_present", "value": "digitalocean_droplet" }
+      ],
+      "tags": ["digitalocean", "junior"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A1-crowdstrike-host-group",
+      "archetype": "A1",
+      "title": "CrowdStrike dynamic host group for prod EC2",
+      "persona": "SecurityEngineer",
+      "prompt": "Create a CrowdStrike Falcon host group 'aws-prod-linux' that dynamically includes any host with platform 'Linux' and the AWS tag env=prod.",
+      "expectations": [
+        { "id": "has_group", "kind": "resource_present", "value": "crowdstrike_host_group" }
+      ],
+      "tags": ["crowdstrike", "scaffold"],
+      "max_tool_calls": 3
+    },
+
+    {
+      "id": "E9-A2-snowflake-grant-args",
+      "archetype": "A2",
+      "title": "Args of snowflake_grant_privileges_to_account_role",
+      "persona": "PlatformEngineer",
+      "prompt": "What arguments does snowflake_grant_privileges_to_account_role take? Specifically I want to know the on_account_object vs on_schema_object difference.",
+      "expectations": [
+        { "id": "names_grant", "kind": "resource_present", "value": "snowflake_grant_privileges_to_account_role" }
+      ],
+      "tags": ["snowflake", "args"],
+      "max_tool_calls": 2
+    },
+    {
+      "id": "E9-A2-vault-database-secret-args",
+      "archetype": "A2",
+      "title": "Args of vault_database_secret_backend_role",
+      "persona": "PlatformEngineer",
+      "prompt": "What args does vault_database_secret_backend_role accept for a Postgres dynamic-creds setup? I need the creation_statements format.",
+      "expectations": [
+        { "id": "names_role", "kind": "resource_present", "value": "vault_database_secret_backend_role" }
+      ],
+      "tags": ["vault", "args"],
+      "max_tool_calls": 2
+    },
+    {
+      "id": "E9-A2-pagerduty-service-args",
+      "archetype": "A2",
+      "title": "Args of pagerduty_service",
+      "persona": "SRE",
+      "prompt": "What args does pagerduty_service take, and how do I set the auto-resolve and acknowledgement timeouts?",
+      "expectations": [
+        { "id": "names_svc", "kind": "resource_present", "value": "pagerduty_service" }
+      ],
+      "tags": ["pagerduty", "args"],
+      "max_tool_calls": 2
+    },
+    {
+      "id": "E9-A2-grafana-dashboard-args",
+      "archetype": "A2",
+      "title": "Args of grafana_dashboard",
+      "persona": "SRE",
+      "prompt": "How do I pass dashboard JSON into grafana_dashboard? Is the config_json arg the only way, or is there a templated alternative?",
+      "expectations": [
+        { "id": "names_dashboard", "kind": "resource_present", "value": "grafana_dashboard" }
+      ],
+      "tags": ["grafana", "args"],
+      "max_tool_calls": 2
+    },
+    {
+      "id": "E9-A2-helm-release-args",
+      "archetype": "A2",
+      "title": "Args of helm_release for chart values",
+      "persona": "PlatformEngineer",
+      "prompt": "What args does helm_release accept? I want to know the difference between values, set, and set_sensitive — when should I use each?",
+      "expectations": [
+        { "id": "names_release", "kind": "resource_present", "value": "helm_release" }
+      ],
+      "tags": ["helm", "args"],
+      "max_tool_calls": 2
+    },
+
+    {
+      "id": "E9-A3-import-snowflake-database",
+      "archetype": "A3",
+      "title": "Import existing Snowflake database",
+      "persona": "PlatformEngineer",
+      "prompt": "We have an existing Snowflake database PROD_ANALYTICS that was created in the UI. Give me the import command and a starter resource block.",
+      "expectations": [
+        { "id": "has_db",   "kind": "resource_present", "value": "snowflake_database" },
+        { "id": "import",   "kind": "import_syntax_match", "value": "snowflake_database" }
+      ],
+      "tags": ["snowflake", "import"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A3-import-okta-group",
+      "archetype": "A3",
+      "title": "Import existing Okta group",
+      "persona": "SecurityEngineer",
+      "prompt": "Bring our existing Okta group 'Engineering' (id 00g1abc23defGHIJ4567) under Terraform.",
+      "expectations": [
+        { "id": "has_group", "kind": "resource_present", "value": "okta_group" },
+        { "id": "import",    "kind": "import_syntax_match", "value": "okta_group" }
+      ],
+      "tags": ["okta", "import"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A3-import-grafana-folder",
+      "archetype": "A3",
+      "title": "Import a Grafana folder",
+      "persona": "SRE",
+      "prompt": "We have a Grafana folder 'SLO Dashboards' (uid: slo-dashboards). Bring it under Terraform.",
+      "expectations": [
+        { "id": "has_folder", "kind": "resource_present", "value": "grafana_folder" },
+        { "id": "import",     "kind": "import_syntax_match", "value": "grafana_folder" }
+      ],
+      "tags": ["grafana", "import"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A3-import-vercel-project",
+      "archetype": "A3",
+      "title": "Import a Vercel project",
+      "persona": "JuniorDev",
+      "prompt": "We created our Vercel project in the dashboard. Project id prj_abc123. Bring it under Terraform with the import command and matching block.",
+      "expectations": [
+        { "id": "has_project", "kind": "resource_present", "value": "vercel_project" },
+        { "id": "import",      "kind": "import_syntax_match", "value": "vercel_project" }
+      ],
+      "tags": ["vercel", "import", "junior"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A3-import-pagerduty-service",
+      "archetype": "A3",
+      "title": "Import an existing PagerDuty service",
+      "persona": "SRE",
+      "prompt": "We have an existing PagerDuty service 'web-api' (id PXXXXXX) that someone made in the UI. Bring it into Terraform.",
+      "expectations": [
+        { "id": "has_svc", "kind": "resource_present", "value": "pagerduty_service" },
+        { "id": "import",  "kind": "import_syntax_match", "value": "pagerduty_service" }
+      ],
+      "tags": ["pagerduty", "import"],
+      "max_tool_calls": 3
+    },
+
+    {
+      "id": "E9-A4-vault-kv-v1-to-v2",
+      "archetype": "A4",
+      "title": "Migrate Vault KV v1 mounts to v2",
+      "persona": "SecurityEngineer",
+      "prompt": "Our 'secret/' mount is still kv v1. Migrate everything under it to kv v2 — show the new mount, the data path differences, and how to migrate vault_generic_secret to vault_kv_secret_v2.",
+      "expectations": [
+        { "id": "has_mount", "kind": "resource_present", "value": "vault_mount" },
+        { "id": "has_v2",    "kind": "resource_present", "value": "vault_kv_secret_v2" },
+        { "id": "cites_card","kind": "cites_card", "value": "vault-kv-v2-mount" }
+      ],
+      "tags": ["vault", "migrate"],
+      "max_tool_calls": 4
+    },
+    {
+      "id": "E9-A4-snowflake-grant-rewrite",
+      "archetype": "A4",
+      "title": "Migrate snowflake_role_grants to v0.93+ split resources",
+      "persona": "PlatformEngineer",
+      "prompt": "Our Snowflake provider is on the old grants model with snowflake_grant. Modernize to the per-object grants in 0.93+ — show the renames and which resource to use for account-object vs schema-object grants.",
+      "expectations": [
+        { "id": "uses_account_grant","kind": "resource_present", "value": "snowflake_grant_privileges_to_account_role" }
+      ],
+      "tags": ["snowflake", "migrate"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A4-helm-v3-rename",
+      "archetype": "A4",
+      "title": "Update helm provider v2 → v3 release fields",
+      "persona": "PlatformEngineer",
+      "prompt": "Our helm provider is on v2 and we have a few helm_release resources. What changes when we go to v3 — anything I need to fix in our blocks?",
+      "expectations": [
+        { "id": "has_release",  "kind": "resource_present", "value": "helm_release" },
+        { "id": "cites_card",   "kind": "cites_card", "value": "helm-provider-v3" }
+      ],
+      "tags": ["helm", "migrate"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A4-k8s-v1-suffix",
+      "archetype": "A4",
+      "title": "Migrate kubernetes_deployment → kubernetes_deployment_v1",
+      "persona": "PlatformEngineer",
+      "prompt": "Our codebase still uses kubernetes_deployment, kubernetes_service, kubernetes_config_map. Migrate to the recommended _v1 suffixed resources.",
+      "expectations": [
+        { "id": "has_dep_v1", "kind": "resource_present", "value": "kubernetes_deployment_v1" },
+        { "id": "has_svc_v1", "kind": "resource_present", "value": "kubernetes_service_v1" },
+        { "id": "cites_card", "kind": "cites_card", "value": "kubernetes-provider-v2-fields" }
+      ],
+      "tags": ["kubernetes", "migrate"],
+      "max_tool_calls": 3
+    },
+
+    {
+      "id": "E9-A5-aks-soft-deps",
+      "archetype": "A5",
+      "title": "Spin up an AKS cluster end-to-end",
+      "persona": "JuniorDev",
+      "prompt": "I need a small AKS cluster for dev — make it usable end-to-end (resource group, networking, node pool, kubeconfig output).",
+      "expectations": [
+        { "id": "has_aks",  "kind": "resource_present", "value": "azurerm_kubernetes_cluster" },
+        { "id": "has_rg",   "kind": "resource_present", "value": "azurerm_resource_group" },
+        { "id": "has_vnet", "kind": "resource_present", "value": "azurerm_virtual_network" }
+      ],
+      "tags": ["azure", "aks", "soft-deps", "junior"],
+      "max_tool_calls": 5
+    },
+    {
+      "id": "E9-A5-cloud-run-soft-deps",
+      "archetype": "A5",
+      "title": "Spin up a Cloud Run service end-to-end",
+      "persona": "JuniorDev",
+      "prompt": "Stand up a Cloud Run service called 'api' on GCP — public, with the artifact registry repo and IAM bindings to make it actually deployable.",
+      "expectations": [
+        { "id": "has_run", "kind": "resource_present", "value": "google_cloud_run_v2_service" },
+        { "id": "has_ar",  "kind": "resource_present", "value": "google_artifact_registry_repository" },
+        { "id": "no_v1",   "kind": "no_resource", "value": "google_cloud_run_service" }
+      ],
+      "tags": ["gcp", "cloud-run", "soft-deps", "junior"],
+      "max_tool_calls": 4
+    },
+    {
+      "id": "E9-A5-pinecone-soft-deps",
+      "archetype": "A5",
+      "title": "Pinecone RAG stack with API key",
+      "persona": "PlatformEngineer",
+      "prompt": "Set up a Pinecone serverless index for our RAG app along with a service-scoped API key our backend will use.",
+      "expectations": [
+        { "id": "has_index", "kind": "resource_present", "value": "pinecone_index" },
+        { "id": "has_key",   "kind": "resource_present", "value": "pinecone_api_key" }
+      ],
+      "tags": ["pinecone", "soft-deps"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A5-clickhouse-soft-deps",
+      "archetype": "A5",
+      "title": "ClickHouse Cloud + private endpoint to AWS VPC",
+      "persona": "PlatformEngineer",
+      "prompt": "We need a ClickHouse Cloud service plus a private endpoint reachable from our AWS VPC vpc-0abc12345 — wire the whole thing.",
+      "expectations": [
+        { "id": "has_service",   "kind": "resource_present", "value": "clickhouse_service" },
+        { "id": "has_pe",        "kind": "resource_present", "value": "clickhouse_private_endpoint_registration" },
+        { "id": "has_vpce",      "kind": "resource_present", "value": "aws_vpc_endpoint" }
+      ],
+      "tags": ["clickhouse", "aws", "cross-provider", "soft-deps"],
+      "max_tool_calls": 5
+    },
+
+    {
+      "id": "E9-A6-grafana-slo-dashboard-pack",
+      "archetype": "A6",
+      "title": "Grafana SLO dashboards + alert rule + contact point",
+      "persona": "SRE",
+      "prompt": "Stand up a Grafana SLO pack: a folder, two dashboards (api + db), an alert rule on burn rate, and a contact point routing to PagerDuty.",
+      "expectations": [
+        { "id": "has_folder",    "kind": "resource_present", "value": "grafana_folder" },
+        { "id": "has_dashboard", "kind": "resource_present", "value": "grafana_dashboard" },
+        { "id": "has_contact",   "kind": "resource_present", "value": "grafana_contact_point" },
+        { "id": "has_policy",    "kind": "resource_present", "value": "grafana_notification_policy" }
+      ],
+      "tags": ["grafana", "topology", "sre"],
+      "max_tool_calls": 5
+    },
+    {
+      "id": "E9-A6-snowflake-warehouse-rbac",
+      "archetype": "A6",
+      "title": "Snowflake RBAC topology — multi-role hierarchy",
+      "persona": "PlatformEngineer",
+      "prompt": "Build a Snowflake RBAC tree for our company: ANALYTICS_RW > ANALYTICS_RO > ANALYST hierarchy, granted on PROD_DB schemas, with three users assigned each.",
+      "expectations": [
+        { "id": "has_role", "kind": "resource_present", "value": "snowflake_account_role" },
+        { "id": "has_user", "kind": "resource_present", "value": "snowflake_user" },
+        { "id": "has_grant_role_to_role", "kind": "resource_present", "value": "snowflake_grant_account_role" }
+      ],
+      "tags": ["snowflake", "rbac", "topology"],
+      "max_tool_calls": 5
+    },
+    {
+      "id": "E9-A6-vault-pki-intermediate",
+      "archetype": "A6",
+      "title": "Vault PKI: root + intermediate + role",
+      "persona": "SecurityEngineer",
+      "prompt": "Build a Vault PKI hierarchy: a self-signed root (10y), an intermediate signed by it (3y), and a role 'webcerts' issuing certs valid 30 days for *.vegastack.internal.",
+      "expectations": [
+        { "id": "has_root",   "kind": "resource_present", "value": "vault_pki_secret_backend_root_cert" },
+        { "id": "has_int",    "kind": "resource_present", "value": "vault_pki_secret_backend_intermediate_cert_request" },
+        { "id": "has_signed", "kind": "resource_present", "value": "vault_pki_secret_backend_root_sign_intermediate" },
+        { "id": "has_role",   "kind": "resource_present", "value": "vault_pki_secret_backend_role" }
+      ],
+      "tags": ["vault", "pki", "topology"],
+      "max_tool_calls": 5
+    },
+    {
+      "id": "E9-A6-gitlab-project-bootstrap",
+      "archetype": "A6",
+      "title": "GitLab project bootstrap with protected branches",
+      "persona": "PlatformEngineer",
+      "prompt": "Bootstrap a new GitLab project 'platform/iac' under our 'platform' group: protected main branch (require MR + 2 approvals), CI/CD vars for AWS_ROLE_ARN, default merge method 'rebase'.",
+      "expectations": [
+        { "id": "has_project",   "kind": "resource_present", "value": "gitlab_project" },
+        { "id": "has_protected", "kind": "resource_present", "value": "gitlab_branch_protection" },
+        { "id": "has_var",       "kind": "resource_present", "value": "gitlab_project_variable" }
+      ],
+      "tags": ["gitlab", "topology"],
+      "max_tool_calls": 5
+    },
+    {
+      "id": "E9-A6-cloudflare-workers-d1-r2",
+      "archetype": "A6",
+      "title": "Cloudflare Worker + D1 + R2 stack",
+      "persona": "PlatformEngineer",
+      "prompt": "Deploy an edge worker that reads from a D1 database and writes uploaded blobs to an R2 bucket — give me the full Cloudflare topology.",
+      "expectations": [
+        { "id": "has_worker",   "kind": "resource_present", "value": "cloudflare_workers_script" },
+        { "id": "has_d1",       "kind": "resource_present", "value": "cloudflare_d1_database" },
+        { "id": "has_r2",       "kind": "resource_present", "value": "cloudflare_r2_bucket" }
+      ],
+      "tags": ["cloudflare", "edge", "topology"],
+      "max_tool_calls": 5
+    },
+    {
+      "id": "E9-A6-datadog-aws-integration",
+      "archetype": "A6",
+      "title": "Datadog AWS integration end-to-end",
+      "persona": "SRE",
+      "prompt": "Wire up the Datadog–AWS integration: the IAM role Datadog assumes, the integration_aws record, and a baseline dashboard for EC2 host counts.",
+      "expectations": [
+        { "id": "has_dd_aws",     "kind": "resource_present", "value": "datadog_integration_aws_account" },
+        { "id": "has_iam_role",   "kind": "resource_present", "value": "aws_iam_role" },
+        { "id": "has_dashboard",  "kind": "resource_present", "value": "datadog_dashboard" }
+      ],
+      "tags": ["datadog", "aws", "topology", "cross-provider"],
+      "max_tool_calls": 5
+    },
+
+    {
+      "id": "E9-A7-helm-cert-manager-route53",
+      "archetype": "A7",
+      "title": "cert-manager on EKS + Route53 dns01 + Let's Encrypt wildcard",
+      "persona": "PlatformEngineer",
+      "prompt": "Helm-install cert-manager on our EKS cluster, configure a ClusterIssuer using Let's Encrypt with Route53 dns01 solver scoped to vegastack.com, and pre-create the IRSA role + policy needed for the Route53 access.",
+      "expectations": [
+        { "id": "has_helm",   "kind": "resource_present", "value": "helm_release" },
+        { "id": "has_role",   "kind": "resource_present", "value": "aws_iam_role" },
+        { "id": "has_policy", "kind": "resource_present", "value": "aws_iam_policy" },
+        { "id": "has_zone",   "kind": "resource_present", "value": "aws_route53_zone" }
+      ],
+      "tags": ["helm", "aws", "k8s", "cross-provider"],
+      "max_tool_calls": 6
+    },
+    {
+      "id": "E9-A7-vault-dynamic-postgres-on-k8s",
+      "archetype": "A7",
+      "title": "Vault dynamic Postgres creds for app on K8s",
+      "persona": "SecurityEngineer",
+      "prompt": "Wire dynamic Postgres credentials from Vault to our app pod on EKS: vault database secret backend connection, role with creation_statements, and a Kubernetes auth role bound to the 'web' service account.",
+      "expectations": [
+        { "id": "has_db_be",    "kind": "resource_present", "value": "vault_database_secret_backend_connection" },
+        { "id": "has_db_role",  "kind": "resource_present", "value": "vault_database_secret_backend_role" },
+        { "id": "has_k8s_auth", "kind": "resource_present", "value": "vault_kubernetes_auth_backend_role" }
+      ],
+      "tags": ["vault", "kubernetes", "cross-provider"],
+      "max_tool_calls": 6
+    },
+    {
+      "id": "E9-A7-pinecone-vault-1password",
+      "archetype": "A7",
+      "title": "Pinecone API key in 1Password, synced via Vault",
+      "persona": "SecurityEngineer",
+      "prompt": "Provision a Pinecone API key, store it in 1Password as the source of truth, and write a Vault KV v2 secret that reads it for our backend service to consume.",
+      "expectations": [
+        { "id": "has_key",   "kind": "resource_present", "value": "pinecone_api_key" },
+        { "id": "has_op",    "kind": "resource_present", "value": "onepassword_item" },
+        { "id": "has_vault", "kind": "resource_present", "value": "vault_kv_secret_v2" }
+      ],
+      "tags": ["pinecone", "1password", "vault", "cross-provider"],
+      "max_tool_calls": 5
+    },
+    {
+      "id": "E9-A7-tls-acm-cloudflare",
+      "archetype": "A7",
+      "title": "Generate cert with TLS provider, import to ACM, validate via Cloudflare DNS",
+      "persona": "PlatformEngineer",
+      "prompt": "Issue a wildcard cert (*.vegastack.com) using the TLS provider, import it into AWS ACM, and add the Cloudflare DNS validation records — fully automated.",
+      "expectations": [
+        { "id": "has_pk",     "kind": "resource_present", "value": "tls_private_key" },
+        { "id": "has_cert",   "kind": "resource_present", "value": "tls_self_signed_cert" },
+        { "id": "has_acm",    "kind": "resource_present", "value": "aws_acm_certificate" },
+        { "id": "has_record", "kind": "resource_present", "value": "cloudflare_dns_record" }
+      ],
+      "tags": ["tls", "aws", "cloudflare", "cross-provider"],
+      "max_tool_calls": 5
+    },
+    {
+      "id": "E9-A7-random-secrets-rds-rotation",
+      "archetype": "A7",
+      "title": "Random password → AWS Secrets Manager → RDS master password",
+      "persona": "SecurityEngineer",
+      "prompt": "Generate the RDS master password with the random provider, store it in AWS Secrets Manager, and configure rotation through the secretsmanager rotation lambda.",
+      "expectations": [
+        { "id": "has_pw",       "kind": "resource_present", "value": "random_password" },
+        { "id": "has_secret",   "kind": "resource_present", "value": "aws_secretsmanager_secret" },
+        { "id": "has_rotation", "kind": "resource_present", "value": "aws_secretsmanager_secret_rotation" },
+        { "id": "has_db",       "kind": "resource_present", "value": "aws_db_instance" }
+      ],
+      "tags": ["random", "aws", "secrets", "cross-provider"],
+      "max_tool_calls": 5
+    },
+    {
+      "id": "E9-A7-vercel-cloudflare-workers-ab",
+      "archetype": "A7",
+      "title": "Vercel project + Netlify legacy redirect + Cloudflare Worker for AB test",
+      "persona": "PlatformEngineer",
+      "prompt": "We're moving from Netlify to Vercel — keep Netlify for legacy /blog/* redirects and put a Cloudflare Worker out front for an AB test routing 10% of root traffic to the old site.",
+      "expectations": [
+        { "id": "has_vercel",   "kind": "resource_present", "value": "vercel_project" },
+        { "id": "has_netlify",  "kind": "resource_present", "value": "netlify_dns_record" },
+        { "id": "has_worker",   "kind": "resource_present", "value": "cloudflare_workers_script" }
+      ],
+      "tags": ["vercel", "netlify", "cloudflare", "cross-provider"],
+      "max_tool_calls": 5
+    },
+    {
+      "id": "E9-A7-crowdstrike-on-aws",
+      "archetype": "A7",
+      "title": "CrowdStrike sensor coverage on every EC2 in org",
+      "persona": "SecurityEngineer",
+      "prompt": "Make sure every EC2 in our AWS org runs the CrowdStrike Falcon sensor — register the AWS account with Falcon Cloud Security, set up an SSM association to install the sensor, and an SCP-style enforcement.",
+      "expectations": [
+        { "id": "has_cs_aws",  "kind": "resource_present", "value": "crowdstrike_cloud_aws_account" },
+        { "id": "has_ssm",     "kind": "resource_present", "value": "aws_ssm_association" },
+        { "id": "has_policy",  "kind": "resource_present", "value": "aws_organizations_policy" }
+      ],
+      "tags": ["crowdstrike", "aws", "cross-provider", "security"],
+      "max_tool_calls": 6
+    },
+    {
+      "id": "E9-A7-splunk-to-otel-datadog",
+      "archetype": "A7",
+      "title": "Migrate Splunk → OpenTelemetry collector → Datadog backend",
+      "persona": "SRE",
+      "prompt": "We're moving off Splunk: keep the Splunk index up for 30-day cutover, deploy an OTel collector on our EKS cluster sending to Datadog, and create the Datadog logs index.",
+      "expectations": [
+        { "id": "has_splunk",   "kind": "resource_present", "value": "splunk_indexes" },
+        { "id": "has_helm",     "kind": "resource_present", "value": "helm_release" },
+        { "id": "has_dd_logs",  "kind": "resource_present", "value": "datadog_logs_index" }
+      ],
+      "tags": ["splunk", "datadog", "helm", "cross-provider"],
+      "max_tool_calls": 6
+    },
+    {
+      "id": "E9-A7-ansible-gitlab-github",
+      "archetype": "A7",
+      "title": "Ansible inventory from EC2, code in GitLab + secrets in GitHub",
+      "persona": "PlatformEngineer",
+      "prompt": "We provision EC2 with Terraform, register them as Ansible hosts, store the playbooks in GitLab, and need a GitHub Actions secret with the SSH key for the runners.",
+      "expectations": [
+        { "id": "has_ec2",     "kind": "resource_present", "value": "aws_instance" },
+        { "id": "has_host",    "kind": "resource_present", "value": "ansible_host" },
+        { "id": "has_gl_proj", "kind": "resource_present", "value": "gitlab_project" },
+        { "id": "has_gh_sec",  "kind": "resource_present", "value": "github_actions_secret" }
+      ],
+      "tags": ["ansible", "gitlab", "github", "aws", "cross-provider"],
+      "max_tool_calls": 6
+    },
+    {
+      "id": "E9-A7-auth0-action-external-claim",
+      "archetype": "A7",
+      "title": "Auth0 Action calls our API for custom claims",
+      "persona": "PlatformEngineer",
+      "prompt": "Wire an Auth0 Action that calls our /entitlements API at api.vegastack.com on post-login, adds the returned plan tier as a custom claim, and stores the API token as a Vault KV v2 secret the action reads.",
+      "expectations": [
+        { "id": "has_action",   "kind": "resource_present", "value": "auth0_action" },
+        { "id": "has_trigger",  "kind": "resource_present", "value": "auth0_trigger_actions" },
+        { "id": "has_vault",    "kind": "resource_present", "value": "vault_kv_secret_v2" }
+      ],
+      "tags": ["auth0", "vault", "cross-provider"],
+      "max_tool_calls": 5
+    },
+    {
+      "id": "E9-A7-redis-elasticache-mongo",
+      "archetype": "A7",
+      "title": "Redis Cloud + ElastiCache failover + Mongo Atlas backup verify",
+      "persona": "SRE",
+      "prompt": "Multi-tier data layer: Redis Cloud Pro DB primary, ElastiCache Redis as warm standby in our VPC, and a MongoDB Atlas advanced cluster with continuous backups and a snapshot policy.",
+      "expectations": [
+        { "id": "has_rc_sub",   "kind": "resource_present", "value": "rediscloud_subscription" },
+        { "id": "has_ec",       "kind": "resource_present", "value": "aws_elasticache_cluster" },
+        { "id": "has_mongo",    "kind": "resource_present", "value": "mongodbatlas_advanced_cluster" }
+      ],
+      "tags": ["redis-cloud", "aws", "mongodb-atlas", "cross-provider"],
+      "max_tool_calls": 6
+    },
+    {
+      "id": "E9-A7-gitlab-tfc-pipeline",
+      "archetype": "A7",
+      "title": "GitLab CI plan/apply with state in Terraform Cloud",
+      "persona": "PlatformEngineer",
+      "prompt": "Set up a GitLab CI pipeline that runs terraform plan on MR and apply on main, with state stored in Terraform Cloud — the GitLab project, the CI vars (TFE_TOKEN), and the Terraform-side cloud {} block.",
+      "expectations": [
+        { "id": "has_gl_proj", "kind": "resource_present", "value": "gitlab_project" },
+        { "id": "has_var",     "kind": "resource_present", "value": "gitlab_project_variable" }
+      ],
+      "tags": ["gitlab", "ci-cd"],
+      "max_tool_calls": 4
+    },
+    {
+      "id": "E9-A7-snowflake-datadog",
+      "archetype": "A7",
+      "title": "Snowflake warehouse + Datadog query-latency monitor",
+      "persona": "PlatformEngineer",
+      "prompt": "Spin up a Snowflake warehouse for analytics and a Datadog monitor that pages on average query latency above 30s for 15 minutes.",
+      "expectations": [
+        { "id": "has_wh",       "kind": "resource_present", "value": "snowflake_warehouse" },
+        { "id": "has_monitor",  "kind": "resource_present", "value": "datadog_monitor" }
+      ],
+      "tags": ["snowflake", "datadog", "cross-provider"],
+      "max_tool_calls": 4
+    },
+    {
+      "id": "E9-A7-do-app-cf-dns",
+      "archetype": "A7",
+      "title": "DigitalOcean App Platform + Cloudflare DNS + Datadog uptime",
+      "persona": "JuniorDev",
+      "prompt": "Run our small side-project on DigitalOcean App Platform with a custom domain pointed via Cloudflare DNS, and a Datadog synthetic uptime check from 3 regions.",
+      "expectations": [
+        { "id": "has_app",     "kind": "resource_present", "value": "digitalocean_app" },
+        { "id": "has_record",  "kind": "resource_present", "value": "cloudflare_dns_record" },
+        { "id": "has_synth",   "kind": "resource_present", "value": "datadog_synthetics_test" }
+      ],
+      "tags": ["digitalocean", "cloudflare", "datadog", "cross-provider", "junior"],
+      "max_tool_calls": 5
+    },
+
+    {
+      "id": "E9-A8-snowflake-network-policy",
+      "archetype": "A8",
+      "title": "Snowflake network policy lock-down",
+      "persona": "SecurityEngineer",
+      "prompt": "Lock down Snowflake account access to our office IPs and our AWS NAT gateway IPs with a network policy applied at account level — the policy and the account-level binding.",
+      "expectations": [
+        { "id": "has_policy", "kind": "resource_present", "value": "snowflake_network_policy" }
+      ],
+      "tags": ["snowflake", "compliance"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A8-okta-mfa-policy",
+      "archetype": "A8",
+      "title": "Okta MFA enforcement policy",
+      "persona": "SecurityEngineer",
+      "prompt": "Enforce MFA for everyone in the 'Engineering' Okta group with WebAuthn or Okta Verify push only — sign-on policy + rule.",
+      "expectations": [
+        { "id": "has_signon", "kind": "resource_present", "value": "okta_policy_signon" },
+        { "id": "has_rule",   "kind": "resource_present", "value": "okta_policy_rule_signon" }
+      ],
+      "tags": ["okta", "compliance"],
+      "max_tool_calls": 4
+    },
+    {
+      "id": "E9-A8-github-branch-protection",
+      "archetype": "A8",
+      "title": "GitHub repo branch protection for SOC2",
+      "persona": "SecurityEngineer",
+      "prompt": "Lock down our 'vegastack/infra' main branch: required reviews=2, required CI checks (terraform plan, tflint), no force pushes, no deletions, signed commits required.",
+      "expectations": [
+        { "id": "has_repo", "kind": "resource_present", "value": "github_repository" },
+        { "id": "has_bp",   "kind": "resource_present", "value": "github_branch_protection" }
+      ],
+      "tags": ["github", "compliance"],
+      "max_tool_calls": 4
+    },
+    {
+      "id": "E9-A8-gcp-org-policy-encryption",
+      "archetype": "A8",
+      "title": "GCP org policy: require CMEK on storage buckets",
+      "persona": "SecurityEngineer",
+      "prompt": "Enforce a GCP org policy that all new google_storage_bucket must use CMEK encryption (constraints/storage.uniformBucketLevelAccess + constraint that disallows default encryption).",
+      "expectations": [
+        { "id": "has_policy", "kind": "resource_present", "value": "google_org_policy_policy" }
+      ],
+      "tags": ["gcp", "compliance"],
+      "max_tool_calls": 3
+    },
+
+    {
+      "id": "E9-A9-snowflake-cost-cut",
+      "archetype": "A9",
+      "title": "Cut Snowflake compute spend",
+      "persona": "FinOps",
+      "prompt": "Our Snowflake bill is dominated by an XLARGE warehouse running 24/7. Cut the cost roughly 60% — what changes (size, auto_suspend, auto_resume, multi-cluster, resource monitor) should we make in Terraform?",
+      "expectations": [
+        { "id": "has_wh",   "kind": "resource_present", "value": "snowflake_warehouse" },
+        { "id": "has_rm",   "kind": "resource_present", "value": "snowflake_resource_monitor" }
+      ],
+      "tags": ["snowflake", "cost", "finops"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A9-mongo-atlas-cost-cut",
+      "archetype": "A9",
+      "title": "Right-size MongoDB Atlas cluster",
+      "persona": "FinOps",
+      "prompt": "Our prod Atlas cluster is M40 multi-region but utilization is 12%. Cut the bill in half — instance size, region count, autoscaling — keep it at M-tier dedicated.",
+      "expectations": [
+        { "id": "has_cluster", "kind": "resource_present", "value": "mongodbatlas_advanced_cluster" }
+      ],
+      "tags": ["mongodb-atlas", "cost", "finops"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A9-redis-cloud-cost-cut",
+      "archetype": "A9",
+      "title": "Move Redis Cloud Pro → Essentials",
+      "persona": "FinOps",
+      "prompt": "Our Redis Cloud Pro subscription is overkill — 50MB used of 5GB. Move us to Essentials free tier or near-free fixed-plan, keep the same key namespace.",
+      "expectations": [
+        { "id": "has_essentials", "kind": "resource_present", "value": "rediscloud_essentials_subscription" }
+      ],
+      "tags": ["redis-cloud", "cost", "finops"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A9-vercel-bandwidth",
+      "archetype": "A9",
+      "title": "Cut Vercel bandwidth spend with edge cache",
+      "persona": "FinOps",
+      "prompt": "Vercel Bandwidth charges are spiking. We push lots of static assets — the Terraform-side changes (project settings, edge cache headers, image optimization) to reduce egress.",
+      "expectations": [
+        { "id": "has_project", "kind": "resource_present", "value": "vercel_project" }
+      ],
+      "tags": ["vercel", "cost", "finops"],
+      "max_tool_calls": 3
+    },
+
+    {
+      "id": "E9-A10-gitlab-ci-pipeline",
+      "archetype": "A10",
+      "title": "GitLab CI plan/apply with TFC backend",
+      "persona": "PlatformEngineer",
+      "prompt": "Build the GitLab CI pipeline (project, protected main, CI vars TFE_TOKEN/AWS_ROLE_ARN, .gitlab-ci.yml committed via terraform_data) for plan-on-MR / apply-on-main with state in Terraform Cloud.",
+      "expectations": [
+        { "id": "has_proj", "kind": "resource_present", "value": "gitlab_project" },
+        { "id": "has_var",  "kind": "resource_present", "value": "gitlab_project_variable" }
+      ],
+      "tags": ["gitlab", "ci-cd", "gitops"],
+      "max_tool_calls": 4
+    },
+    {
+      "id": "E9-A10-github-actions-deploy-vercel",
+      "archetype": "A10",
+      "title": "GitHub Actions deploy pipeline → Vercel",
+      "persona": "PlatformEngineer",
+      "prompt": "Build a GH Actions deploy pipeline for our Vercel app: env-scoped secrets, workflow triggers on main push, and a vercel_project_environment_variable for VERCEL_ORG_ID + VERCEL_PROJECT_ID.",
+      "expectations": [
+        { "id": "has_secret",  "kind": "resource_present", "value": "github_actions_secret" },
+        { "id": "has_vercel",  "kind": "resource_present", "value": "vercel_project_environment_variable" }
+      ],
+      "tags": ["github", "vercel", "ci-cd", "cross-provider"],
+      "max_tool_calls": 4
+    },
+    {
+      "id": "E9-A10-helm-argocd",
+      "archetype": "A10",
+      "title": "Bootstrap ArgoCD via helm_release",
+      "persona": "PlatformEngineer",
+      "prompt": "Helm-install ArgoCD into the argocd namespace on our EKS cluster, with values overrides enabling the SSO integration via Okta and ingress through the AWS Load Balancer Controller.",
+      "expectations": [
+        { "id": "has_helm", "kind": "resource_present", "value": "helm_release" },
+        { "id": "has_ns",   "kind": "resource_present", "value": "kubernetes_namespace" }
+      ],
+      "tags": ["helm", "kubernetes", "gitops"],
+      "max_tool_calls": 4
+    },
+
+    {
+      "id": "E9-A11-cycle-okta-app-secret",
+      "archetype": "A11",
+      "title": "Rotate Okta app client_secret",
+      "persona": "SecurityEngineer",
+      "prompt": "We need to rotate the client_secret on our Okta OIDC app 'app.vegastack.com' without dropping live sessions — the Terraform-side change and operational order.",
+      "expectations": [
+        { "id": "has_app", "kind": "resource_present", "value": "okta_app_oauth" }
+      ],
+      "tags": ["okta", "day2"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A11-snowflake-suspend-resume",
+      "archetype": "A11",
+      "title": "Suspend/resume Snowflake warehouse off-hours",
+      "persona": "FinOps",
+      "prompt": "Add an automatic suspend/resume schedule to our ANALYTICS_WH warehouse — suspend nights 8pm-6am ET via auto_suspend, and a resource monitor that triggers at 80% of monthly credit cap.",
+      "expectations": [
+        { "id": "has_wh",  "kind": "resource_present", "value": "snowflake_warehouse" },
+        { "id": "has_rm",  "kind": "resource_present", "value": "snowflake_resource_monitor" }
+      ],
+      "tags": ["snowflake", "day2", "finops"],
+      "max_tool_calls": 3
+    },
+    {
+      "id": "E9-A11-pagerduty-maintenance-window",
+      "archetype": "A11",
+      "title": "Schedule a PagerDuty maintenance window",
+      "persona": "SRE",
+      "prompt": "Schedule a 2-hour PagerDuty maintenance window starting Saturday 2am UTC for our 'web-api' service so we can do the Postgres major-version upgrade without paging.",
+      "expectations": [
+        { "id": "has_mw", "kind": "resource_present", "value": "pagerduty_maintenance_window" }
+      ],
+      "tags": ["pagerduty", "day2", "sre"],
+      "max_tool_calls": 3
+    },
+
+    {
+      "id": "E9-A12-helm-v3-changes",
+      "archetype": "A12",
+      "title": "What changed in helm provider v3?",
+      "persona": "PlatformEngineer",
+      "prompt": "Helm provider v3 came out — what changed that I need to know about? Anything deprecated in helm_release?",
+      "expectations": [
+        { "id": "has_release", "kind": "resource_present", "value": "helm_release" },
+        { "id": "cites_card",  "kind": "cites_card", "value": "helm-provider-v3" }
+      ],
+      "tags": ["helm", "deprecation"],
+      "max_tool_calls": 2
+    },
+    {
+      "id": "E9-A12-mongodb-cluster-replaced",
+      "archetype": "A12",
+      "title": "Is mongodbatlas_cluster being deprecated?",
+      "persona": "PlatformEngineer",
+      "prompt": "I see warnings about mongodbatlas_cluster — what's replacing it and when do I need to migrate?",
+      "expectations": [
+        { "id": "uses_advanced","kind": "resource_present", "value": "mongodbatlas_advanced_cluster" },
+        { "id": "no_legacy",    "kind": "no_resource", "value": "mongodbatlas_cluster" },
+        { "id": "cites_card",   "kind": "cites_card", "value": "mongodb-atlas-cluster-vs-advanced" }
+      ],
+      "tags": ["mongodb-atlas", "deprecation"],
+      "max_tool_calls": 2
+    },
+    {
+      "id": "E9-A12-cloud-run-v1-still-supported",
+      "archetype": "A12",
+      "title": "Should I still use google_cloud_run_service?",
+      "persona": "JuniorDev",
+      "prompt": "We're starting a new GCP service — should I use google_cloud_run_service or google_cloud_run_v2_service? Which is recommended now?",
+      "expectations": [
+        { "id": "uses_v2",  "kind": "resource_present", "value": "google_cloud_run_v2_service" },
+        { "id": "no_v1",    "kind": "no_resource", "value": "google_cloud_run_service" },
+        { "id": "cites_card", "kind": "cites_card", "value": "gcp-cloud-run-v2-default" }
+      ],
+      "tags": ["gcp", "deprecation", "junior"],
+      "max_tool_calls": 2
+    },
+    {
+      "id": "E9-A6-azure-keyvault-soft-deps",
+      "archetype": "A6",
+      "title": "Azure Key Vault + access policy + secret",
+      "persona": "SecurityEngineer",
+      "prompt": "Stand up an Azure Key Vault in eastus2 for our prod app secrets, with an access policy granting our app's user-assigned managed identity get/list on secrets, and an initial secret 'db-password'.",
+      "expectations": [
+        { "id": "has_kv",     "kind": "resource_present", "value": "azurerm_key_vault" },
+        { "id": "has_secret", "kind": "resource_present", "value": "azurerm_key_vault_secret" },
+        { "id": "has_uai",    "kind": "resource_present", "value": "azurerm_user_assigned_identity" }
+      ],
+      "tags": ["azure", "compliance", "topology"],
+      "max_tool_calls": 4
+    },
+    {
+      "id": "E9-A12-datadog-monitor-tag-syntax",
+      "archetype": "A12",
+      "title": "Old datadog_monitor query format still works?",
+      "persona": "SRE",
+      "prompt": "Our older datadog_monitor resources use host: scoping in the query for our Lambda functions and aren't firing. What's the new syntax?",
+      "expectations": [
+        { "id": "has_monitor", "kind": "resource_present", "value": "datadog_monitor" },
+        { "id": "cites_card",  "kind": "cites_card", "value": "datadog-monitor-v2-syntax" }
+      ],
+      "tags": ["datadog", "deprecation", "sre"],
+      "max_tool_calls": 2
+    }
+  ]
+}
