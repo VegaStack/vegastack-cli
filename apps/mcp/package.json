@@ -1,6 +1,6 @@
 {
   "name": "@vegastack/mcp-server",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": true,
   "description": "vegastack-cli Remote MCP server — Cloudflare Workers + Agents SDK. Exposes `vegastack tf` discovery (and friends) to any MCP-aware coding agent over StreamableHTTP/SSE.",
   "license": "MIT",

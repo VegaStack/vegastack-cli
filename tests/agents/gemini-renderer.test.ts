@@ -1,5 +1,5 @@
 // Renderer tests for the modern Gemini CLI extension layout
-// (~/.gemini-extensions/<name>/{gemini-extension.json, skills/, commands/}).
+// (~/.gemini/extensions/<name>/{gemini-extension.json, skills/, commands/}).
 
 import * as fs from "node:fs";
 import * as os from "node:os";

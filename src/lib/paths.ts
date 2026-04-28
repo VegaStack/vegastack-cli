@@ -95,8 +95,8 @@ export function geminiContextPath(cwd: string): string {
 
 /**
  * Gemini CLI extensions (Apr-2026 docs format):
- * `~/.gemini-extensions/<name>/{gemini-extension.json, skills/, commands/}`
- * (global) or `<cwd>/.gemini-extensions/<name>/...` (project).
+ * `~/.gemini/extensions/<name>/{gemini-extension.json, skills/, commands/}`
+ * (global) or `<cwd>/.gemini/extensions/<name>/...` (project).
  *
  * The extension dir contains both the extension config and the per-extension
  * SKILL.md + commands TOML. Project mode is rare — usually this is global.
@@ -104,8 +104,8 @@ export function geminiContextPath(cwd: string): string {
 export function geminiExtensionRoot(scope: AgentScope, cwd: string): string {
   const root =
     scope === "global"
-      ? path.join(HOME, ".gemini-extensions")
-      : path.join(cwd, ".gemini-extensions");
+      ? path.join(HOME, ".gemini", "extensions")
+      : path.join(cwd, ".gemini", "extensions");
   return path.join(root, "vegastack");
 }
 

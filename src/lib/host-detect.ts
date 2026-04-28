@@ -118,7 +118,7 @@ export function detectHost(agent: string): HostStatus {
     case "gemini": {
       if (binaryOnPath("gemini"))
         return { agent, installed: true, evidence: "binary on PATH (gemini)" };
-      // Vega writes ~/.gemini-extensions/, not ~/.gemini/. Gemini CLI itself
+      // Vega writes ~/.gemini/extensions/, not ~/.gemini/. Gemini CLI itself
       // writes ~/.gemini/settings.json on first launch.
       const home = process.env.GEMINI_CLI_HOME ?? path.join(HOME, ".gemini");
       const f = path.join(home, "settings.json");

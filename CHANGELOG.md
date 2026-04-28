@@ -4,6 +4,21 @@ All notable changes to `@vegastack/cli` are documented here. The format is based
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2026-04-28
+
+Per-agent install path audit against canonical docs. The Gemini CLI installer was writing to a path Gemini doesn't actually scan.
+
+### Fixed
+
+- Gemini CLI extension install path: `~/.gemini-extensions/<name>/` → `~/.gemini/extensions/<name>/`. The old path matched a stale comment from a prior docs revision; the canonical [Gemini CLI docs](https://geminicli.com/docs/extensions/reference/) state extensions are auto-discovered from `<home>/.gemini/extensions`. The wrong path meant `vegastack skills install --agent gemini` succeeded but Gemini CLI silently never loaded the extension. Project-scope path moved correspondingly: `<cwd>/.gemini-extensions/` → `<cwd>/.gemini/extensions/`.
+
+### Verified (no change needed)
+
+- Codex CLI: `~/.agents/skills/<name>` (global) and `<cwd>/.agents/skills/<name>` (project) match [OpenAI's Codex Skills docs](https://developers.openai.com/codex/skills) exactly. An earlier third-party blog post claiming `~/.codex/skills/` was incorrect.
+- Cursor: `<cwd>/.cursor/rules/<name>.mdc` matches the [Cursor Rules docs](https://cursor.com/docs/context/rules) — file-drop is the official method for the `.cursor/rules/*.mdc` format that Cursor 2026 expects.
+- Continue.dev: `~/.continue/mcpServers/<name>.yaml` with `name`/`version`/`schema` metadata matches [Continue's MCP docs](https://docs.continue.dev/customize/deep-dives/mcp). The standalone-file approach is documented as canonical.
+- Aider: `.aider.conf.yml` + `CONVENTIONS.vegastack.md` matches [Aider's conventions docs](https://aider.chat/docs/usage/conventions.html).
+
 ## [0.1.6] - 2026-04-28
 
 Single, brand-aligned skill surface — and a working Claude Code install path.

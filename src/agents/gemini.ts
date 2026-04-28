@@ -3,14 +3,14 @@
 // Gemini CLI renderer.
 //
 // Per geminicli.com/docs/extensions/reference (April 2026), an extension
-// installs to `~/.gemini-extensions/<name>/` and contains:
+// installs to `~/.gemini/extensions/<name>/` and contains:
 //
 //   gemini-extension.json   — extension manifest (name, version, mcpServers, ...)
 //   skills/<id>/SKILL.md    — Anthropic-style skill (Gemini reads SKILL.md too)
 //   commands/tf.toml        — registers a /tf slash command
 //
 // We support both `--scope global` (writes under HOME) and `--scope project`
-// (writes under cwd/.gemini-extensions/), though global is the documented
+// (writes under cwd/.gemini/extensions/), though global is the documented
 // install target for shared extensions.
 
 import * as fs from "node:fs";
@@ -174,7 +174,7 @@ export const geminiRenderer: AgentRenderer = new GeminiRenderer();
 // into the user's project cwd. That worked for early Gemini Code Assist
 // adopters and the existing `vegastack skills install` command depends on it.
 // New consumers should target the AgentRenderer above (modern layout under
-// `~/.gemini-extensions/vegastack/`).
+// `~/.gemini/extensions/vegastack/`).
 
 class GeminiInstaller implements AgentInstaller {
   readonly name = "gemini";
