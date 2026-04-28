@@ -4,6 +4,24 @@ All notable changes to `@vegastack/cli` are documented here. The format is based
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-04-28
+
+Stops `vega install` from silently lying about "another install in progress" when the real problem is a bad `VEGA_BUNDLE_DIR` or filesystem permissions. The previous code conflated three distinct failure modes (placeholder env value, lock infrastructure failure, real lock contention) into one misleading message.
+
+### Fixed
+
+- `vega install` no longer says "another vega install is in progress" when the bundle dir is unwriteable, points at a literal placeholder (`/absolute/path/to/...`, `/path/to/your/...`, `<your-bundle>`, or unexpanded `$VAR`), or when the lockfile mechanism itself fails (EACCES, EROFS, ENOTDIR, network mount without flock support). Each failure shape now produces a specific error with a concrete recovery hint:
+  - **Placeholder** → "Run `unset VEGA_BUNDLE_DIR` and retry."
+  - **Not absolute** → "Set VEGA_BUNDLE_DIR to an absolute path."
+  - **EACCES/EROFS/ENOTDIR/ENOENT on parent** → name the OS error code and explain the likely cause.
+  - **ELOCKED (real contention)** → keep the existing message, but also point at the new `VEGA_FORCE_UNLOCK=1` override.
+  - **Other lock infra failure** → "This is NOT another install — the lockfile mechanism itself failed." with diagnosis hints.
+
+### Added
+
+- `VEGA_FORCE_UNLOCK=1` env var. Removes the lock sentinel before acquire so users with a known-stale lock (killed previous install, hung process they cleaned up manually) don't have to learn the lockfile path or wait for proper-lockfile's 5-minute stale window.
+- New `validateBundleDir()` function in `npm/install.js`. Runs at startup before any I/O, so failures surface in milliseconds instead of after a confusing chain of mkdir → write → lock attempts.
+
 ## [0.1.3] - 2026-04-28
 
 `vega doctor` now distinguishes "agent host installed" from "vega skill registered" instead of conflating them. This fixes a misleading `✓ codex registered` line that was actually showing "vega's previously-installed file is still on disk" even when codex itself had never been on the machine.

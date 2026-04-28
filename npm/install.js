@@ -25,6 +25,9 @@
 //   VEGA_BUNDLE_DIR=<path>        override extract destination
 //   VEGA_BUNDLE_TIMEOUT_MS=N      per-attempt fetch timeout (default 60_000)
 //   VEGA_BUNDLE_RETRIES=N         retries on transient failure (default 2)
+//   VEGA_FORCE_UNLOCK=1           remove a stale lock before acquire (manual
+//                                 override; only use if you're sure no other
+//                                 install is in flight)
 //
 // Standard proxy env (any of, in this order):
 //   HTTPS_PROXY, https_proxy, HTTP_PROXY, http_proxy
@@ -68,15 +71,108 @@ const HEX64 = /^[0-9a-f]{64}$/i;
 const ALLOWED_REDIRECT_SCHEMES = new Set(["https:"]);
 
 // ── Paths ─────────────────────────────────────────────────────
-function bundleDir() {
-  if (process.env.VEGA_BUNDLE_DIR) return process.env.VEGA_BUNDLE_DIR;
+function bundleDirRaw() {
+  if (process.env.VEGA_BUNDLE_DIR) {
+    return { dir: process.env.VEGA_BUNDLE_DIR, source: "VEGA_BUNDLE_DIR" };
+  }
   const home = process.env.HOME || process.env.USERPROFILE;
   if (!home) {
     throw new Error("Cannot determine home directory. Set VEGA_BUNDLE_DIR explicitly.");
   }
-  return path.join(home, ".config", "vegastack", "bundle");
+  return { dir: path.join(home, ".config", "vegastack", "bundle"), source: "default" };
 }
-const BUNDLE_DIR = bundleDir();
+
+/**
+ * Validate that the resolved bundle dir is usable BEFORE any lock acquisition.
+ *
+ * Distinguishes three failure shapes the user can act on:
+ *   1. Placeholder string (literal "/absolute/path/...", "<your/path>", "$VAR")
+ *      — almost always means the user pasted a doc example into `export ...`.
+ *      Recovery: `unset VEGA_BUNDLE_DIR`.
+ *   2. Not absolute — refuse early; relative paths combined with random cwd
+ *      cause "I installed the bundle, where did it go?" confusion.
+ *   3. Parent dir cannot be created (EACCES / EROFS / ENOTDIR / ENOENT) —
+ *      filesystem rejected the path. Bubble up the OS error code so the user
+ *      can map it to a real cause (no perms, read-only mount, parent is a
+ *      file, etc.).
+ *
+ * Returns { ok: true } on success, or { ok: false, reason, hint } on failure.
+ */
+function validateBundleDir(dir, source) {
+  if (!path.isAbsolute(dir)) {
+    return {
+      ok: false,
+      reason: `${source}='${dir}' is not an absolute path`,
+      hint:
+        source === "VEGA_BUNDLE_DIR"
+          ? 'Set VEGA_BUNDLE_DIR to an absolute path (e.g. "$HOME/.config/vegastack/bundle").'
+          : "Internal error — please file a bug at https://github.com/VegaStack/vegastack-cli/issues",
+    };
+  }
+
+  // Placeholder detection. These patterns are almost never legitimate:
+  //   - "/absolute/path/..."     ← was in the v0.1.0 README; users pasted it
+  //   - "/path/to/your/..."      ← generic doc placeholder
+  //   - "<anything>"             ← angle-bracket placeholder
+  //   - unexpanded "$VAR" or "${VAR}"
+  //   - "/your/..."              ← another generic
+  const placeholderPatterns = [
+    /^\/absolute\/path(?:\/|$)/i,
+    /\/path\/to\/(?:your\/|the\/)?/i,
+    /^\/your\//i,
+    /<[^>]+>/,
+    // Unexpanded shell var. Allow $HOME literally only if it's the FULL value
+    // before path.join (we already expanded HOME above, so a $-prefix here is
+    // almost certainly an unexpanded token from a heredoc / script).
+    /\$\{?[A-Za-z_][A-Za-z0-9_]*\}?/,
+  ];
+  for (const re of placeholderPatterns) {
+    if (re.test(dir)) {
+      return {
+        ok: false,
+        reason: `${source}='${dir}' looks like an unfilled placeholder string`,
+        hint:
+          source === "VEGA_BUNDLE_DIR"
+            ? "Run `unset VEGA_BUNDLE_DIR` and retry. The default location (~/.config/vegastack/bundle) works for almost all users."
+            : "Set VEGA_BUNDLE_DIR to a real absolute path.",
+      };
+    }
+  }
+
+  // Try to create the parent dir. mkdir -p is idempotent so this is safe to
+  // do upfront. Surfaces EACCES (no perms), EROFS (read-only fs), ENOTDIR
+  // (some parent is a file), ENOENT (parent path traversal failed).
+  try {
+    mkdirSync(path.dirname(dir), { recursive: true });
+    return { ok: true };
+  } catch (e) {
+    const code = e?.code ?? "?";
+    let hint;
+    switch (code) {
+      case "EACCES":
+        hint = `Permission denied creating ${path.dirname(dir)}. Pick a path under your home directory (try \`unset VEGA_BUNDLE_DIR\` to use the default).`;
+        break;
+      case "EROFS":
+        hint = `Read-only filesystem at ${path.dirname(dir)}. Pick a writable path.`;
+        break;
+      case "ENOTDIR":
+        hint = `One of the parents in '${dir}' is a file, not a directory. Verify the path.`;
+        break;
+      case "ENOENT":
+        hint = `Parent dir of '${dir}' cannot be reached (likely you don't have permission to create top-level dirs). Run \`unset VEGA_BUNDLE_DIR\` to use the default.`;
+        break;
+      default:
+        hint = `Verify '${dir}' is correct and you have write access.`;
+    }
+    return {
+      ok: false,
+      reason: `${source}='${dir}' parent dir cannot be created (${code}: ${e?.message ?? "?"})`,
+      hint,
+    };
+  }
+}
+
+const { dir: BUNDLE_DIR, source: BUNDLE_DIR_SOURCE } = bundleDirRaw();
 const VERSION_FILE = path.join(BUNDLE_DIR, ".version");
 const LOCK_PATH = `${BUNDLE_DIR}.lock`;
 
@@ -153,13 +249,40 @@ if (nodeMajor < 18) {
 // extract + atomic rename). proper-lockfile.lock returns a release()
 // function we call in the cleanup path.
 let lockRelease = null;
+
+/**
+ * Try to acquire the bundle install lock.
+ *
+ * Three return shapes:
+ *   { ok: true }                   — lock held, proceed.
+ *   { ok: false, kind: "held" }    — another install is genuinely in flight.
+ *   { ok: false, kind: "infra", error } — lock infrastructure failed
+ *                                          (filesystem doesn't support flock,
+ *                                          EPERM, etc.). Distinct from
+ *                                          contention so we don't lie to
+ *                                          users about non-existent installs.
+ */
 async function tryAcquireLock() {
   try {
-    mkdirSync(path.dirname(BUNDLE_DIR), { recursive: true });
     // proper-lockfile needs a file or directory to lock against. We create
     // an empty sentinel (`bundle.lock`) so the bundle dir itself doesn't
-    // need to exist yet.
+    // need to exist yet. The PARENT dir was already created by
+    // validateBundleDir() at startup; if we reach here it exists.
     if (!existsSync(LOCK_PATH)) writeFileSync(LOCK_PATH, "");
+
+    // Manual override: VEGA_FORCE_UNLOCK=1 nukes a stale lock the user
+    // believes is bogus (proper-lockfile's 5-min stale window can be too
+    // long for someone watching a hung install).
+    if (process.env.VEGA_FORCE_UNLOCK === "1") {
+      const lockDir = `${LOCK_PATH}.lock`;
+      try {
+        rmSync(lockDir, { recursive: true, force: true });
+        log("VEGA_FORCE_UNLOCK=1 — removed stale lock before acquire");
+      } catch (e) {
+        warn(`VEGA_FORCE_UNLOCK requested but couldn't remove ${lockDir}: ${e?.message ?? e}`);
+      }
+    }
+
     const properLockfile = await import("proper-lockfile");
     lockRelease = await properLockfile.lock(LOCK_PATH, {
       // A 5-minute "stale" window covers slow CI runners but reclaims locks
@@ -171,12 +294,13 @@ async function tryAcquireLock() {
       // The lock file is itself the lock object; no extra symlink needed.
       lockfilePath: `${LOCK_PATH}.lock`,
     });
-    return true;
+    return { ok: true };
   } catch (e) {
-    if (e?.code === "ELOCKED") return false;
-    // Unexpected — log and bail.
-    warn(`could not acquire install lock: ${redactUserPaths(e?.message ?? e)}`);
-    return false;
+    // proper-lockfile sets e.code = "ELOCKED" specifically when contention
+    // is the cause. Any other error is infrastructure (perms, missing
+    // dirs we couldn't create earlier, locking unsupported on the FS).
+    if (e?.code === "ELOCKED") return { ok: false, kind: "held" };
+    return { ok: false, kind: "infra", error: e };
   }
 }
 async function releaseLock() {
@@ -356,12 +480,38 @@ async function resolveBundleSpec() {
 
 // ── Main install flow ─────────────────────────────────────────
 async function main() {
+  // Validate the bundle dir BEFORE doing any I/O. Catches placeholder env
+  // values (`/absolute/path/to/...`) and unwriteable paths upfront with a
+  // specific error rather than letting them masquerade as a lock-held condition.
+  const validation = validateBundleDir(BUNDLE_DIR, BUNDLE_DIR_SOURCE);
+  if (!validation.ok) {
+    err(`bundle directory unusable: ${validation.reason}`);
+    err(`hint: ${validation.hint}`);
+    process.exit(0);
+  }
+
   // Acquire the bundle dir lock so parallel `npm i` calls don't corrupt each other.
-  if (!(await tryAcquireLock())) {
-    warn(
-      `another vega install is in progress (lock at ${LOCK_PATH}); skipping. ` +
-        `If you believe this is wrong, remove the lock file and re-run.`,
-    );
+  const lock = await tryAcquireLock();
+  if (!lock.ok) {
+    if (lock.kind === "held") {
+      warn(
+        `another vega install is in progress (lock at ${LOCK_PATH}); skipping. ` +
+          `If you're sure no other install is running (e.g. a previous run was killed), ` +
+          `re-run with VEGA_FORCE_UNLOCK=1 or remove ${LOCK_PATH}.lock manually.`,
+      );
+    } else {
+      const e = lock.error;
+      err(
+        `lock infrastructure failed (not a contention issue): ${e?.code ?? "?"} ${e?.message ?? e}`,
+      );
+      err(`This is NOT another install — the lockfile mechanism itself failed.`);
+      err(
+        `Common causes: filesystem doesn't support locking (some network mounts), no write permission, or a parent path is broken.`,
+      );
+      err(
+        `Try: re-run with a writable VEGA_BUNDLE_DIR, or \`unset VEGA_BUNDLE_DIR\` to use the default (~/.config/vegastack/bundle).`,
+      );
+    }
     process.exit(0);
   }
 
