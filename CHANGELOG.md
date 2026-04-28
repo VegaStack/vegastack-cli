@@ -4,6 +4,19 @@ All notable changes to `@vegastack/cli` are documented here. The format is based
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-04-28
+
+The Claude Code installer actually uses the marketplace it ships now.
+
+### Fixed
+
+- `vegastack skills install --agent claude-code` now invokes `claude plugin marketplace add <pkg-root>` + `claude plugin install vegastack-cli@vegastack-cli` instead of symlinking the package into `~/.claude/plugins/vegastack-cli/`. Previous releases (≤0.1.7) shipped a `marketplace.json` but the installer was still doing the legacy symlink, which Claude Code 2.1+ counts as `1 plugin` but does NOT load — skills, hooks, and the MCP server stayed dark on fresh user machines. Existing stale symlinks at `~/.claude/plugins/vegastack-cli` are detected and removed automatically before the marketplace install runs.
+
+### Changed
+
+- The installer now requires the `claude` binary on PATH. If Claude Code isn't installed, `vegastack skills install --agent claude-code` reports a clear error pointing at the install URL instead of silently dropping a non-functional symlink.
+- `vegastack skills uninstall --agent claude-code` now invokes `claude plugin uninstall` (and also cleans up any legacy symlink left by older releases). Idempotent.
+
 ## [0.1.7] - 2026-04-28
 
 Per-agent install path audit against canonical docs. The Gemini CLI installer was writing to a path Gemini doesn't actually scan.

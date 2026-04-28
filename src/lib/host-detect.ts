@@ -27,7 +27,7 @@ export interface HostStatus {
 const HOME = os.homedir();
 
 /** Returns true if `name` resolves on $PATH. Cross-platform via `which`/`where`. */
-function binaryOnPath(name: string): boolean {
+export function binaryOnPath(name: string): boolean {
   const cmd = process.platform === "win32" ? "where" : "command";
   const args = process.platform === "win32" ? [name] : ["-v", name];
   const r = spawnSync(cmd, args, {
