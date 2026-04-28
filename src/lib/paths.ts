@@ -31,8 +31,17 @@ export function bundleVersionFile(): string {
 /** Resolve the package root (where this CLI was installed). */
 export function pkgRoot(): string {
   // dist/lib/paths.js → dist/ → package root
-  // node:url import.meta.url unavailable here at compile-time without ESM gymnastics; use process.argv[1]
-  const cliPath = process.argv[1] ?? "";
+  // node:url import.meta.url unavailable here at compile-time without ESM gymnastics; use process.argv[1].
+  // Resolve symlinks: when installed via `npm i -g`, the `vega` bin is a
+  // symlink in the npm prefix's bin/ dir pointing into lib/node_modules/...,
+  // and walking up from the symlink path never finds package.json.
+  const rawCliPath = process.argv[1] ?? "";
+  let cliPath = rawCliPath;
+  try {
+    if (rawCliPath !== "") cliPath = fs.realpathSync(rawCliPath);
+  } catch {
+    /* fall back to raw path */
+  }
   // walk up until we find package.json with our name
   let cur = path.dirname(cliPath);
   for (let i = 0; i < 6; i++) {

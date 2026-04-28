@@ -4,6 +4,14 @@ All notable changes to `@vegastack/cli` are documented here. The format is based
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-04-28
+
+Fixes a packaging bug where `vega install` and other commands resolved the package root from the bin symlink, not the real install location, breaking every command that needed an in-package script (`vega install`, `vega refresh`, etc.) when installed via `npm i -g`.
+
+### Fixed
+
+- `pkgRoot()` now resolves `process.argv[1]` through `fs.realpathSync` before walking up to find `package.json`. Previously, when `vega` was a symlink in the npm prefix's `bin/` dir (the standard global-install layout), the upward walk never found the package and fell back to the npm prefix itself — producing nonsense paths like `/opt/homebrew/npm/install.js`.
+
 ## [0.1.0] - 2026-04-28
 
 First internal release of `@vegastack/cli` to GitHub Packages under the `@vegastack` org. Deterministic file-system knowledge harness for coding agents (Claude Code, Codex, Cursor, Gemini, Continue, Aider) covering 31 Terraform providers.
