@@ -622,7 +622,12 @@ async function downloadWithRetry(url, dest) {
   }
 
   const retries = clampInt(process.env.VEGASTACK_BUNDLE_RETRIES, DEFAULT_RETRIES, 0, 10);
-  const timeoutMs = clampInt(process.env.VEGASTACK_BUNDLE_TIMEOUT_MS, DEFAULT_TIMEOUT_MS, 1000, 600_000);
+  const timeoutMs = clampInt(
+    process.env.VEGASTACK_BUNDLE_TIMEOUT_MS,
+    DEFAULT_TIMEOUT_MS,
+    1000,
+    600_000,
+  );
   const maxAttempts = retries + 1;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -715,7 +720,12 @@ async function fetchTextWithRetry(url, maxBytes) {
   }
 
   const retries = clampInt(process.env.VEGASTACK_BUNDLE_RETRIES, DEFAULT_RETRIES, 0, 10);
-  const timeoutMs = clampInt(process.env.VEGASTACK_BUNDLE_TIMEOUT_MS, DEFAULT_TIMEOUT_MS, 1000, 600_000);
+  const timeoutMs = clampInt(
+    process.env.VEGASTACK_BUNDLE_TIMEOUT_MS,
+    DEFAULT_TIMEOUT_MS,
+    1000,
+    600_000,
+  );
   const maxAttempts = retries + 1;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {

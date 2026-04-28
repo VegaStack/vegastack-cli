@@ -25,9 +25,9 @@ describe("bundle-mini fixture sanity", () => {
 
   it("each provider has at least 5 resources in MANIFEST.json", async () => {
     for (const provider of ["aws", "cloudflare"]) {
-      const m = JSON.parse(
-        await readFile(join(BUNDLE, provider, "MANIFEST.json"), "utf8")
-      ) as { resources: Record<string, unknown> };
+      const m = JSON.parse(await readFile(join(BUNDLE, provider, "MANIFEST.json"), "utf8")) as {
+        resources: Record<string, unknown>;
+      };
       expect(Object.keys(m.resources).length).toBeGreaterThanOrEqual(5);
     }
   });
@@ -69,17 +69,20 @@ describe("manifest entry shape (per discover-types.ts contract)", () => {
       expect.arrayContaining([
         "aws_s3_bucket_versioning",
         "aws_s3_bucket_server_side_encryption_configuration",
-      ])
+      ]),
     );
   });
 
   it("aws_eks_cluster declares a vpc_config block (top-level args + block separation)", async () => {
     const m = JSON.parse(await readFile(join(BUNDLE, "aws", "MANIFEST.json"), "utf8")) as {
-      resources: Record<string, { required_args: { name: string }[]; blocks: Record<string, unknown> }>;
+      resources: Record<
+        string,
+        { required_args: { name: string }[]; blocks: Record<string, unknown> }
+      >;
     };
     const entry = m.resources.aws_eks_cluster;
     expect(entry?.required_args.map((a) => a.name)).toEqual(
-      expect.arrayContaining(["name", "role_arn", "vpc_config"])
+      expect.arrayContaining(["name", "role_arn", "vpc_config"]),
     );
     expect(entry?.blocks.vpc_config).toBeTruthy();
   });

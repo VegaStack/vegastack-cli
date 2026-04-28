@@ -25,10 +25,7 @@ const MINI_FIXTURE = path.resolve(__dirname, "..", "..", "fixtures", "bundle-min
  */
 function makeBundle(
   provider: string,
-  resources: Record<
-    string,
-    { file: string; description: string; primary?: boolean }
-  >,
+  resources: Record<string, { file: string; description: string; primary?: boolean }>,
   primaryResources?: Record<string, string>,
 ): string {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-sc-"));

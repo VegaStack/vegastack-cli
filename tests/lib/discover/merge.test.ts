@@ -23,7 +23,11 @@ describe("mergeAndRank", () => {
   });
 
   it("pure-grep results get tier='grep'", () => {
-    const merged = mergeAndRank(new Map(), new Map([["/x/r/a.html.markdown", sf(40, "grep_resource")]]), 10);
+    const merged = mergeAndRank(
+      new Map(),
+      new Map([["/x/r/a.html.markdown", sf(40, "grep_resource")]]),
+      10,
+    );
     expect(merged[0]?.tier).toBe("grep");
   });
 

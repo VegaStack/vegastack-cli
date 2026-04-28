@@ -55,7 +55,7 @@ describe("CanonicalSkill parser", () => {
       "description: A test.",
       "metadata:",
       "  homepage: https://example.com",
-      "  schema_version: \"1\"",
+      '  schema_version: "1"',
       "---",
       "",
     ].join("\n");

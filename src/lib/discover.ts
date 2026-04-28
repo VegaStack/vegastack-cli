@@ -9,7 +9,13 @@ import { discover as nativeDiscover } from "./discover/index.js";
 import type { DiscoverArgs as NativeArgs, DiscoverResult } from "./discover/index.js";
 import { bundleDir } from "./paths.js";
 
-export type { DiscoverFile, DiscoverResult, KnowledgeCard, RecipeMatch, ConceptAliasMatch } from "./discover/index.js";
+export type {
+  DiscoverFile,
+  DiscoverResult,
+  KnowledgeCard,
+  RecipeMatch,
+  ConceptAliasMatch,
+} from "./discover/index.js";
 
 export interface DiscoverArgs {
   query: string;

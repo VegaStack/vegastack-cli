@@ -43,17 +43,22 @@ jobs:
             --lockfile=package-lock.json
             ./
 
-  codeql:
-    name: CodeQL
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      actions: read
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@012739e5082ff0c22ca6d6ab32e07c36df03c4a4 # v3.27.0
-        with:
-          languages: javascript-typescript
-          queries: security-and-quality
-      - uses: github/codeql-action/analyze@012739e5082ff0c22ca6d6ab32e07c36df03c4a4 # v3.27.0
+  # CodeQL is disabled while the repo is private on a Team plan. Code Scanning
+  # for private repos requires the Code Security add-on ($30/committer/month)
+  # or GHAS ($49/committer/month). Re-enable when the repo goes public (then
+  # it's free) or when the org buys the add-on.
+  #
+  # codeql:
+  #   name: CodeQL
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     security-events: write
+  #     actions: read
+  #     contents: read
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: github/codeql-action/init@012739e5082ff0c22ca6d6ab32e07c36df03c4a4 # v3.27.0
+  #       with:
+  #         languages: javascript-typescript
+  #         queries: security-and-quality
+  #     - uses: github/codeql-action/analyze@012739e5082ff0c22ca6d6ab32e07c36df03c4a4 # v3.27.0

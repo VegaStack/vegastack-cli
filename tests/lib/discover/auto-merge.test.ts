@@ -219,7 +219,12 @@ describe("discover — > 4 candidates stays ambiguous (latency cap)", () => {
 // ─── per-provider quota helpers ──────────────────────────────────────────
 
 /** Build a minimal DiscoverFile for use in synthetic envelopes. */
-function fakeFile(providerName: string, index: number, scoreNorm: number, score: number): DiscoverFile {
+function fakeFile(
+  providerName: string,
+  index: number,
+  scoreNorm: number,
+  score: number,
+): DiscoverFile {
   return {
     path: `/bundle/${providerName}/r/resource_${index}.html.markdown`,
     score,
@@ -248,10 +253,7 @@ function fakeFile(providerName: string, index: number, scoreNorm: number, score:
 }
 
 /** Build a minimal DiscoverOkEnvelope for a synthetic provider. */
-function fakeEnvelope(
-  provider: string,
-  files: DiscoverFile[],
-): DiscoverOkEnvelope {
+function fakeEnvelope(provider: string, files: DiscoverFile[]): DiscoverOkEnvelope {
   return {
     status: "ok",
     query: "test query",
@@ -305,12 +307,8 @@ describe("discover — auto-merge: per-provider quota (R1 fix)", () => {
     const dominantFiles = Array.from({ length: 10 }, (_, i) =>
       fakeFile("dominant", i, 75, 100 - i * 3),
     );
-    const minor1Files = Array.from({ length: 10 }, (_, i) =>
-      fakeFile("minor1", i, 75, 99 - i * 3),
-    );
-    const minor2Files = Array.from({ length: 10 }, (_, i) =>
-      fakeFile("minor2", i, 75, 98 - i * 3),
-    );
+    const minor1Files = Array.from({ length: 10 }, (_, i) => fakeFile("minor1", i, 75, 99 - i * 3));
+    const minor2Files = Array.from({ length: 10 }, (_, i) => fakeFile("minor2", i, 75, 98 - i * 3));
 
     const opts: MergeOpts = { query: "test query", bundleVersion: "test", max: MAX };
 

@@ -34,13 +34,20 @@ export function loadManifest(providerDir: string): ProviderManifest {
   try {
     raw = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   } catch (e) {
-    throw new VegastackError("BundleCorrupt", `provider manifest is not valid JSON: ${manifestPath}`, {
-      cause: e,
-      context: { providerDir, manifestPath },
-    });
+    throw new VegastackError(
+      "BundleCorrupt",
+      `provider manifest is not valid JSON: ${manifestPath}`,
+      {
+        cause: e,
+        context: { providerDir, manifestPath },
+      },
+    );
   }
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
-    throw new VegastackError("BundleCorrupt", `provider manifest is not a JSON object: ${manifestPath}`);
+    throw new VegastackError(
+      "BundleCorrupt",
+      `provider manifest is not a JSON object: ${manifestPath}`,
+    );
   }
 
   const manifest = raw as ProviderManifest;

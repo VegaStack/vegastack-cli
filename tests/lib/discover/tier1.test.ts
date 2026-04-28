@@ -128,9 +128,7 @@ describe("tier1 — argument_index", () => {
       provider: "aws",
       providerDir: AWS_DIR,
     });
-    const lf = Array.from(out.entries()).find(([p]) =>
-      p.endsWith("lambda_function.html.markdown"),
-    );
+    const lf = Array.from(out.entries()).find(([p]) => p.endsWith("lambda_function.html.markdown"));
     expect(lf).toBeDefined();
     expect(lf![1].reasons.some((r) => r.kind === "argument_index")).toBe(true);
   });
@@ -207,9 +205,7 @@ describe("tier1 — cloudflare", () => {
       provider: "cloudflare",
       providerDir: CF_DIR,
     });
-    const dns = Array.from(out.entries()).find(([p]) =>
-      p.endsWith("dns_record.html.markdown"),
-    );
+    const dns = Array.from(out.entries()).find(([p]) => p.endsWith("dns_record.html.markdown"));
     expect(dns).toBeDefined();
     expect(dns![1].reasons.some((r) => r.kind === "primary_resource")).toBe(true);
   });

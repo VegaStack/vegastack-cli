@@ -63,9 +63,9 @@ function runClaude(args: readonly string[]): { ok: boolean; output: string } {
   } catch (e) {
     const err = e as { stderr?: Buffer | string; stdout?: Buffer | string; message?: string };
     const stderr =
-      typeof err.stderr === "string" ? err.stderr : err.stderr?.toString("utf8") ?? "";
+      typeof err.stderr === "string" ? err.stderr : (err.stderr?.toString("utf8") ?? "");
     const stdout =
-      typeof err.stdout === "string" ? err.stdout : err.stdout?.toString("utf8") ?? "";
+      typeof err.stdout === "string" ? err.stdout : (err.stdout?.toString("utf8") ?? "");
     return { ok: false, output: stderr || stdout || (err.message ?? "") };
   }
 }

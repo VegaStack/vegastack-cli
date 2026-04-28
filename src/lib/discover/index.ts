@@ -126,7 +126,11 @@ export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
       root,
       knownProviders,
     );
-    let det = detectProvider(query, { knownProviders, distinctiveTokensByProvider, serviceAliases });
+    let det = detectProvider(query, {
+      knownProviders,
+      distinctiveTokensByProvider,
+      serviceAliases,
+    });
 
     // ── Concept-alias phrase pre-detection (closes C6 / C4 in the TS harness) ──
     // If the confidence-based classifier failed to detect a provider, scan
@@ -496,7 +500,14 @@ async function runProviderPipeline(args: ProviderPipelineArgs): Promise<Provider
 
   // ── Enrichment ──
   const tEnrich0 = nowMs();
-  const { files } = enrichFiles({ ranked: shortCircuitRanked, manifest, providerDir: dir, enrich, brief, fullExamples });
+  const { files } = enrichFiles({
+    ranked: shortCircuitRanked,
+    manifest,
+    providerDir: dir,
+    enrich,
+    brief,
+    fullExamples,
+  });
   const enrichMs = nowMs() - tEnrich0;
 
   // ── Channel loaders ──
@@ -590,7 +601,10 @@ export interface MergeOpts {
  */
 /** @internal Exported for unit-testing the per-provider quota logic.
  *  Not part of the public API surface — do NOT import from application code. */
-export function mergeOkEnvelopes(envelopes: DiscoverOkEnvelope[], opts: MergeOpts): DiscoverOkEnvelope {
+export function mergeOkEnvelopes(
+  envelopes: DiscoverOkEnvelope[],
+  opts: MergeOpts,
+): DiscoverOkEnvelope {
   const { query, bundleVersion, max } = opts;
 
   const sortedProviders = [...envelopes.map((e) => e.provider)].sort((a, b) => a.localeCompare(b));
@@ -894,9 +908,7 @@ export function detectMultiProviderPhrasing(
   raw.sort((a, b) => b.end - b.start - (a.end - a.start) || a.start - b.start);
   const accepted: Mention[] = [];
   for (const r of raw) {
-    const conflicts = accepted.some(
-      (a) => !(r.end <= a.start || r.start >= a.end),
-    );
+    const conflicts = accepted.some((a) => !(r.end <= a.start || r.start >= a.end));
     if (!conflicts) accepted.push(r);
   }
   // Sort by start for downstream connector lookup.

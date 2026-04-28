@@ -1,6 +1,6 @@
 {
   "name": "@vegastack/dashboard",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": true,
   "type": "module",
   "description": "Public eval dashboard for vegastack-cli — Astro on Cloudflare Workers.",
@@ -29,5 +29,8 @@
   },
   "engines": {
     "node": ">=20.10.0"
+  },
+  "overrides": {
+    "yaml": ">=2.8.3"
   }
 }

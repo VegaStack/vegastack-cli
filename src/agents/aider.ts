@@ -98,7 +98,10 @@ function parseConf(text: string): ParsedConf {
     while (i < lines.length) {
       const cur = lines[i] ?? "";
       if (!/^\s+-\s+/.test(cur)) break;
-      const item = cur.replace(/^\s+-\s+/, "").trim().replace(/^["']|["']$/g, "");
+      const item = cur
+        .replace(/^\s+-\s+/, "")
+        .trim()
+        .replace(/^["']|["']$/g, "");
       if (item) out.read.push(item);
       i++;
     }
@@ -148,7 +151,9 @@ class AiderRenderer implements AgentRenderer {
       notes: convPresent
         ? referenced
           ? ["Conventions file present and referenced from .aider.conf.yml."]
-          : [`Conventions file present but not referenced — re-run \`vegastack skills install --agent aider --force\`.`]
+          : [
+              `Conventions file present but not referenced — re-run \`vegastack skills install --agent aider --force\`.`,
+            ]
         : ["Not installed."],
       warnings: [],
     };
@@ -237,9 +242,7 @@ class AiderRenderer implements AgentRenderer {
       try {
         const parsed = parseConf(fs.readFileSync(conf, "utf8"));
         const before = parsed.read.length;
-        parsed.read = parsed.read.filter(
-          (r) => r !== conv && r !== path.basename(conv),
-        );
+        parsed.read = parsed.read.filter((r) => r !== conv && r !== path.basename(conv));
         if (parsed.read.length !== before) {
           fs.writeFileSync(conf, renderConf(parsed), "utf8");
           result.notes.push(`unpatched ${conf}`);

@@ -111,9 +111,7 @@ class ContinueRenderer implements AgentRenderer {
       } catch {
         /* fall through to overwrite-with-warning */
       }
-      result.warnings.push(
-        `destination exists and differs; pass --force to overwrite: ${dest}`,
-      );
+      result.warnings.push(`destination exists and differs; pass --force to overwrite: ${dest}`);
       return result;
     }
 

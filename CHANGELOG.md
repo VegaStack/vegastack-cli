@@ -4,6 +4,17 @@ All notable changes to `@vegastack/cli` are documented here. The format is based
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.9] - 2026-04-28
+
+CI cleanup — gets the push workflows back to green.
+
+### Changed
+
+- `vitest` bumped from `^1.5.0` to `^3.0.0` (now resolves to 3.2.4). Pulls in `vite@7.3.2` and `esbuild@0.27.7`, which closes [GHSA-4w7w-66w2-5vf9](https://osv.dev/GHSA-4w7w-66w2-5vf9) (vite path traversal) and [GHSA-67mh-4wv8-2f99](https://osv.dev/GHSA-67mh-4wv8-2f99) (esbuild dev-server CORS). Both were dev-only.
+- `apps/dashboard/package.json` adds an `overrides` clamp `yaml: ">=2.8.3"` to escape [GHSA-48c2-rrv3-qjmp](https://osv.dev/GHSA-48c2-rrv3-qjmp) (yaml stack-overflow DoS) — transitive via `@astrojs/check` → `yaml-language-server`.
+- Codebase-wide Prettier pass — 31 files were drifting from the format checker.
+- `.github/workflows/security.yml`: CodeQL job commented out. Code Scanning for private repos on the Team plan requires the Code Security add-on ($30/committer/month); not buying it just to satisfy a CI job. OSV-Scanner still runs and covers dependency vulns. Re-enable when the repo goes public (free) or when the org adopts the add-on.
+
 ## [0.1.8] - 2026-04-28
 
 The Claude Code installer actually uses the marketplace it ships now.

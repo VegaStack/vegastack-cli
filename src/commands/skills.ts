@@ -16,9 +16,7 @@ export interface SkillsOptions {
   json: boolean;
 }
 
-type ResultRow =
-  | { agent: string; error: string }
-  | { agent: string; result: InstallResult };
+type ResultRow = { agent: string; error: string } | { agent: string; result: InstallResult };
 
 export async function runSkills(action: Action, opts: SkillsOptions): Promise<number> {
   const cwd = process.cwd();

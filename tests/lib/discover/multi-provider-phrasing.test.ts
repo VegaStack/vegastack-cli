@@ -96,10 +96,7 @@ describe("detectMultiProviderPhrasing — positive cases (multi-provider topolog
   });
 
   it("orders providers by first-mention position (deterministic)", () => {
-    const r = detectMultiProviderPhrasing(
-      "Cloudflare DNS in front of AWS",
-      KNOWN_PROVIDERS,
-    );
+    const r = detectMultiProviderPhrasing("Cloudflare DNS in front of AWS", KNOWN_PROVIDERS);
     expect(r).toBeDefined();
     expect(r!.providers[0]).toBe("cloudflare");
     expect(r!.providers[1]).toBe("aws");
@@ -122,10 +119,7 @@ describe("detectMultiProviderPhrasing — negative cases (single-provider, MUST 
   });
 
   it("'kubernetes cluster on bare metal' → single (bare metal is not a provider)", () => {
-    const r = detectMultiProviderPhrasing(
-      "kubernetes cluster on bare metal",
-      KNOWN_PROVIDERS,
-    );
+    const r = detectMultiProviderPhrasing("kubernetes cluster on bare metal", KNOWN_PROVIDERS);
     expect(r).toBeUndefined();
   });
 
@@ -135,18 +129,12 @@ describe("detectMultiProviderPhrasing — negative cases (single-provider, MUST 
   });
 
   it("'kubernetes deployment with config map' → single (config map isn't a provider)", () => {
-    const r = detectMultiProviderPhrasing(
-      "kubernetes deployment with config map",
-      KNOWN_PROVIDERS,
-    );
+    const r = detectMultiProviderPhrasing("kubernetes deployment with config map", KNOWN_PROVIDERS);
     expect(r).toBeUndefined();
   });
 
   it("'Cloudflare Workers + D1 + R2' → single (D1 and R2 are cloudflare features, not separate providers)", () => {
-    const r = detectMultiProviderPhrasing(
-      "Cloudflare Workers + D1 + R2",
-      KNOWN_PROVIDERS,
-    );
+    const r = detectMultiProviderPhrasing("Cloudflare Workers + D1 + R2", KNOWN_PROVIDERS);
     // D1 and R2 are not in DEFAULT_SERVICE_ALIASES and not canonical
     // providers, so each + connector fragment fails to resolve to a
     // distinct second provider. Expected: undefined (single-provider).

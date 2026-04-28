@@ -116,13 +116,7 @@ describe("safe-tar — rejects malicious tarballs", () => {
     // storing). The fixture was built once on macOS and contains a single
     // entry `../escape/x`, which `safeExtract` must reject regardless of the
     // host's tar implementation.
-    const fixture = path.join(
-      __dirname,
-      "..",
-      "fixtures",
-      "safe-tar",
-      "traversal.tar.gz",
-    );
+    const fixture = path.join(__dirname, "..", "fixtures", "safe-tar", "traversal.tar.gz");
     const tarball = path.join(workspace, "trav.tar.gz");
     fs.copyFileSync(fixture, tarball);
 

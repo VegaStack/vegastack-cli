@@ -14,12 +14,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { normalizeScores } from "./scoring.js";
-import type {
-  DiscoverFile,
-  ManifestResourceEntry,
-  ProviderManifest,
-  ScoredFile,
-} from "./types.js";
+import type { DiscoverFile, ManifestResourceEntry, ProviderManifest, ScoredFile } from "./types.js";
 import type { RankedFile } from "./merge.js";
 
 const MAX_MARKDOWN_BYTES = 1 * 1024 * 1024;
@@ -74,9 +69,7 @@ export function enrichFiles(args: EnrichArgs): EnrichResult {
   }
 
   // Compute per-provider normalized scores.
-  const norms = normalizeScores(
-    new Map(ranked.map((r) => [r.path, { score: r.score }] as const)),
-  );
+  const norms = normalizeScores(new Map(ranked.map((r) => [r.path, { score: r.score }] as const)));
 
   const out: DiscoverFile[] = [];
   for (const r of ranked) {

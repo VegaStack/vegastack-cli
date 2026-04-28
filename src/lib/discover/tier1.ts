@@ -41,7 +41,7 @@ export function tier1(args: Tier1Args): ReadonlyMap<string, ScoredFile> {
   const resources = manifest.resources ?? {};
   const dataSources = manifest.data_sources ?? {};
   const subcategoryUseful = manifest.subcategory_useful ?? true;
-  const subcategories = subcategoryUseful ? manifest.subcategories ?? {} : {};
+  const subcategories = subcategoryUseful ? (manifest.subcategories ?? {}) : {};
   const synthetic = manifest.synthetic_subcategories ?? {};
   const hclRefs = manifest.hcl_references ?? {};
   const argIndex = manifest.argument_index ?? {};
@@ -275,7 +275,12 @@ export function tier1(args: Tier1Args): ReadonlyMap<string, ScoredFile> {
     // exact_resource hits are high-confidence (user typed the resource name
     // literally) so companions deserve a stronger signal. primary_resource is
     // less certain. All other paths fall back to the legacy +20. Closes P5 C5.
-    const hitReasons = new Set(scorer.toMap().get(hitPath)?.reasons.map((r) => r.kind) ?? []);
+    const hitReasons = new Set(
+      scorer
+        .toMap()
+        .get(hitPath)
+        ?.reasons.map((r) => r.kind) ?? [],
+    );
     let companionBoost: number;
     if (hitReasons.has("exact_resource")) {
       companionBoost = 50; // exact_resource → companion boost (closes P5 C5)

@@ -67,9 +67,7 @@ describe("agent install paths", () => {
 
   it("cursor rule path is project-relative", () => {
     const cwd = "/tmp/proj";
-    expect(cursorRulePath(cwd)).toBe(
-      path.join(cwd, ".cursor", "rules", "vegastack-cli.mdc"),
-    );
+    expect(cursorRulePath(cwd)).toBe(path.join(cwd, ".cursor", "rules", "vegastack-cli.mdc"));
   });
 
   it("gemini extension and context are at project root", () => {

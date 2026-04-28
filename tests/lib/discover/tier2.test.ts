@@ -3,11 +3,7 @@
 import { fileURLToPath } from "node:url";
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-  _ripgrepCacheForTesting,
-  clearCaches,
-  tier2,
-} from "../../../src/lib/discover/tier2.js";
+import { _ripgrepCacheForTesting, clearCaches, tier2 } from "../../../src/lib/discover/tier2.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "bundle-mini");

@@ -49,7 +49,9 @@ interface RgCacheEntry {
 let RIPGREP_AVAILABLE_CACHE: RgCacheEntry | null = null;
 
 function hashPath(): string {
-  return createHash("sha256").update(process.env.PATH ?? "").digest("hex");
+  return createHash("sha256")
+    .update(process.env.PATH ?? "")
+    .digest("hex");
 }
 
 function isRipgrepAvailable(): boolean {

@@ -14,7 +14,10 @@ import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadManifest } from "../../../src/lib/discover/manifest.js";
 import { tier1 } from "../../../src/lib/discover/tier1.js";
-import { applyCanonicalMultiplier, tieBreakByNameLength } from "../../../src/lib/discover/scoring.js";
+import {
+  applyCanonicalMultiplier,
+  tieBreakByNameLength,
+} from "../../../src/lib/discover/scoring.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "bundle-mini");
@@ -136,7 +139,9 @@ describe("companion-boost — source always outranks companions (load-bearing in
       providerDir: AWS_DIR,
     });
     const boosted = applyCanonicalMultiplier(raw);
-    const sourcePath = Array.from(boosted.keys()).find((p) => p.endsWith("s3_bucket.html.markdown"));
+    const sourcePath = Array.from(boosted.keys()).find((p) =>
+      p.endsWith("s3_bucket.html.markdown"),
+    );
     expect(sourcePath).toBeDefined();
     const sourceScore = boosted.get(sourcePath!)!.score;
 
@@ -195,9 +200,11 @@ describe("companion-boost — 60% cap prevents companion from exceeding source",
 
     // Verify each companion score is at most 60% of the source's raw score.
     const companionPaths = Array.from(raw.keys()).filter((p) =>
-      raw.get(p)!.reasons.some(
-        (r) => r.kind === "recommended_companion" && r.detail.startsWith("aws_s3_bucket→"),
-      ),
+      raw
+        .get(p)!
+        .reasons.some(
+          (r) => r.kind === "recommended_companion" && r.detail.startsWith("aws_s3_bucket→"),
+        ),
     );
     expect(companionPaths.length).toBeGreaterThan(0);
     for (const cp of companionPaths) {

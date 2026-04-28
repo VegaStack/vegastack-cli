@@ -85,12 +85,7 @@ describe("generate-skill-from-bundle", () => {
       "..",
       "..",
     );
-    const templatePath = path.join(
-      repoRoot,
-      "bundle",
-      "skill-source",
-      "SKILL.md.template",
-    );
+    const templatePath = path.join(repoRoot, "bundle", "skill-source", "SKILL.md.template");
     const skillPath = path.join(repoRoot, "skills", "vegastack", "SKILL.md");
 
     const tpl = fs.readFileSync(templatePath, "utf8");

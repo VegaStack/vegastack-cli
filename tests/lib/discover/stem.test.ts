@@ -72,10 +72,10 @@ describe("stem — suffix stripping", () => {
   // kubernetes-provider-v2-fields knowledge card's `tokens: ["v1"]` trigger
   // to stop matching, and breaks the k8s v1→v2 migration eval.
   it("digit-protection: v1, M40, t4g, r6g are returned unchanged (R2 guard)", () => {
-    expect(stem("v1")).toBe("v1");    // k8s versioned alias trigger
-    expect(stem("M40")).toBe("M40");  // mongodb-atlas tier name
-    expect(stem("t4g")).toBe("t4g");  // AWS instance type suffix
-    expect(stem("r6g")).toBe("r6g");  // AWS instance type suffix
+    expect(stem("v1")).toBe("v1"); // k8s versioned alias trigger
+    expect(stem("M40")).toBe("M40"); // mongodb-atlas tier name
+    expect(stem("t4g")).toBe("t4g"); // AWS instance type suffix
+    expect(stem("r6g")).toBe("r6g"); // AWS instance type suffix
     // Confirm the non-digit path still works (regression check: R2 guard
     // must not swallow the -ing rule).
     expect(stem("locking")).toBe("lock");

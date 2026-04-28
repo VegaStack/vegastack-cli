@@ -81,11 +81,15 @@ describe("score primitives", () => {
 
   it("cites_recipe matches by id substring", () => {
     const text = "Recipe ref: scalable-backend-aws-ecs-fargate-rds-datadog";
-    expect(cites_recipe(text, "scalable-backend-aws-ecs-fargate-rds-datadog", []).passed).toBe(true);
+    expect(cites_recipe(text, "scalable-backend-aws-ecs-fargate-rds-datadog", []).passed).toBe(
+      true,
+    );
   });
 
   it("cites_path matches by substring", () => {
-    expect(cites_path("from aws/r/eks_cluster.html.markdown", "aws/r/eks_cluster").passed).toBe(true);
+    expect(cites_path("from aws/r/eks_cluster.html.markdown", "aws/r/eks_cluster").passed).toBe(
+      true,
+    );
     expect(cites_path("nope", "aws/r/eks_cluster").passed).toBe(false);
   });
 });

@@ -47,20 +47,16 @@ describe("tokenize", () => {
 
 describe("tokenizeWithAliases — phrase rewrites BEFORE token splitting", () => {
   it("matches alias phrase and appends the alias to tokens", () => {
-    const result = tokenizeWithAliases(
-      "I want to protect from bots on my site",
-      "cloudflare",
-      {
-        aliases: [
-          {
-            phrase: "protect from bots",
-            alias: "bot_protection",
-            resources: ["cloudflare_bot_management"],
-            provider: "cloudflare",
-          },
-        ],
-      },
-    );
+    const result = tokenizeWithAliases("I want to protect from bots on my site", "cloudflare", {
+      aliases: [
+        {
+          phrase: "protect from bots",
+          alias: "bot_protection",
+          resources: ["cloudflare_bot_management"],
+          provider: "cloudflare",
+        },
+      ],
+    });
     expect(result.aliasMatches).toHaveLength(1);
     expect(result.tokens).toContain("bot_protection");
   });

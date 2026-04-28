@@ -146,9 +146,13 @@ export function validateSafeFilePath(
   // is on the input itself, against realpath'd roots.
   const realInput = realpathIfExists(normalized);
   if (!allowedReal.some((root) => isWithin(realInput, root))) {
-    throw new VegastackError("ValidationError", `file path is outside the allowed roots: ${realInput}`, {
-      context: { input, normalized, real: realInput, allowed: allowedReal },
-    });
+    throw new VegastackError(
+      "ValidationError",
+      `file path is outside the allowed roots: ${realInput}`,
+      {
+        context: { input, normalized, real: realInput, allowed: allowedReal },
+      },
+    );
   }
   return normalized;
 }

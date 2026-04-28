@@ -87,7 +87,10 @@ export function applyCanonicalMultiplier(
  * The resource-name length is taken from the file basename minus the doc
  * extension (`.markdown` / `.html.markdown` / `.md`).
  */
-export function tieBreakByNameLength(a: { path: string; score: number }, b: { path: string; score: number }): number {
+export function tieBreakByNameLength(
+  a: { path: string; score: number },
+  b: { path: string; score: number },
+): number {
   if (b.score !== a.score) return b.score - a.score;
   const na = baseName(a.path);
   const nb = baseName(b.path);
@@ -98,7 +101,10 @@ export function tieBreakByNameLength(a: { path: string; score: number }, b: { pa
 function baseName(p: string): string {
   const slash = p.lastIndexOf("/");
   const last = slash >= 0 ? p.slice(slash + 1) : p;
-  return last.replace(/\.html\.markdown$/, "").replace(/\.markdown$/, "").replace(/\.md$/, "");
+  return last
+    .replace(/\.html\.markdown$/, "")
+    .replace(/\.markdown$/, "")
+    .replace(/\.md$/, "");
 }
 
 /**

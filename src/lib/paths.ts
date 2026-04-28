@@ -127,7 +127,9 @@ export function continueMcpServerPath(scope: AgentScope, cwd: string): string {
 
 /** Aider: home-level YAML config. Aider walks home → repo root → cwd. */
 export function aiderConfPath(scope: AgentScope, cwd: string): string {
-  return scope === "global" ? path.join(HOME, ".aider.conf.yml") : path.join(cwd, ".aider.conf.yml");
+  return scope === "global"
+    ? path.join(HOME, ".aider.conf.yml")
+    : path.join(cwd, ".aider.conf.yml");
 }
 /** Aider: where we drop our CONVENTIONS.md. */
 export function aiderConventionsPath(scope: AgentScope, cwd: string): string {

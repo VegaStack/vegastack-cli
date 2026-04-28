@@ -1,6 +1,6 @@
 {
   "name": "@vegastack/cli",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "vegastack — a deterministic, offline knowledge harness for coding agents (Claude Code, Codex, Cursor, Gemini). Ships 31 Terraform providers' upstream docs + manifests + recipes + knowledge cards as one installable CLI.",
   "license": "MIT",
   "author": {
@@ -106,7 +106,7 @@
     "prettier": "^3.2.0",
     "tsx": "^4.21.0",
     "typescript": "^5.4.0",
-    "vitest": "^1.5.0"
+    "vitest": "^3.2.4"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",

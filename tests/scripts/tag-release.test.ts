@@ -8,13 +8,11 @@ describe("tag-release: pinBundleIntoPackage", () => {
     channels: {
       latest: {
         bundle_version: "2026.04.28",
-        bundle_sha256:
-          "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+        bundle_sha256: "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
       },
       stable: {
         bundle_version: "2026.04.20",
-        bundle_sha256:
-          "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+        bundle_sha256: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
       },
     },
   };
@@ -45,8 +43,7 @@ describe("tag-release: pinBundleIntoPackage", () => {
   it("returns false when nothing changed (idempotent re-runs)", () => {
     const pkg: Record<string, string> = {
       expectedBundleVersion: "2026.04.28",
-      expectedBundleSha:
-        "sha256-abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+      expectedBundleSha: "sha256-abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
     };
     expect(pinBundleIntoPackage(pkg, baseManifest, "latest")).toBe(false);
   });
@@ -56,8 +53,7 @@ describe("tag-release: pinBundleIntoPackage", () => {
       channels: {
         latest: {
           bundle_version: "2026.04.28",
-          bundle_sha256:
-            "sha256-abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+          bundle_sha256: "sha256-abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
         },
       },
     };
@@ -74,8 +70,7 @@ describe("tag-release: pinBundleIntoPackage", () => {
   it("tolerates a flat manifest shape (no channels wrapper)", () => {
     const flat = {
       bundle_version: "2026.04.28",
-      bundle_sha256:
-        "1111111111111111111111111111111111111111111111111111111111111111",
+      bundle_sha256: "1111111111111111111111111111111111111111111111111111111111111111",
     };
     const pkg: Record<string, string> = {
       expectedBundleVersion: "0.0.0",

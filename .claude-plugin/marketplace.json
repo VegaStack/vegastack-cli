@@ -11,7 +11,7 @@
       "name": "vegastack-cli",
       "source": "./",
       "description": "Terraform docs harness for 31 providers (AWS, Azure, GCP, Cloudflare, Kubernetes, Helm, Vault, DigitalOcean, GitHub, GitLab, Vercel, Netlify, Datadog, Grafana, Splunk, PagerDuty, Okta, Auth0, CrowdStrike, 1Password, MongoDB Atlas, Snowflake, Redis Cloud, ClickHouse, Pinecone, Ansible, and standard utility providers). Provides accurate resource names, argument schemas, import syntax, deprecation flags, HCL examples, recent-change knowledge cards, cross-provider recipes, and concept-alias resolution — without web search, MCPs, or model-knowledge gaps.",
-      "version": "0.1.8",
+      "version": "0.1.9",
       "author": {
         "name": "Vegastack Engineering",
         "email": "engg@vegastack.com",
