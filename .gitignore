@@ -15,6 +15,11 @@ npm/.version
 *.zip
 *.sha256
 
+# Re-allow test fixture tarballs (precomputed inputs for cross-platform tests
+# where building the tarball at runtime would diverge between BSD vs GNU tar).
+!tests/fixtures/**/*.tar.gz
+!tests/fixtures/**/*.tgz
+
 # Editor state
 .vscode/
 .idea/

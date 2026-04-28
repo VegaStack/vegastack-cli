@@ -110,31 +110,27 @@ describe("safe-tar — rejects malicious tarballs", () => {
 
   it("rejects a tarball with a `..` traversal entry", () => {
     if (process.platform === "win32") return;
-    const stagingParent = fs.mkdtempSync(path.join(os.tmpdir(), "vega-tar-stage-"));
-    try {
-      // Build a tarball whose entry name contains `../`. We do this by:
-      //   1. Creating ./stage/payload.txt
-      //   2. Calling tar -czf with a transform option that adds `../escape/` prefix.
-      // The simplest portable way is to just create the dir layout and tar from
-      // a parent so the entry has `staging/../escape/x`.
-      const escapeDir = path.join(stagingParent, "escape");
-      fs.mkdirSync(escapeDir);
-      fs.writeFileSync(path.join(escapeDir, "x"), "hello");
-      const stagingDir = path.join(stagingParent, "staging");
-      fs.mkdirSync(stagingDir);
+    // Use a precomputed fixture instead of building the tarball at runtime —
+    // `tar -C dir ../subdir` behaves differently between BSD tar (preserves
+    // `../` in the stored entry name) and GNU tar (normalizes the path before
+    // storing). The fixture was built once on macOS and contains a single
+    // entry `../escape/x`, which `safeExtract` must reject regardless of the
+    // host's tar implementation.
+    const fixture = path.join(
+      __dirname,
+      "..",
+      "fixtures",
+      "safe-tar",
+      "traversal.tar.gz",
+    );
+    const tarball = path.join(workspace, "trav.tar.gz");
+    fs.copyFileSync(fixture, tarball);
 
-      const tarball = path.join(workspace, "trav.tar.gz");
-      // Tar with `-C staging` so escape is reachable as `../escape/x`.
-      execFileSync("tar", ["czf", tarball, "-C", stagingDir, "../escape"]);
-
-      const dst = path.join(workspace, "dst");
-      fs.mkdirSync(dst);
-      const r = safeExtract(tarball, dst);
-      expect(r.ok).toBe(false);
-      expect(r.output).toMatch(/(escape|absolute|\.\.)/i);
-    } finally {
-      fs.rmSync(stagingParent, { recursive: true, force: true });
-    }
+    const dst = path.join(workspace, "dst");
+    fs.mkdirSync(dst);
+    const r = safeExtract(tarball, dst);
+    expect(r.ok).toBe(false);
+    expect(r.output).toMatch(/(escape|absolute|\.\.)/i);
   });
 
   it("rejects a tarball with a symlink pointing outside the dest", () => {
