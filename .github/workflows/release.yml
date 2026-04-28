@@ -127,12 +127,12 @@ jobs:
           echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
 
       # SLSA Level 3 build provenance for the npm tarball itself.
-      # actions/attest-build-provenance@v2 is the documented stable major
+      # actions/attest-build-provenance@v4 is the documented stable major
       # for Sigstore-backed in-toto SLSA v1 attestations. (v4 is also
       # available as of April 2026 but is a thin wrapper over actions/attest;
       # v2 is still maintained and is the path the brief explicitly asked for.)
       - name: Attest build provenance (SLSA Level 3)
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: ${{ steps.pack.outputs.tarball }}
 
