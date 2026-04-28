@@ -49,7 +49,7 @@ describe("codex installer (project scope)", () => {
 });
 
 describe("codex installer (global scope)", () => {
-  it("install writes ~/.agents/skills/terraform-docs and ~/.codex/AGENTS.md", () => {
+  it("install writes ~/.agents/skills/vegastack and ~/.codex/AGENTS.md", () => {
     if (process.platform === "win32") return; // home-sandbox semantics differ
     const r = codex.install({ scope: "global", cwd, force: false, dryRun: false });
     expect(r.installed).toBe(true);

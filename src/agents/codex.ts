@@ -1,5 +1,5 @@
 // Codex installer.
-// Strategy: link the package's skills/terraform-docs/ into ~/.agents/skills/
+// Strategy: link the package's skills/vegastack/ into ~/.agents/skills/
 // (or <cwd>/.agents/skills/ for project scope). On Windows non-admin we fall
 // back to a recursive copy. Optionally copy AGENTS.md to ~/.codex/AGENTS.md
 // for Codex's user-level instructions, with a backup if one already exists.

@@ -2,7 +2,7 @@
 //
 // Loads the canonical SKILL.md once and caches it per process. Renderers
 // consume the result. The on-disk source is the package-installed
-// `skills/terraform-docs/SKILL.md` (which itself is generated from
+// `skills/vegastack/SKILL.md` (which itself is generated from
 // `bundle/skill-source/SKILL.md.template` by `scripts/generate-skill-from-bundle.ts`).
 
 import * as fs from "node:fs";
@@ -29,7 +29,7 @@ export class PackageSkillSource implements SkillSourceLoader {
 }
 
 function defaultSkillPath(): string {
-  return path.join(pkgRoot(), "skills", "terraform-docs", "SKILL.md");
+  return path.join(pkgRoot(), "skills", "vegastack", "SKILL.md");
 }
 
 /**

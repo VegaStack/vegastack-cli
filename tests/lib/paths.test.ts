@@ -54,9 +54,9 @@ describe("agent install paths", () => {
     const cwd = "/tmp/my-project";
     const global = codexSkillDir("global", cwd);
     const project = codexSkillDir("project", cwd);
-    expect(global).toMatch(/\.agents[\\/]skills[\\/]terraform-docs$/);
+    expect(global).toMatch(/\.agents[\\/]skills[\\/]vegastack$/);
     expect(global).not.toContain(cwd);
-    expect(project).toBe(path.join(cwd, ".agents", "skills", "terraform-docs"));
+    expect(project).toBe(path.join(cwd, ".agents", "skills", "vegastack"));
   });
 
   it("codex AGENTS.md uses ~/.codex in global, cwd in project", () => {

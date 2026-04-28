@@ -73,7 +73,7 @@ For each remaining file, grep for every item in the change manifest. Also grep b
 **Additionally** check non-markdown files that contain user-facing text:
 
 - `apps/mcp/README.md`, `apps/dashboard/README.md` — separate README per app
-- `skills/terraform-docs/SKILL.md` and `skills/terraform-docs/references/*.md` — the public-facing skill body and supporting references
+- `skills/vegastack/SKILL.md` and `skills/vegastack/references/*.md` — the public-facing skill body and supporting references
 - `cursor-rule.mdc`, `gemini-extension.json` — per-agent surface files
 - `.claude-plugin/plugin.json` — Claude Code plugin manifest
 - `package.json#description` and `package.json#keywords` — npm-surface text

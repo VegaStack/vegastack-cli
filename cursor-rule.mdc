@@ -16,7 +16,7 @@ alwaysApply: false
 
 # vegastack-terraform (Cursor rule)
 
-This rule mirrors the SKILL.md shipped at `<plugin-root>/skills/terraform-docs/SKILL.md`. After installing `@vegastack/cli`, run `vegastack skills install --agent cursor` to drop this `.mdc` into `<project>/.cursor/rules/`.
+This rule mirrors the SKILL.md shipped at `<plugin-root>/skills/vegastack/SKILL.md`. After installing `@vegastack/cli`, run `vegastack skills install --agent cursor` to drop this `.mdc` into `<project>/.cursor/rules/`.
 
 ## How to use
 
@@ -35,4 +35,4 @@ This rule mirrors the SKILL.md shipped at `<plugin-root>/skills/terraform-docs/S
 
 ## Full reference
 
-For the complete workflow, examples, and reference files, read `<plugin-root>/skills/terraform-docs/SKILL.md` and the files in `<plugin-root>/skills/terraform-docs/references/`.
+For the complete workflow, examples, and reference files, read `<plugin-root>/skills/vegastack/SKILL.md` and the files in `<plugin-root>/skills/vegastack/references/`.

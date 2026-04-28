@@ -2,7 +2,7 @@
 //
 // Mirrors the gws-cli `generate_skills.rs` pattern (R2 §6) at a smaller scale:
 // reads a single canonical SKILL.md template from `bundle/skill-source/` and
-// emits a final, token-substituted SKILL.md to `skills/terraform-docs/SKILL.md`.
+// emits a final, token-substituted SKILL.md to `skills/vegastack/SKILL.md`.
 //
 // The generator is intentionally tiny: no mustache, no handlebars, no
 // dependencies. We only need ${TOKEN} replacement and a stable provider list,
@@ -18,7 +18,7 @@
 //
 // Direct invocation:
 //
-//   npm run generate-skill           # writes skills/terraform-docs/SKILL.md
+//   npm run generate-skill           # writes skills/vegastack/SKILL.md
 //   npm run generate-skill -- --out /tmp/SKILL.md
 //
 // Tokens substituted (see template):
@@ -35,7 +35,7 @@ import * as url from "node:url";
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
 const TEMPLATE_PATH = path.join(REPO_ROOT, "bundle", "skill-source", "SKILL.md.template");
-const DEFAULT_OUT = path.join(REPO_ROOT, "skills", "terraform-docs", "SKILL.md");
+const DEFAULT_OUT = path.join(REPO_ROOT, "skills", "vegastack", "SKILL.md");
 const BUNDLE_MANIFEST = path.join(REPO_ROOT, "bundle", "MANIFEST.json");
 
 // Fallback list — used when bundle/MANIFEST.json isn't on disk yet (CI build,

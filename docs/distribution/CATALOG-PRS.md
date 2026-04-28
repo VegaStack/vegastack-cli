@@ -51,13 +51,13 @@ HashiCorp Team for Terraform`:
 
 ### Skills by Vegastack Team for Terraform
 
-- **[vegastack/terraform-docs](https://officialskills.sh/vegastack/skills/terraform-docs)** - Per-resource manifest, import syntax, deprecation flags, and multi-provider recipes for 31 Terraform providers (AWS, Azure, GCP, Cloudflare, Kubernetes, Vault, Datadog, Snowflake, …). Installs via `npm i -g @vegastack/cli` and `vegastack skills install --agent <claude-code|codex|cursor|gemini|continue|aider>`. MIT.
+- **[vegastack/vegastack](https://officialskills.sh/vegastack/skills/vegastack)** - Per-resource manifest, import syntax, deprecation flags, and multi-provider recipes for 31 Terraform providers (AWS, Azure, GCP, Cloudflare, Kubernetes, Vault, Datadog, Snowflake, …). Installs via `npm i -g @vegastack/cli` and `vegastack skills install --agent <claude-code|codex|cursor|gemini|continue|aider>`. MIT.
 
 ## Verification
 
 - npm: https://www.npmjs.com/package/@vegastack/cli
 - Repo: https://github.com/vegastack/vegastack-cli
-- Skill body: https://github.com/vegastack/vegastack-cli/blob/main/skills/terraform-docs/SKILL.md
+- Skill body: https://github.com/vegastack/vegastack-cli/blob/main/skills/vegastack/SKILL.md
 - License: MIT
 - Spec: agentskills.io v1.0
 ```
@@ -97,7 +97,7 @@ a new sibling block right below it:
 
 ### Skills by Vegastack (Terraform consumers)
 
-- [vegastack/terraform-docs](https://agent-skill.co/vegastack/skills/terraform-docs) - Per-resource manifest, import syntax, deprecation flags for 31 Terraform providers (AWS, Azure, GCP, Cloudflare, Vault, Datadog, …)
+- [vegastack/vegastack](https://agent-skill.co/vegastack/skills/vegastack) - Per-resource manifest, import syntax, deprecation flags for 31 Terraform providers (AWS, Azure, GCP, Cloudflare, Vault, Datadog, …)
 
 ## Why this fits
 
@@ -112,7 +112,7 @@ a new sibling block right below it:
 
 - npm: https://www.npmjs.com/package/@vegastack/cli
 - Source: https://github.com/vegastack/vegastack-cli
-- SKILL.md: https://github.com/vegastack/vegastack-cli/blob/main/skills/terraform-docs/SKILL.md
+- SKILL.md: https://github.com/vegastack/vegastack-cli/blob/main/skills/vegastack/SKILL.md
 ```
 
 ---

@@ -24,7 +24,7 @@ export interface AnthropicRunnerOpts {
   client: Anthropic;
   model: string;
   mode: RunMode;
-  skillBodyPath: string; // path to skills/terraform-docs/SKILL.md
+  skillBodyPath: string; // path to skills/vegastack/SKILL.md
   vegaBin?: string; // path to `vegastack` binary; default `vegastack` on PATH
   maxTurns?: number; // safety cap on tool-loop turns
   timeoutMs?: number; // overall per-prompt timeout
@@ -51,7 +51,7 @@ export async function runPromptOnce(prompt: string, opts: AnthropicRunnerOpts): 
 
   const skillBody = opts.mode === "with-skill" ? await safeRead(opts.skillBodyPath) : "";
   const system = opts.mode === "with-skill"
-    ? `${BASELINE_SYSTEM}\n\n=== SKILL: terraform-docs ===\n${skillBody}\n=== END SKILL ===`
+    ? `${BASELINE_SYSTEM}\n\n=== SKILL: vegastack ===\n${skillBody}\n=== END SKILL ===`
     : BASELINE_SYSTEM;
 
   const messages: { role: "user" | "assistant"; content: unknown }[] = [

@@ -4,6 +4,24 @@ All notable changes to `@vegastack/cli` are documented here. The format is based
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-04-28
+
+Single, brand-aligned skill surface — and a working Claude Code install path.
+
+### Added
+
+- `.claude-plugin/marketplace.json` so Claude Code 2.1.x can install via `claude plugin marketplace add` + `claude plugin install vegastack-cli@vegastack-cli`. Modern Claude Code only activates plugins registered through a marketplace; the prior symlink-into-`~/.claude/plugins/` approach was visible (`1 plugin` count) but did not load components.
+
+### Changed (BREAKING)
+
+- Skill renamed `terraform-docs` → `vegastack`. Skill dir moved `skills/terraform-docs/` → `skills/vegastack/`. Surfaces as `/vegastack` in Claude Code. Forward-compatible — future knowledge packs (runbooks, devops/cloudops guides) will be dispatched from this same skill body.
+- Removed redundant `commands/tf.md` slash command. The skill auto-triggers on Terraform/HCL queries; no slash needed. Use `/vegastack` for explicit invocation.
+- Codex skill symlink moved `.agents/skills/terraform-docs/` → `.agents/skills/vegastack/`.
+
+### Fixed
+
+- Hooks file structure: `hooks/hooks.json` now nests events under a top-level `"hooks"` key (`{"hooks": {"SessionStart": [...]}}`), matching what Claude Code's loader expects. The previous flat shape produced `Hook load failed: invalid_type at path "hooks"` and `0 hooks` on reload.
+
 ## [0.1.5] - 2026-04-28
 
 Project-wide rename to a single brand: the CLI, plugin, internal symbols, and env vars now all use `vegastack`/`VEGASTACK_` instead of the mix of `vega` (binary), `terraform-providers-kit` (plugin), and `VEGA_*` (env). Terraform was the first knowledge pack; the surface name no longer pre-commits us to it. Also moves the Claude Code plugin layout to the spec-default locations so reload picks up commands, hooks, and the MCP server.

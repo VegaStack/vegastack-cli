@@ -65,7 +65,7 @@ class GeminiRenderer implements AgentRenderer {
   async status(ctx: InstallContext): Promise<InstallResult> {
     const root = geminiExtensionRoot(ctx.scope, ctx.cwd);
     const extJson = path.join(root, "gemini-extension.json");
-    const skillMd = path.join(root, "skills", "terraform-docs", "SKILL.md");
+    const skillMd = path.join(root, "skills", "vegastack", "SKILL.md");
     const cmdToml = path.join(root, "commands", "tf.toml");
     const all = [extJson, skillMd, cmdToml];
     const present = all.every((p) => existsOrLink(p));
@@ -83,7 +83,7 @@ class GeminiRenderer implements AgentRenderer {
   async install(ctx: InstallContext): Promise<InstallResult> {
     const root = geminiExtensionRoot(ctx.scope, ctx.cwd);
     const extJson = path.join(root, "gemini-extension.json");
-    const skillMd = path.join(root, "skills", "terraform-docs", "SKILL.md");
+    const skillMd = path.join(root, "skills", "vegastack", "SKILL.md");
     const cmdToml = path.join(root, "commands", "tf.toml");
 
     const result: InstallResult = {

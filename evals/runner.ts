@@ -14,7 +14,7 @@
 //   --limit <n>                         only run first N prompts (for smoke)
 //   --filter <prefix>                   only run prompts whose archetype matches
 //   --evals <path>                      path to evals.json (default: evals/evals.json)
-//   --skill <path>                      path to SKILL.md (default: skills/terraform-docs/SKILL.md)
+//   --skill <path>                      path to SKILL.md (default: skills/vegastack/SKILL.md)
 //   --vegastack <path>                       path to `vegastack` binary (with-skill only)
 //   --mock                              use mock fixtures instead of calling Anthropic
 //
@@ -96,7 +96,7 @@ function parseArgs(argv: string[]): CliArgs {
     limit: null,
     filter: "",
     evals: resolve(here(), "evals.json"),
-    skill: resolve(here(), "..", "skills", "terraform-docs", "SKILL.md"),
+    skill: resolve(here(), "..", "skills", "vegastack", "SKILL.md"),
     vegastack: null,
     mock: false,
     mockFixtures: null,
@@ -142,7 +142,7 @@ function printHelp(): void {
       `--limit <n>                       only run first N\n` +
       `--filter <archetype>              only run prompts whose archetype starts with this\n` +
       `--evals <path>                    (default: evals/evals.json)\n` +
-      `--skill <path>                    (default: skills/terraform-docs/SKILL.md)\n` +
+      `--skill <path>                    (default: skills/vegastack/SKILL.md)\n` +
       `--vegastack <path>                     path to vegastack bin for with-skill mode\n` +
       `--mock                            use deterministic mock instead of Anthropic API\n` +
       `--pr-smoke                        12-prompt smoke for PR CI\n` +

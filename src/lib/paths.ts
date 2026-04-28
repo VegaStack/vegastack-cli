@@ -72,7 +72,7 @@ export function claudePluginDir(): string {
 export function codexSkillDir(scope: AgentScope, cwd: string): string {
   const root =
     scope === "global" ? path.join(HOME, ".agents", "skills") : path.join(cwd, ".agents", "skills");
-  return path.join(root, "terraform-docs");
+  return path.join(root, "vegastack");
 }
 
 /** Codex: AGENTS.md target. Global goes to ~/.codex/AGENTS.md (per Codex docs). Project to cwd/AGENTS.md. */
@@ -140,13 +140,13 @@ export function aiderConventionsPath(scope: AgentScope, cwd: string): string {
 
 /** The canonical SKILL.md the renderers read from inside the package. */
 export function pkgCanonicalSkillMd(): string {
-  return path.join(pkgRoot(), "skills", "terraform-docs", "SKILL.md");
+  return path.join(pkgRoot(), "skills", "vegastack", "SKILL.md");
 }
 
 // ── Source-of-truth paths inside the package ─────────────────────
 
 export function pkgSkillDir(): string {
-  return path.join(pkgRoot(), "skills", "terraform-docs");
+  return path.join(pkgRoot(), "skills", "vegastack");
 }
 export function pkgAgentsMd(): string {
   return path.join(pkgRoot(), "AGENTS.md");

@@ -2,7 +2,7 @@
   "name": "vegastack-terraform",
   "version": "0.1.0",
   "description": "Local, deterministic Terraform docs harness for 31 providers. Mirrors `vegastack tf` to Gemini CLI as a /tf slash command, plus an MCP server for tool-style access.",
-  "contextFileName": "skills/terraform-docs/SKILL.md",
+  "contextFileName": "skills/vegastack/SKILL.md",
   "mcpServers": {
     "vegastack-tf": {
       "type": "sse",

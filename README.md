@@ -124,7 +124,7 @@ vegastack skills uninstall --agent cursor --scope project
 | Agent           | Scope            | Files written by `vegastack skills install`                                                              |
 | --------------- | ---------------- | --------------------------------------------------------------------------------------------------- |
 | **Claude Code** | global           | `~/.claude/plugins/vegastack-cli/` (symlink to package; auto-updates with the CLI)        |
-| **Codex**       | global / project | `~/.agents/skills/terraform-docs/` (or `<cwd>/.agents/skills/...`); optionally `~/.codex/AGENTS.md` |
+| **Codex**       | global / project | `~/.agents/skills/vegastack/` (or `<cwd>/.agents/skills/...`); optionally `~/.codex/AGENTS.md` |
 | **Cursor**      | project only     | `<cwd>/.cursor/rules/vegastack-cli.mdc`                                                   |
 | **Gemini**      | project only     | `<cwd>/gemini-extension.json` + `<cwd>/CONTEXT.md`                                                  |
 
@@ -172,13 +172,13 @@ The ~2× cost above was measured against v0.1's Python harness; v0.2 collapses i
 ```
 @vegastack/cli/
 ├── .claude-plugin/plugin.json     # Claude Code plugin manifest
-├── .agents/skills/terraform-docs/ # Codex skill location (symlink to ./skills/terraform-docs/)
+├── .agents/skills/vegastack/ # Codex skill location (symlink to ./skills/vegastack/)
 ├── AGENTS.md                      # Codex / generic-agent project instructions
 ├── CLAUDE.md                      # Defers to AGENTS.md
 ├── cursor-rule.mdc                # Drop-in Cursor rule template
 ├── gemini-extension.json          # Gemini Code Assist extension
 ├── CONTEXT.md                     # Gemini agent context
-├── skills/terraform-docs/
+├── skills/vegastack/
 │   ├── SKILL.md                   # The Anthropic Agent Skills standard skill
 │   └── references/                # 5 reference files (CLI, manifest, knowledge, recipes, aliases)
 ├── npm/

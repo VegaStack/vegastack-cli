@@ -1,0 +1,40 @@
+{
+  "name": "vegastack-cli",
+  "description": "Local, deterministic knowledge harness for coding agents — Terraform docs (31 providers) plus future runbooks and devops/cloudops guides",
+  "owner": {
+    "name": "Vegastack Engineering",
+    "email": "engg@vegastack.com",
+    "url": "https://vegastack.com"
+  },
+  "plugins": [
+    {
+      "name": "vegastack-cli",
+      "source": "./",
+      "description": "Terraform docs harness for 31 providers (AWS, Azure, GCP, Cloudflare, Kubernetes, Helm, Vault, DigitalOcean, GitHub, GitLab, Vercel, Netlify, Datadog, Grafana, Splunk, PagerDuty, Okta, Auth0, CrowdStrike, 1Password, MongoDB Atlas, Snowflake, Redis Cloud, ClickHouse, Pinecone, Ansible, and standard utility providers). Provides accurate resource names, argument schemas, import syntax, deprecation flags, HCL examples, recent-change knowledge cards, cross-provider recipes, and concept-alias resolution — without web search, MCPs, or model-knowledge gaps.",
+      "version": "0.1.6",
+      "author": {
+        "name": "Vegastack Engineering",
+        "email": "engg@vegastack.com",
+        "url": "https://vegastack.com"
+      },
+      "category": "development",
+      "keywords": [
+        "terraform",
+        "hcl",
+        "iac",
+        "aws",
+        "azure",
+        "gcp",
+        "cloudflare",
+        "kubernetes",
+        "helm",
+        "vault",
+        "knowledge-harness",
+        "agent-skills"
+      ],
+      "homepage": "https://github.com/VegaStack/vegastack-cli",
+      "repository": "https://github.com/VegaStack/vegastack-cli",
+      "license": "MIT"
+    }
+  ]
+}

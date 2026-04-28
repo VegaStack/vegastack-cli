@@ -91,7 +91,7 @@ describe("generate-skill-from-bundle", () => {
       "skill-source",
       "SKILL.md.template",
     );
-    const skillPath = path.join(repoRoot, "skills", "terraform-docs", "SKILL.md");
+    const skillPath = path.join(repoRoot, "skills", "vegastack", "SKILL.md");
 
     const tpl = fs.readFileSync(templatePath, "utf8");
     const summary = resolveBundleSummary(path.join(repoRoot, "bundle", "MANIFEST.json"));

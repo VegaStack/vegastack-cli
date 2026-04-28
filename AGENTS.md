@@ -8,17 +8,17 @@ This file is read by Codex, Cursor, Gemini, and any agent that follows the AGENT
 
 - A bundled docs library for **31 Terraform providers** (~9,000 markdown files, ~97 MB on disk after extract).
 - A deterministic discovery CLI: `vegastack tf "<query>"` returns a JSON envelope with ranked files, knowledge cards (recent-change facts), recipes (multi-provider scaffolds), and concept aliases.
-- An [Anthropic Agent Skills Standard](https://agentskills.io/specification) skill body at `skills/terraform-docs/SKILL.md` — read this for the full agent-side mental model.
+- An [Anthropic Agent Skills Standard](https://agentskills.io/specification) skill body at `skills/vegastack/SKILL.md` — read this for the full agent-side mental model.
 
 ## Skill router
 
-This project ships ONE skill (`terraform-docs`) for v0.1.x. v0.2 may split it into:
+This project ships ONE skill (`vegastack`) for v0.1.x. v0.2 may split it into:
 
 - `tf-discover` — resource/argument/import-id lookup (the heavy CLI invocation path)
 - `tf-recipes` — cross-provider topology recipes
 - `tf-knowledge` — recent renames / deprecations / native-feature replacements
 
-For v0.1.x, agents call `vegastack tf "<query>"` directly. The router pattern is documented here so v0.2's split is non-breaking: the dispatcher will live at this same router section and will only add new skill names, never rename or remove `terraform-docs`.
+For v0.1.x, agents call `vegastack tf "<query>"` directly. The router pattern is documented here so v0.2's split is non-breaking: the dispatcher will live at this same router section and will only add new skill names, never rename or remove `vegastack`.
 
 ## When to use it
 
@@ -65,9 +65,9 @@ Cite every file path returned in `citations[]` (or in `files[].path`) at the end
 | `src/lib/`                             | `paths.ts` (canonical filesystem locations), `bundle.ts` (status), `discover.ts` (calls Python harness in v0.1; native in v0.2), `log.ts` |
 | `npm/install.js`                       | Postinstall: download bundle from GitHub Releases, SHA256 verify, extract                                                                 |
 | `npm/run.js`                           | npm bin entry, delegates to compiled `dist/cli.js`                                                                                        |
-| `skills/terraform-docs/`               | The shipped Anthropic Agent Skills skill (SKILL.md + references/)                                                                         |
+| `skills/vegastack/`               | The shipped Anthropic Agent Skills skill (SKILL.md + references/)                                                                         |
 | `.claude-plugin/plugin.json`           | Claude Code plugin manifest                                                                                                               |
-| `.agents/skills/terraform-docs/`       | Symlink to `skills/terraform-docs/` for Codex                                                                                             |
+| `.agents/skills/vegastack/`       | Symlink to `skills/vegastack/` for Codex                                                                                             |
 | `cursor-rule.mdc`                      | Cursor rule template (copied to `<cwd>/.cursor/rules/` on install)                                                                        |
 | `gemini-extension.json` + `CONTEXT.md` | Gemini Code Assist integration                                                                                                            |
 | `PORT-ROADMAP.md`                      | Plan to drop Python in v0.2 (read this before changing the harness shape)                                                                 |

@@ -34,7 +34,7 @@ export interface InstallResult {
 /**
  * The canonical skill source the renderer consumes. Today it's read from
  * `bundle/skill-source/` (or, when the bundle isn't on disk, from the
- * `skills/terraform-docs/` dir inside the package as a fallback).
+ * `skills/vegastack/` dir inside the package as a fallback).
  *
  * Renderers transform this into per-agent shapes:
  *   - Claude Code: SKILL.md + plugin.json + skills dir layout
@@ -59,7 +59,7 @@ export interface CanonicalSkill {
 
 /**
  * Resolves the canonical skill from disk. Defaults to the package's own
- * `skills/terraform-docs/SKILL.md`; renderers may swap the path in tests.
+ * `skills/vegastack/SKILL.md`; renderers may swap the path in tests.
  */
 export interface SkillSourceLoader {
   load(): CanonicalSkill;

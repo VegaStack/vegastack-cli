@@ -29,4 +29,4 @@ The 31-provider docs bundle is downloaded by `vegastack install` to `~/.config/v
 
 ## Full skill reference
 
-For the complete workflow, examples, and CLI reference, read [skills/terraform-docs/SKILL.md](skills/terraform-docs/SKILL.md) and the files under [skills/terraform-docs/references/](skills/terraform-docs/references/).
+For the complete workflow, examples, and CLI reference, read [skills/vegastack/SKILL.md](skills/vegastack/SKILL.md) and the files under [skills/vegastack/references/](skills/vegastack/references/).

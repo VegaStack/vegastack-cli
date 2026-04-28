@@ -1,5 +1,5 @@
 ---
-name: terraform-docs
+name: vegastack
 description: |
   Use when the user asks to write, debug, import, or migrate Terraform / HCL,
   or names any cloud / SaaS provider in a "deploy / provision / configure"
