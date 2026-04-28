@@ -1,6 +1,6 @@
 {
   "name": "@vegastack/cli",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "vega — a deterministic, offline knowledge harness for coding agents (Claude Code, Codex, Cursor, Gemini). Ships 31 Terraform providers' upstream docs + manifests + recipes + knowledge cards as one installable CLI.",
   "license": "MIT",
   "author": {

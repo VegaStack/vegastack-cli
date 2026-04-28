@@ -4,6 +4,29 @@ All notable changes to `@vegastack/cli` are documented here. The format is based
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-04-28
+
+`vega doctor` now distinguishes "agent host installed" from "vega skill registered" instead of conflating them. This fixes a misleading `✓ codex registered` line that was actually showing "vega's previously-installed file is still on disk" even when codex itself had never been on the machine.
+
+### Changed
+
+- `vega doctor` agent registration block now shows two columns per agent: `host ✓/—` (is the agent itself installed?) and `skill ✓/—` (have we wired our skill into it?). Each combination produces a contextual hint:
+  - `host ✓ skill ✓` → all good (green)
+  - `host ✓ skill —` → "run `vega skills install --agent <name>` to register"
+  - `host — skill ✓` → "host not detected; skill is an orphan, safe to remove"
+  - `host — skill —` → silent (user doesn't use this agent)
+
+### Added
+
+- New `src/lib/host-detect.ts` with per-agent detection rules. Each agent has two signals: binary on `$PATH` (definitive when present) and a config file the agent itself creates on first run (never a path vega writes to — that would be tautological).
+  - claude-code: `claude` on PATH or `~/.claude/settings.json`
+  - codex: `codex` on PATH or `~/.codex/auth.json` (created by `codex login`)
+  - cursor: `cursor` on PATH or platform-specific config dir (`~/Library/Application Support/Cursor` on macOS, `~/.config/Cursor` on Linux, `%APPDATA%\Cursor` on Windows)
+  - gemini: `gemini` on PATH or `~/.gemini/settings.json`
+  - continue: `~/.continue/config.{yaml,json}` (extension-only; no CLI binary)
+  - aider: `aider` on PATH or `~/.aider.conf.yml`
+- `CODEX_HOME` and `GEMINI_CLI_HOME` env-var overrides honored when checking those agents' config dirs.
+
 ## [0.1.2] - 2026-04-28
 
 Fixes the `vega install` 404 by switching to the manifest-driven bundle resolution that matches the actual R2 + CalVer architecture. Also adds `vega update` and a daily stale-version nag.

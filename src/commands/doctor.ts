@@ -10,6 +10,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ALL_RENDERER_NAMES, getRenderer } from "../agents/index.js";
 import { readBundleStatus } from "../lib/bundle.js";
+import { detectHost } from "../lib/host-detect.js";
 import { log } from "../lib/log.js";
 import { bundleDir, pkgRoot } from "../lib/paths.js";
 import { isNewer, refreshUpdateCache } from "../lib/update-check.js";
@@ -136,6 +137,7 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
       return {
         agent: n,
         scope,
+        host: detectHost(n),
         status: await r.status({ scope, cwd, force: false, dryRun: false }),
       };
     }),
@@ -172,11 +174,26 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
 
   process.stderr.write("\nAgent registration:\n");
   for (const ar of agentResults) {
-    const installed = ar.status.installed;
-    const detail = ar.status.paths[0] ?? "";
-    const line = `${ar.agent.padEnd(12)} ${installed ? "registered" : "not registered"} ${detail}`;
-    if (installed) log.ok(line);
+    const skillRegistered = ar.status.installed;
+    const hostInstalled = ar.host?.installed ?? false;
+    const path0 = ar.status.paths[0] ?? "";
+    const hostMark = hostInstalled ? "host ✓" : "host —";
+    const skillMark = skillRegistered ? "skill ✓" : "skill —";
+    const line = `${ar.agent.padEnd(12)} ${hostMark}  ${skillMark}  ${path0}`;
+    // Color logic:
+    //  - host ✓ + skill ✓ → all good (ok)
+    //  - host ✓ + skill — → actionable: tell user to install (info, with hint)
+    //  - host — + skill ✓ → orphan skill (info, with hint to clean up)
+    //  - host — + skill — → user doesn't use this agent (info, quiet)
+    if (hostInstalled && skillRegistered) log.ok(line);
     else log.info(line);
+    if (hostInstalled && !skillRegistered) {
+      log.info(`  → run \`vega skills install --agent ${ar.agent}\` to register`);
+    } else if (!hostInstalled && skillRegistered) {
+      log.info(
+        `  → host not detected (${ar.host?.evidence ?? "?"}); skill is an orphan, safe to remove`,
+      );
+    }
     for (const w of ar.status.warnings) log.warn(`  ${w}`);
   }
 
