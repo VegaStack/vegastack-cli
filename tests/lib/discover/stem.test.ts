@@ -143,7 +143,7 @@ describe("D1 specific: 'S3 backend state locking DynamoDB' fires aws-s3-native-s
 describe("matchesAnyTrigger — bidirectional stem matching", () => {
   let tmp: string;
   beforeEach(() => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vega-stem-"));
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-stem-"));
     fs.mkdirSync(path.join(tmp, "knowledge"));
   });
   afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));

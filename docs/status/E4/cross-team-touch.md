@@ -34,8 +34,8 @@ E4 added two new top-level fields to `package.json`:
 E2 should read these via `JSON.parse(readFileSync(packageJsonPath))`
 and compare against the bundle on disk (sha256 of the unpacked bundle
 manifest, or the cached value from the postinstall step). If the bundle
-present on disk does not match, surface as a `vega doctor` warning and
-suggest `vega update`.
+present on disk does not match, surface as a `vegastack doctor` warning and
+suggest `vegastack update`.
 
 `expectedBundleSha` is `sha256-PENDING-FIRST-RELEASE` until the first
 `tag-release.js` run pulls a real value from R2.

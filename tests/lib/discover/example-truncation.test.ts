@@ -50,7 +50,7 @@ describe("example_usage truncation (E2)", () => {
   beforeEach(() => {
     // Create a temporary directory with a minimal MANIFEST.json so we can
     // use enrichFiles with a custom markdown path.
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "vega-test-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-test-"));
     tmpManifestDir = tmpDir;
     // Copy MANIFEST.json from bundle-mini/aws — we'll override the file path
     // by using the full abs path in ranked.

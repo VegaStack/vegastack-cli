@@ -32,11 +32,11 @@ head_sampling_rate = 1.0
 # each MCP session gets its own isolated, hibernating instance.
 [[durable_objects.bindings]]
 name = "MCP_OBJECT"
-class_name = "VegaMcp"
+class_name = "VegastackMcp"
 
 [[migrations]]
 tag = "v1"
-new_sqlite_classes = ["VegaMcp"]
+new_sqlite_classes = ["VegastackMcp"]
 
 # ── R2: bundle reader ─────────────────────────────────────────────────────
 # E4 publishes the bundle to this bucket. The worker reads `bundle/MANIFEST.json`

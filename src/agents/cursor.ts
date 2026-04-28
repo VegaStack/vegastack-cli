@@ -1,5 +1,5 @@
 // Cursor installer.
-// Strategy: copy cursor-rule.mdc to <cwd>/.cursor/rules/terraform-providers-kit.mdc.
+// Strategy: copy cursor-rule.mdc to <cwd>/.cursor/rules/vegastack-cli.mdc.
 // Cursor rules are project-scoped; running with --scope global is rejected
 // with a clear message.
 //

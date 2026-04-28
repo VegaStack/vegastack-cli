@@ -1,5 +1,5 @@
 // Claude Code installer.
-// Strategy: link the *package* dir to ~/.claude/plugins/terraform-providers-kit/.
+// Strategy: link the *package* dir to ~/.claude/plugins/vegastack-cli/.
 // The package contains .claude-plugin/plugin.json + skills/ + bin/, which is the
 // canonical Claude Code plugin layout. Linking (rather than copying) means the
 // plugin updates automatically when the user runs `npm i -g @vegastack/cli@latest`.
@@ -40,7 +40,7 @@ class ClaudeCodeInstaller implements AgentInstaller {
         ? [
             linked
               ? "Linked to package root (auto-updates with the CLI)."
-              : "Installed as a copy (re-run `vega skills install --force` after CLI updates).",
+              : "Installed as a copy (re-run `vegastack skills install --force` after CLI updates).",
           ]
         : ["Not installed."],
       warnings: [],

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// vega — postinstall: download the docs bundle from GitHub Releases,
+// vegastack — postinstall: download the docs bundle from GitHub Releases,
 // verify SHA256 (timing-safe + streaming), extract safely (path-traversal
 // validated), and atomically swap the bundle dir.
 //
@@ -11,21 +11,21 @@
 //   - Tarball entries are validated against path-traversal BEFORE extraction.
 //   - Postinstall NEVER fails npm install. If something goes wrong, we print
 //     a clear recovery instruction and exit 0; the user can retry with
-//     `vega install` or `VEGA_BUNDLE_URL=file://…`.
+//     `vegastack install` or `VEGASTACK_BUNDLE_URL=file://…`.
 //
 // Env:
-//   VEGA_SKIP_POSTINSTALL=1       skip download entirely (CI / dev installs)
-//   VEGA_BUNDLE_MANIFEST_URL=<u>  override the root manifest (default
+//   VEGASTACK_SKIP_POSTINSTALL=1       skip download entirely (CI / dev installs)
+//   VEGASTACK_BUNDLE_MANIFEST_URL=<u>  override the root manifest (default
 //                                 https://bundles.vegastack.com/cli/manifest.json)
-//   VEGA_BUNDLE_URL=<url>         override download URL (testing / offline);
+//   VEGASTACK_BUNDLE_URL=<url>         override download URL (testing / offline);
 //                                 when set, bypasses the manifest entirely
 //                                 and reads SHA from `<url>.sha256` sidecar
-//   VEGA_BUNDLE_SHA256=<hex>      override SHA256 when VEGA_BUNDLE_URL is set
+//   VEGASTACK_BUNDLE_SHA256=<hex>      override SHA256 when VEGASTACK_BUNDLE_URL is set
 //                                 (lets you point at a URL without a sidecar)
-//   VEGA_BUNDLE_DIR=<path>        override extract destination
-//   VEGA_BUNDLE_TIMEOUT_MS=N      per-attempt fetch timeout (default 60_000)
-//   VEGA_BUNDLE_RETRIES=N         retries on transient failure (default 2)
-//   VEGA_FORCE_UNLOCK=1           remove a stale lock before acquire (manual
+//   VEGASTACK_BUNDLE_DIR=<path>        override extract destination
+//   VEGASTACK_BUNDLE_TIMEOUT_MS=N      per-attempt fetch timeout (default 60_000)
+//   VEGASTACK_BUNDLE_RETRIES=N         retries on transient failure (default 2)
+//   VEGASTACK_FORCE_UNLOCK=1           remove a stale lock before acquire (manual
 //                                 override; only use if you're sure no other
 //                                 install is in flight)
 //
@@ -72,12 +72,12 @@ const ALLOWED_REDIRECT_SCHEMES = new Set(["https:"]);
 
 // ── Paths ─────────────────────────────────────────────────────
 function bundleDirRaw() {
-  if (process.env.VEGA_BUNDLE_DIR) {
-    return { dir: process.env.VEGA_BUNDLE_DIR, source: "VEGA_BUNDLE_DIR" };
+  if (process.env.VEGASTACK_BUNDLE_DIR) {
+    return { dir: process.env.VEGASTACK_BUNDLE_DIR, source: "VEGASTACK_BUNDLE_DIR" };
   }
   const home = process.env.HOME || process.env.USERPROFILE;
   if (!home) {
-    throw new Error("Cannot determine home directory. Set VEGA_BUNDLE_DIR explicitly.");
+    throw new Error("Cannot determine home directory. Set VEGASTACK_BUNDLE_DIR explicitly.");
   }
   return { dir: path.join(home, ".config", "vegastack", "bundle"), source: "default" };
 }
@@ -88,7 +88,7 @@ function bundleDirRaw() {
  * Distinguishes three failure shapes the user can act on:
  *   1. Placeholder string (literal "/absolute/path/...", "<your/path>", "$VAR")
  *      — almost always means the user pasted a doc example into `export ...`.
- *      Recovery: `unset VEGA_BUNDLE_DIR`.
+ *      Recovery: `unset VEGASTACK_BUNDLE_DIR`.
  *   2. Not absolute — refuse early; relative paths combined with random cwd
  *      cause "I installed the bundle, where did it go?" confusion.
  *   3. Parent dir cannot be created (EACCES / EROFS / ENOTDIR / ENOENT) —
@@ -104,8 +104,8 @@ function validateBundleDir(dir, source) {
       ok: false,
       reason: `${source}='${dir}' is not an absolute path`,
       hint:
-        source === "VEGA_BUNDLE_DIR"
-          ? 'Set VEGA_BUNDLE_DIR to an absolute path (e.g. "$HOME/.config/vegastack/bundle").'
+        source === "VEGASTACK_BUNDLE_DIR"
+          ? 'Set VEGASTACK_BUNDLE_DIR to an absolute path (e.g. "$HOME/.config/vegastack/bundle").'
           : "Internal error — please file a bug at https://github.com/VegaStack/vegastack-cli/issues",
     };
   }
@@ -132,9 +132,9 @@ function validateBundleDir(dir, source) {
         ok: false,
         reason: `${source}='${dir}' looks like an unfilled placeholder string`,
         hint:
-          source === "VEGA_BUNDLE_DIR"
-            ? "Run `unset VEGA_BUNDLE_DIR` and retry. The default location (~/.config/vegastack/bundle) works for almost all users."
-            : "Set VEGA_BUNDLE_DIR to a real absolute path.",
+          source === "VEGASTACK_BUNDLE_DIR"
+            ? "Run `unset VEGASTACK_BUNDLE_DIR` and retry. The default location (~/.config/vegastack/bundle) works for almost all users."
+            : "Set VEGASTACK_BUNDLE_DIR to a real absolute path.",
       };
     }
   }
@@ -150,7 +150,7 @@ function validateBundleDir(dir, source) {
     let hint;
     switch (code) {
       case "EACCES":
-        hint = `Permission denied creating ${path.dirname(dir)}. Pick a path under your home directory (try \`unset VEGA_BUNDLE_DIR\` to use the default).`;
+        hint = `Permission denied creating ${path.dirname(dir)}. Pick a path under your home directory (try \`unset VEGASTACK_BUNDLE_DIR\` to use the default).`;
         break;
       case "EROFS":
         hint = `Read-only filesystem at ${path.dirname(dir)}. Pick a writable path.`;
@@ -159,7 +159,7 @@ function validateBundleDir(dir, source) {
         hint = `One of the parents in '${dir}' is a file, not a directory. Verify the path.`;
         break;
       case "ENOENT":
-        hint = `Parent dir of '${dir}' cannot be reached (likely you don't have permission to create top-level dirs). Run \`unset VEGA_BUNDLE_DIR\` to use the default.`;
+        hint = `Parent dir of '${dir}' cannot be reached (likely you don't have permission to create top-level dirs). Run \`unset VEGASTACK_BUNDLE_DIR\` to use the default.`;
         break;
       default:
         hint = `Verify '${dir}' is correct and you have write access.`;
@@ -187,15 +187,15 @@ const LOCK_PATH = `${BUNDLE_DIR}.lock`;
 //     `channels.latest.bundle_sha256`, and use them. This keeps the CLI
 //     decoupled from the bundle's release cadence.
 //
-//  2. URL override. When VEGA_BUNDLE_URL is set we skip the manifest and use
-//     the URL directly, with SHA from VEGA_BUNDLE_SHA256 (preferred) or the
+//  2. URL override. When VEGASTACK_BUNDLE_URL is set we skip the manifest and use
+//     the URL directly, with SHA from VEGASTACK_BUNDLE_SHA256 (preferred) or the
 //     `<url>.sha256` sidecar. Useful for tests, airgap installs, and
 //     development against a local bundle (`file://`).
 const DEFAULT_MANIFEST_URL = "https://bundles.vegastack.com/cli/manifest.json";
 const MAX_MANIFEST_BYTES = 1 * 1024 * 1024; // 1 MB; manifest is ~tens of KB
 
 function manifestUrl() {
-  return process.env.VEGA_BUNDLE_MANIFEST_URL || DEFAULT_MANIFEST_URL;
+  return process.env.VEGASTACK_BUNDLE_MANIFEST_URL || DEFAULT_MANIFEST_URL;
 }
 
 // (expectedBundleSha pinning was removed in v0.1.2: bundle and CLI now ship
@@ -206,9 +206,9 @@ function manifestUrl() {
 // the bundle itself.)
 
 // ── Logging ───────────────────────────────────────────────────
-const log = (msg) => process.stderr.write(`vega install: ${redactUserPaths(msg)}\n`);
-const warn = (msg) => process.stderr.write(`vega install: WARN ${redactUserPaths(msg)}\n`);
-const err = (msg) => process.stderr.write(`vega install: ERROR ${redactUserPaths(msg)}\n`);
+const log = (msg) => process.stderr.write(`vegastack install: ${redactUserPaths(msg)}\n`);
+const warn = (msg) => process.stderr.write(`vegastack install: WARN ${redactUserPaths(msg)}\n`);
+const err = (msg) => process.stderr.write(`vegastack install: ERROR ${redactUserPaths(msg)}\n`);
 
 // Strip user paths from error output for log redaction.
 function redactUserPaths(s) {
@@ -223,14 +223,14 @@ function redactUserPaths(s) {
 }
 
 // ── Skip checks ───────────────────────────────────────────────
-if (process.env.VEGA_SKIP_POSTINSTALL === "1") {
-  log("VEGA_SKIP_POSTINSTALL=1 set; skipping bundle download.");
+if (process.env.VEGASTACK_SKIP_POSTINSTALL === "1") {
+  log("VEGASTACK_SKIP_POSTINSTALL=1 set; skipping bundle download.");
   process.exit(0);
 }
 
 // Fast-path skip is decided in main() now — once we know the resolved
 // bundle version (CalVer when manifest-driven; CLI VERSION when
-// VEGA_BUNDLE_URL overrides). We can't decide here without the resolution.
+// VEGASTACK_BUNDLE_URL overrides). We can't decide here without the resolution.
 
 // Node version check.
 const nodeMajor = Number(process.versions.node.split(".")[0]);
@@ -270,16 +270,16 @@ async function tryAcquireLock() {
     // validateBundleDir() at startup; if we reach here it exists.
     if (!existsSync(LOCK_PATH)) writeFileSync(LOCK_PATH, "");
 
-    // Manual override: VEGA_FORCE_UNLOCK=1 nukes a stale lock the user
+    // Manual override: VEGASTACK_FORCE_UNLOCK=1 nukes a stale lock the user
     // believes is bogus (proper-lockfile's 5-min stale window can be too
     // long for someone watching a hung install).
-    if (process.env.VEGA_FORCE_UNLOCK === "1") {
+    if (process.env.VEGASTACK_FORCE_UNLOCK === "1") {
       const lockDir = `${LOCK_PATH}.lock`;
       try {
         rmSync(lockDir, { recursive: true, force: true });
-        log("VEGA_FORCE_UNLOCK=1 — removed stale lock before acquire");
+        log("VEGASTACK_FORCE_UNLOCK=1 — removed stale lock before acquire");
       } catch (e) {
-        warn(`VEGA_FORCE_UNLOCK requested but couldn't remove ${lockDir}: ${e?.message ?? e}`);
+        warn(`VEGASTACK_FORCE_UNLOCK requested but couldn't remove ${lockDir}: ${e?.message ?? e}`);
       }
     }
 
@@ -368,7 +368,7 @@ async function configureProxyIfNeeded(targetUrl) {
       `proxy is set (${redactProxyUrl(proxy)}) but undici unavailable: ${redactUserPaths(e?.message ?? e)}.`,
     );
     warn(
-      "Continuing with direct fetch; if it fails, set VEGA_BUNDLE_URL=file:///path/to/bundle.tar.gz.",
+      "Continuing with direct fetch; if it fails, set VEGASTACK_BUNDLE_URL=file:///path/to/bundle.tar.gz.",
     );
   }
 }
@@ -426,18 +426,18 @@ async function tryGitHubReleasesFallback() {
 }
 
 async function resolveBundleSpec() {
-  // Override path: VEGA_BUNDLE_URL forces a specific URL. SHA comes from
-  // VEGA_BUNDLE_SHA256 (preferred) or the `<url>.sha256` sidecar.
-  if (process.env.VEGA_BUNDLE_URL) {
-    const url = process.env.VEGA_BUNDLE_URL;
+  // Override path: VEGASTACK_BUNDLE_URL forces a specific URL. SHA comes from
+  // VEGASTACK_BUNDLE_SHA256 (preferred) or the `<url>.sha256` sidecar.
+  if (process.env.VEGASTACK_BUNDLE_URL) {
+    const url = process.env.VEGASTACK_BUNDLE_URL;
     if (!url.startsWith("https://") && !url.startsWith("file://")) {
       throw new Error(
-        `refusing non-HTTPS bundle URL: ${url}. Set VEGA_BUNDLE_URL to an https:// or file:// URL.`,
+        `refusing non-HTTPS bundle URL: ${url}. Set VEGASTACK_BUNDLE_URL to an https:// or file:// URL.`,
       );
     }
-    if (process.env.VEGA_BUNDLE_SHA256) {
-      const sha = process.env.VEGA_BUNDLE_SHA256.toLowerCase();
-      if (!HEX64.test(sha)) throw new Error(`VEGA_BUNDLE_SHA256 must be 64 hex chars`);
+    if (process.env.VEGASTACK_BUNDLE_SHA256) {
+      const sha = process.env.VEGASTACK_BUNDLE_SHA256.toLowerCase();
+      if (!HEX64.test(sha)) throw new Error(`VEGASTACK_BUNDLE_SHA256 must be 64 hex chars`);
       return { url, expectedSha: sha, bundleVersion: VERSION, source: "override-env" };
     }
     log(`fetching checksum ${url}.sha256`);
@@ -495,9 +495,9 @@ async function main() {
   if (!lock.ok) {
     if (lock.kind === "held") {
       warn(
-        `another vega install is in progress (lock at ${LOCK_PATH}); skipping. ` +
+        `another vegastack install is in progress (lock at ${LOCK_PATH}); skipping. ` +
           `If you're sure no other install is running (e.g. a previous run was killed), ` +
-          `re-run with VEGA_FORCE_UNLOCK=1 or remove ${LOCK_PATH}.lock manually.`,
+          `re-run with VEGASTACK_FORCE_UNLOCK=1 or remove ${LOCK_PATH}.lock manually.`,
       );
     } else {
       const e = lock.error;
@@ -509,13 +509,13 @@ async function main() {
         `Common causes: filesystem doesn't support locking (some network mounts), no write permission, or a parent path is broken.`,
       );
       err(
-        `Try: re-run with a writable VEGA_BUNDLE_DIR, or \`unset VEGA_BUNDLE_DIR\` to use the default (~/.config/vegastack/bundle).`,
+        `Try: re-run with a writable VEGASTACK_BUNDLE_DIR, or \`unset VEGASTACK_BUNDLE_DIR\` to use the default (~/.config/vegastack/bundle).`,
       );
     }
     process.exit(0);
   }
 
-  const tmpRoot = mkdtempSync(path.join(tmpdir(), "vega-install-"));
+  const tmpRoot = mkdtempSync(path.join(tmpdir(), "vegastack-install-"));
   PENDING_TMP.add(tmpRoot);
 
   try {
@@ -593,9 +593,9 @@ async function main() {
   } catch (e) {
     warn(`bundle install failed: ${redactUserPaths(e?.message ?? e)}`);
     warn("CLI is still installed. Recover with one of:");
-    warn("  • vega install                                    (retry the download)");
-    warn("  • vega refresh                                    (force a fresh download)");
-    warn("  • VEGA_BUNDLE_URL=file:///path/to/bundle.tar.gz vega install");
+    warn("  • vegastack install                                    (retry the download)");
+    warn("  • vegastack refresh                                    (force a fresh download)");
+    warn("  • VEGASTACK_BUNDLE_URL=file:///path/to/bundle.tar.gz vegastack install");
     if (process.env.HTTPS_PROXY || process.env.HTTP_PROXY) {
       warn(
         "Detected a proxy setting; if your proxy blocks GitHub Releases, use the file:// option above.",
@@ -621,8 +621,8 @@ async function downloadWithRetry(url, dest) {
     return downloadFileUrl(url, dest);
   }
 
-  const retries = clampInt(process.env.VEGA_BUNDLE_RETRIES, DEFAULT_RETRIES, 0, 10);
-  const timeoutMs = clampInt(process.env.VEGA_BUNDLE_TIMEOUT_MS, DEFAULT_TIMEOUT_MS, 1000, 600_000);
+  const retries = clampInt(process.env.VEGASTACK_BUNDLE_RETRIES, DEFAULT_RETRIES, 0, 10);
+  const timeoutMs = clampInt(process.env.VEGASTACK_BUNDLE_TIMEOUT_MS, DEFAULT_TIMEOUT_MS, 1000, 600_000);
   const maxAttempts = retries + 1;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -714,8 +714,8 @@ async function fetchTextWithRetry(url, maxBytes) {
     return data.toString("utf8");
   }
 
-  const retries = clampInt(process.env.VEGA_BUNDLE_RETRIES, DEFAULT_RETRIES, 0, 10);
-  const timeoutMs = clampInt(process.env.VEGA_BUNDLE_TIMEOUT_MS, DEFAULT_TIMEOUT_MS, 1000, 600_000);
+  const retries = clampInt(process.env.VEGASTACK_BUNDLE_RETRIES, DEFAULT_RETRIES, 0, 10);
+  const timeoutMs = clampInt(process.env.VEGASTACK_BUNDLE_TIMEOUT_MS, DEFAULT_TIMEOUT_MS, 1000, 600_000);
   const maxAttempts = retries + 1;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {

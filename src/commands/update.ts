@@ -1,4 +1,4 @@
-// `vega update` — install the latest @vegastack/cli over the current install.
+// `vegastack update` — install the latest @vegastack/cli over the current install.
 // Wraps `npm i -g @vegastack/cli@latest` so users don't have to remember the
 // package name or registry routing (their ~/.npmrc handles it).
 //
@@ -32,7 +32,7 @@ export async function runUpdate(opts: UpdateOpts): Promise<number> {
         return 0;
       }
       if (isNewer(latest, opts.current)) {
-        log.info(`update available: ${opts.current} → ${latest} (run \`vega update\`)`);
+        log.info(`update available: ${opts.current} → ${latest} (run \`vegastack update\`)`);
       } else {
         log.ok(`up to date (${opts.current})`);
       }
@@ -61,7 +61,7 @@ export async function runUpdate(opts: UpdateOpts): Promise<number> {
       return r.status ?? 1;
     }
 
-    // Refresh cache so subsequent `vega doctor` reflects the install.
+    // Refresh cache so subsequent `vegastack doctor` reflects the install.
     refreshUpdateCache();
     log.ok(`upgraded — re-run any in-flight command to use the new version`);
     return 0;

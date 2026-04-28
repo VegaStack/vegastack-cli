@@ -15,13 +15,13 @@ We support the latest published `0.x` minor on npm. Patch releases land on the m
 
 - Send telemetry. The CLI never makes outbound network calls at query time.
 - Take credentials. The bundle is static documentation; there is no auth flow.
-- Execute remote code. The only network call is the one-time postinstall download of the docs bundle (or a `vega install` / `vega refresh` invocation).
+- Execute remote code. The only network call is the one-time postinstall download of the docs bundle (or a `vegastack install` / `vegastack refresh` invocation).
 
 What the CLI **does** that has a security surface:
 
 1. **Bundle download** during postinstall — fetches `vegastack-bundle-vX.Y.Z.tar.gz` from GitHub Releases over HTTPS, with a sidecar `.sha256` for integrity.
 2. **Tarball extraction** to `~/.config/vegastack/bundle/`.
-3. **Filesystem writes** by `vega skills install` — scoped to known agent directories (`~/.claude/plugins/`, `~/.agents/skills/`, `<cwd>/.cursor/rules/`, `<cwd>/gemini-extension.json`, `<cwd>/CONTEXT.md`).
+3. **Filesystem writes** by `vegastack skills install` — scoped to known agent directories (`~/.claude/plugins/`, `~/.agents/skills/`, `<cwd>/.cursor/rules/`, `<cwd>/gemini-extension.json`, `<cwd>/CONTEXT.md`).
 4. **Symlink creation** (Claude Code installer) — falls back to a recursive copy on Windows non-admin.
 5. **Subprocess invocation** of `python3` (v0.1 only — v0.2 drops this), `tar`, `du`, `jq`, `rg` from the user's `PATH`.
 
@@ -33,7 +33,7 @@ The implementation goes beyond a typical npm postinstall script. Every item belo
 
 - **HTTPS-only.** Non-`https://` URLs are refused (the only exception is `file://` for offline / air-gapped installs).
 - **Manual redirect handling.** Each redirect hop is inspected; redirects to non-`https://` schemes (e.g., `file://`, `gopher://`) are rejected.
-- **Bounded fetch.** Per-attempt timeout (default 60s, configurable via `VEGA_BUNDLE_TIMEOUT_MS`); 3 retries with exponential backoff capped at 8s.
+- **Bounded fetch.** Per-attempt timeout (default 60s, configurable via `VEGASTACK_BUNDLE_TIMEOUT_MS`); 3 retries with exponential backoff capped at 8s.
 - **Streaming download.** The tarball is hashed and written in chunks; we never load the whole file into memory. Streams are aborted as soon as `MAX_BUNDLE_BYTES` (500 MB) is exceeded.
 - **Size sanity bounds.** Tarball must be `≥ 1 KB` (rejects HTML error pages) and `≤ 500 MB` (rejects bombs).
 - **Constant-time SHA256 compare.** Verification uses `crypto.timingSafeEqual` against a hex-validated `.sha256` sidecar. The sidecar itself is capped at 1 KB so a malicious server can't tunnel data through it.
@@ -62,16 +62,16 @@ The implementation goes beyond a typical npm postinstall script. Every item belo
 
 ### Subprocess invocation
 
-- **`process.execPath` for Node spawns.** `vega install` and `vega refresh` re-launch `npm/install.js` via `process.execPath`, not the bare `node` from `PATH` — defends against a malicious `node` shim earlier on the user's PATH.
-- **Allowlisted env to subprocesses.** The Python harness receives only `PATH`, `HOME`, `USER`, `LANG`/`LC_*`, `TZ`, `TMPDIR`, `SystemRoot`, `ComSpec`, `PATHEXT`, plus our own `VEGA_*` vars. `GITHUB_TOKEN`, `AWS_*`, `NPM_TOKEN`, etc. are not exposed.
+- **`process.execPath` for Node spawns.** `vegastack install` and `vegastack refresh` re-launch `npm/install.js` via `process.execPath`, not the bare `node` from `PATH` — defends against a malicious `node` shim earlier on the user's PATH.
+- **Allowlisted env to subprocesses.** The Python harness receives only `PATH`, `HOME`, `USER`, `LANG`/`LC_*`, `TZ`, `TMPDIR`, `SystemRoot`, `ComSpec`, `PATHEXT`, plus our own `VEGASTACK_*` vars. `GITHUB_TOKEN`, `AWS_*`, `NPM_TOKEN`, etc. are not exposed.
 - **Signal handlers.** `SIGINT`/`SIGTERM`/`SIGHUP` clean up tmp dirs and release the lock before exiting.
 - **Output redaction.** Every stderr line in `npm/install.js` runs through `redactUserPaths`, which strips `$HOME` from paths and ANSI escape sequences before logging. Error stack traces also flow through this filter.
 
 ### Error handling
 
-- **Discriminated `VegaError` type** with stable exit codes (1–12). Each variant has a `hint()` so users see _problem → cause → fix_.
+- **Discriminated `VegastackError` type** with stable exit codes (1–12). Each variant has a `hint()` so users see _problem → cause → fix_.
 - **No silent catch-alls.** Every `try/catch` either rethrows or wraps into a typed error.
-- **Postinstall never fails npm install.** Failures exit 0 with a clear recovery instruction, so a transient network issue doesn't block the whole install. Operators who need fail-closed behavior can use `VEGA_SKIP_POSTINSTALL=1` plus a follow-up `vega install` step under their own audit.
+- **Postinstall never fails npm install.** Failures exit 0 with a clear recovery instruction, so a transient network issue doesn't block the whole install. Operators who need fail-closed behavior can use `VEGASTACK_SKIP_POSTINSTALL=1` plus a follow-up `vegastack install` step under their own audit.
 
 ### Supply chain
 
@@ -100,9 +100,9 @@ We will acknowledge receipt within **2 business days** and aim to issue a fix or
 If you operate this CLI in a security-sensitive environment, consider:
 
 - **Verify the bundle SHA256 yourself** before relying on it. Each release on GitHub publishes both `vegastack-bundle-vX.Y.Z.tar.gz` and a `…tar.gz.sha256` sidecar.
-- **Pin the npm version** (e.g. `npm i -g @vegastack/cli@0.1.0`) and consider `npm ci --ignore-scripts` to skip the postinstall, then run `vega install` later under your own audit.
-- **Restrict the CLI's filesystem writes** by running `vega skills install` only inside project directories you control.
-- **Set `VEGA_BUNDLE_URL=file:///abs/path`** in air-gapped environments to avoid the GitHub Releases fetch entirely.
+- **Pin the npm version** (e.g. `npm i -g @vegastack/cli@0.1.0`) and consider `npm ci --ignore-scripts` to skip the postinstall, then run `vegastack install` later under your own audit.
+- **Restrict the CLI's filesystem writes** by running `vegastack skills install` only inside project directories you control.
+- **Set `VEGASTACK_BUNDLE_URL=file:///abs/path`** in air-gapped environments to avoid the GitHub Releases fetch entirely.
 - **For internal redistribution**, host the tarball + `.sha256` sidecar on an HTTPS-only internal mirror. The CLI's redirect-scheme check ensures even a misconfigured redirector can't downgrade the channel.
 
 ## Acknowledgements

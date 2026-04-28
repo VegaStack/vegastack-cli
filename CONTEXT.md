@@ -1,11 +1,11 @@
 # vegastack-cli — Gemini context
 
-Use the `vega` CLI for any Terraform / HCL question across these 31 providers: aws, azure, gcp, cloudflare, kubernetes, helm, vault, digitalocean, github, gitlab, vercel, netlify, datadog, grafana, splunk, pagerduty, okta, auth0, crowdstrike, 1password, mongodb-atlas, snowflake, redis-cloud, clickhouse, pinecone, ansible, random, tls, time, local, external.
+Use the `vegastack` CLI for any Terraform / HCL question across these 31 providers: aws, azure, gcp, cloudflare, kubernetes, helm, vault, digitalocean, github, gitlab, vercel, netlify, datadog, grafana, splunk, pagerduty, okta, auth0, crowdstrike, 1password, mongodb-atlas, snowflake, redis-cloud, clickhouse, pinecone, ansible, random, tls, time, local, external.
 
 ## How to query
 
 ```bash
-vega tf "<the user's natural-language Terraform request>"
+vegastack tf "<the user's natural-language Terraform request>"
 ```
 
 Output is a single JSON envelope with four channels:
@@ -25,7 +25,7 @@ Output is a single JSON envelope with four channels:
 
 ## Bundle location
 
-The 31-provider docs bundle is downloaded by `vega install` to `~/.config/vegastack/bundle/`. If queries fail with "bundle not found", run `vega install` (or `vega refresh` to pull the latest).
+The 31-provider docs bundle is downloaded by `vegastack install` to `~/.config/vegastack/bundle/`. If queries fail with "bundle not found", run `vegastack install` (or `vegastack refresh` to pull the latest).
 
 ## Full skill reference
 

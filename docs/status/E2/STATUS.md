@@ -42,7 +42,7 @@ Branch: `main` (no commits made — per protocol rule 5)
 ### Commands + install
 | file | LOC delta | purpose |
 |---|---|---|
-| `src/commands/tf.ts` | +75/-15 | New envelope; `--json-schema` flag; sets `$VEGA_BUNDLE` env var. |
+| `src/commands/tf.ts` | +75/-15 | New envelope; `--json-schema` flag; sets `$VEGASTACK_BUNDLE` env var. |
 | `src/commands/doctor.ts` | +90/-30 | Dropped python3 check; added `bundle/schema/manifest.schema.json` presence check; added `--verify-bundle` JSON-Schema validator. Closes F12. |
 | `src/cli.ts` | +6/-2 | Wired `--verify-bundle` into doctor and `--json-schema` into tf. |
 | `npm/install.js` | +75/-50 | Pinned-SHA verification (`expectedBundleSha` in package.json) preferred over network sidecar (closes F11). `proper-lockfile@4.1.2` replaces hand-rolled mtime stale-lock heuristic (closes F19). |
@@ -88,7 +88,7 @@ in `tests/integration/discover-native.test.ts` had to be relaxed to
 
 Filed `/tmp/exec-status/E2/contract-issue.md` with the field list.
 
-**E1 — bundle/schema/manifest.schema.json.** `vega doctor --verify-bundle`
+**E1 — bundle/schema/manifest.schema.json.** `vegastack doctor --verify-bundle`
 expects this file at `~/.config/vegastack/bundle/schema/manifest.schema.json`.
 The schema source-of-truth is `/tmp/synthesis/contracts/manifest.schema.json`
 which E1 needs to copy into the bundle.

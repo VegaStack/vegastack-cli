@@ -1,7 +1,7 @@
 # E9 cross-provider scorecard
 
 **76 prompts** across **31 providers**, 12 archetypes (A1-A12), 5 personas. 
-Each prompt was run via the TS `vega tf` against bundle 
+Each prompt was run via the TS `vegastack tf` against bundle 
 `/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers`. 
 Manifest-side scoring only (no LLM, no API key) — covers 
 `resource_present`, `no_resource`, `import_syntax_match`, `cites_card`, `cites_recipe`, `cites_path`. 

@@ -31,7 +31,7 @@ function makeBundle(
   >,
   primaryResources?: Record<string, string>,
 ): string {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vega-sc-"));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-sc-"));
   fs.writeFileSync(
     path.join(tmp, "MANIFEST.json"),
     JSON.stringify({ bundle_version: "test", providers: [provider] }),

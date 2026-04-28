@@ -12,7 +12,7 @@ import { renderSkill, resolveBundleSummary } from "../../scripts/generate-skill-
 let workdir: string;
 
 beforeEach(() => {
-  workdir = fs.mkdtempSync(path.join(os.tmpdir(), "vega-skill-render-"));
+  workdir = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-skill-render-"));
 });
 afterEach(() => {
   fs.rmSync(workdir, { recursive: true, force: true });

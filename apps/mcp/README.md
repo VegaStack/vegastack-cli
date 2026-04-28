@@ -1,6 +1,6 @@
 # vegastack-mcp
 
-Cloudflare Workers Remote MCP server that exposes the `vega tf` Terraform-discovery harness to any MCP-aware coding agent (Claude Code, Codex, Cursor, Continue, Aider, Cline, …).
+Cloudflare Workers Remote MCP server that exposes the `vegastack tf` Terraform-discovery harness to any MCP-aware coding agent (Claude Code, Codex, Cursor, Continue, Aider, Cline, …).
 
 - **Transport:** StreamableHTTP at `/mcp` (modern clients) and SSE at `/sse` (legacy clients).
 - **Auth:** none — v0.1 ships anonymous public read. The bundle is open data.
@@ -17,7 +17,7 @@ Cloudflare Workers Remote MCP server that exposes the `vega tf` Terraform-discov
 | `tf_get_knowledge_card(id)` | Single curated card (markdown + frontmatter parsed). |
 | `tf_get_recipe(id)` | Single curated recipe (TOML parsed). |
 
-The envelope shape is the source of truth at `/tmp/synthesis/contracts/discover-types.ts`. It mirrors the CLI's `vega tf <query>` output exactly.
+The envelope shape is the source of truth at `/tmp/synthesis/contracts/discover-types.ts`. It mirrors the CLI's `vegastack tf <query>` output exactly.
 
 ## Local development
 

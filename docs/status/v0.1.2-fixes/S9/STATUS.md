@@ -44,7 +44,7 @@ has measured.
 S7's 435 (+18, all from S8's two new test files). Raw output:
 `/tmp/exec-status/S9/test-output.log`.
 
-The `vega install: WARN bundle install failed: HTTP 404 Not Found` on
+The `vegastack install: WARN bundle install failed: HTTP 404 Not Found` on
 root install is benign — the postinstall hook tries to fetch the v0.1.0
 bundle tarball from GitHub releases, which doesn't exist yet (because
 v0.1.0 has not been tagged). `CLI is still installed`. Will resolve

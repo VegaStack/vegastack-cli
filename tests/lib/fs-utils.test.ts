@@ -14,7 +14,7 @@ import {
 let workspace: string;
 
 beforeEach(() => {
-  workspace = fs.mkdtempSync(path.join(os.tmpdir(), "vega-fsutils-"));
+  workspace = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-fsutils-"));
 });
 afterEach(() => {
   fs.rmSync(workspace, { recursive: true, force: true });

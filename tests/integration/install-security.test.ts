@@ -20,7 +20,7 @@ let bundleSrc: string;
 let bundleTar: string;
 
 beforeEach(() => {
-  workspace = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "vega-sec-")));
+  workspace = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-sec-")));
   bundleSrc = path.join(workspace, "src");
   fs.mkdirSync(bundleSrc, { recursive: true });
   fs.writeFileSync(
@@ -75,8 +75,8 @@ describe("install.js — security properties", () => {
     const urlUnderHome = path.join(fakeHome, "missing.tar.gz");
     const r = runInstall({
       HOME: fakeHome,
-      VEGA_BUNDLE_DIR: path.join(fakeHome, "bundle"),
-      VEGA_BUNDLE_URL: `file://${urlUnderHome}`,
+      VEGASTACK_BUNDLE_DIR: path.join(fakeHome, "bundle"),
+      VEGASTACK_BUNDLE_URL: `file://${urlUnderHome}`,
     });
     expect(r.status).toBe(0);
     // The error message must NOT contain the user's actual home path.
@@ -88,8 +88,8 @@ describe("install.js — security properties", () => {
   it("writes .version atomically (uses rename, not direct write)", () => {
     const targetDir = path.join(workspace, "target");
     const r = runInstall({
-      VEGA_BUNDLE_DIR: targetDir,
-      VEGA_BUNDLE_URL: `file://${bundleTar}`,
+      VEGASTACK_BUNDLE_DIR: targetDir,
+      VEGASTACK_BUNDLE_URL: `file://${bundleTar}`,
     });
     expect(r.status).toBe(0);
     // After a successful install, NO `.version.tmp-*` files should remain.
@@ -102,8 +102,8 @@ describe("install.js — security properties", () => {
 
   it("rejects an http:// (non-https) bundle URL", () => {
     const r = runInstall({
-      VEGA_BUNDLE_DIR: path.join(workspace, "target"),
-      VEGA_BUNDLE_URL: "http://insecure.example.com/x.tar.gz",
+      VEGASTACK_BUNDLE_DIR: path.join(workspace, "target"),
+      VEGASTACK_BUNDLE_URL: "http://insecure.example.com/x.tar.gz",
     });
     expect(r.status).toBe(0);
     expect(r.stderr).toMatch(/non-HTTPS/);
@@ -121,11 +121,11 @@ describe("install.js — security properties", () => {
     fs.mkdirSync(lockDir, { recursive: true });
 
     const r = runInstall({
-      VEGA_BUNDLE_DIR: targetDir,
-      VEGA_BUNDLE_URL: `file://${bundleTar}`,
+      VEGASTACK_BUNDLE_DIR: targetDir,
+      VEGASTACK_BUNDLE_URL: `file://${bundleTar}`,
     });
     expect(r.status).toBe(0);
-    expect(r.stderr).toMatch(/another vega install is in progress/);
+    expect(r.stderr).toMatch(/another vegastack install is in progress/);
 
     // Critical: the install MUST NOT have removed the lock we owned.
     expect(fs.existsSync(lockDir)).toBe(true);
@@ -147,8 +147,8 @@ describe("install.js — security properties", () => {
     fs.utimesSync(lockDir, longAgo, longAgo);
 
     const r = runInstall({
-      VEGA_BUNDLE_DIR: targetDir,
-      VEGA_BUNDLE_URL: `file://${bundleTar}`,
+      VEGASTACK_BUNDLE_DIR: targetDir,
+      VEGASTACK_BUNDLE_URL: `file://${bundleTar}`,
     });
     expect(r.status).toBe(0);
     expect(r.stderr).toMatch(/checksum verified/);
@@ -160,8 +160,8 @@ describe("install.js — security properties", () => {
     // .sha256 still references the original hash -> mismatch.
 
     const r = runInstall({
-      VEGA_BUNDLE_DIR: path.join(workspace, "target"),
-      VEGA_BUNDLE_URL: `file://${bundleTar}`,
+      VEGASTACK_BUNDLE_DIR: path.join(workspace, "target"),
+      VEGASTACK_BUNDLE_URL: `file://${bundleTar}`,
     });
     expect(r.status).toBe(0);
     expect(r.stderr).toMatch(/SHA256 mismatch/);
@@ -171,8 +171,8 @@ describe("install.js — security properties", () => {
     fs.writeFileSync(`${bundleTar}.sha256`, "not a valid sha256");
 
     const r = runInstall({
-      VEGA_BUNDLE_DIR: path.join(workspace, "target"),
-      VEGA_BUNDLE_URL: `file://${bundleTar}`,
+      VEGASTACK_BUNDLE_DIR: path.join(workspace, "target"),
+      VEGASTACK_BUNDLE_URL: `file://${bundleTar}`,
     });
     expect(r.status).toBe(0);
     expect(r.stderr).toMatch(/checksum file did not contain a single SHA256/);
@@ -183,8 +183,8 @@ describe("install.js — security properties", () => {
     fs.writeFileSync(`${bundleTar}.sha256`, "a".repeat(2048));
 
     const r = runInstall({
-      VEGA_BUNDLE_DIR: path.join(workspace, "target"),
-      VEGA_BUNDLE_URL: `file://${bundleTar}`,
+      VEGASTACK_BUNDLE_DIR: path.join(workspace, "target"),
+      VEGASTACK_BUNDLE_URL: `file://${bundleTar}`,
     });
     expect(r.status).toBe(0);
     expect(r.stderr).toMatch(/exceeds .* bytes/i);

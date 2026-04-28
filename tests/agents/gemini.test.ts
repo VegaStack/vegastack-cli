@@ -8,7 +8,7 @@ import { geminiContextPath, geminiExtensionPath } from "../../src/lib/paths.js";
 let cwd: string;
 
 beforeEach(() => {
-  cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vega-gemini-"));
+  cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-gemini-"));
 });
 afterEach(() => {
   fs.rmSync(cwd, { recursive: true, force: true });

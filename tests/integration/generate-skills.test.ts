@@ -34,7 +34,7 @@ function run(script: string): { ok: boolean; stderr: string } {
   const r = spawnSync("npm", ["run", "--silent", script], {
     cwd: PKG_ROOT,
     encoding: "utf8",
-    env: { ...process.env, VEGA_SKIP_POSTINSTALL: "1" },
+    env: { ...process.env, VEGASTACK_SKIP_POSTINSTALL: "1" },
   });
   return { ok: r.status === 0, stderr: r.stderr };
 }

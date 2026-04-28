@@ -73,7 +73,7 @@ describe("loadKnowledge — happy path", () => {
 describe("loadKnowledge — empty / missing dirs", () => {
   let tmp: string;
   beforeEach(() => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vega-kn-"));
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-kn-"));
   });
   afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));
 

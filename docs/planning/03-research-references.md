@@ -53,7 +53,7 @@ All clones in /Users/mk/projects/references/, read-only, --depth 1.
 - Factory pattern (pkg/cmdutil/Factory): IOStreams, Config, HTTPClient, Browser, Prompter all injected.
 - Extension model: native + git-based extensions, internal/update.CheckForExtensionUpdate reuses 24h state-file pattern.
 
-**Steal:** 24h-throttled state-file update notifier — port verbatim with VEGASTACK_NO_UPDATE_NOTIFIER; gh skill subcommand layout — match exactly (vega skill install/preview/publish/search/update); Factory + IOStreams pattern.
+**Steal:** 24h-throttled state-file update notifier — port verbatim with VEGASTACK_NO_UPDATE_NOTIFIER; gh skill subcommand layout — match exactly (vegastack skill install/preview/publish/search/update); Factory + IOStreams pattern.
 **Don't copy:** breadth of pkg/cmd/* (~30 verb groups). Keep vegastack-cli verb tree small.
 
 ## 6. anthropics/skills (Mixed: Apache-2.0 / source-available)

@@ -12,7 +12,7 @@ import { geminiExtensionRoot } from "../../src/lib/paths.js";
 let cwd: string;
 
 beforeEach(() => {
-  cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vega-gemini-"));
+  cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-gemini-"));
 });
 afterEach(() => {
   fs.rmSync(cwd, { recursive: true, force: true });
@@ -46,7 +46,7 @@ describe("gemini renderer", () => {
 
     const tomlText = fs.readFileSync(path.join(root, "commands", "tf.toml"), "utf8");
     expect(tomlText).toContain("description");
-    expect(tomlText).toContain("vega tf");
+    expect(tomlText).toContain("vegastack tf");
 
     const extText = fs.readFileSync(path.join(root, "gemini-extension.json"), "utf8");
     expect(extText).toContain("vegastack-terraform");

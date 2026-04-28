@@ -19,7 +19,7 @@ const SAFE_TAR_MJS = path.join(PKG_ROOT, "npm", "safe-tar.js");
 let workspace: string;
 
 beforeEach(() => {
-  workspace = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "vega-safe-tar-")));
+  workspace = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-safe-tar-")));
 });
 afterEach(() => {
   fs.rmSync(workspace, { recursive: true, force: true });
@@ -89,7 +89,7 @@ describe("safe-tar — rejects malicious tarballs", () => {
     // Use `-P` (preserve absolute paths) and craft an entry whose name starts with `/`.
     const tarball = path.join(workspace, "evil.tar.gz");
     // Build a tarball that includes the file with an absolute name.
-    const stagedAbs = "/tmp/vega-test-evil-payload";
+    const stagedAbs = "/tmp/vegastack-test-evil-payload";
     try {
       fs.writeFileSync(stagedAbs, "haha");
       execFileSync("tar", ["czPf", tarball, stagedAbs], { stdio: "pipe" });

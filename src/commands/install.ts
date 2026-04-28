@@ -1,11 +1,11 @@
-// `vega install` — explicitly run the bundle download. The npm postinstall
+// `vegastack install` — explicitly run the bundle download. The npm postinstall
 // runs the same install.js, but users may want to retry after a failure or
-// install offline via VEGA_BUNDLE_URL.
+// install offline via VEGASTACK_BUNDLE_URL.
 
 import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { VegaError } from "../lib/errors.js";
+import { VegastackError } from "../lib/errors.js";
 import { log, printError } from "../lib/log.js";
 import { bundleVersionFile, pkgRoot } from "../lib/paths.js";
 
@@ -17,7 +17,7 @@ export async function runInstall(opts: InstallOptions): Promise<number> {
   try {
     const installer = path.join(pkgRoot(), "npm", "install.js");
     if (!fs.existsSync(installer)) {
-      throw new VegaError("BundleCorrupt", `installer script missing at ${installer}`, {
+      throw new VegastackError("BundleCorrupt", `installer script missing at ${installer}`, {
         context: { installer },
       });
     }
@@ -30,12 +30,12 @@ export async function runInstall(opts: InstallOptions): Promise<number> {
 
     log.step(`running ${installer}`);
     const env = { ...process.env };
-    delete env.VEGA_SKIP_POSTINSTALL;
+    delete env.VEGASTACK_SKIP_POSTINSTALL;
     // Use process.execPath rather than `node` from PATH — defends against a
     // malicious `node` shim earlier on the user's PATH.
     const result = spawnSync(process.execPath, [installer], { stdio: "inherit", env });
     if (result.error !== undefined) {
-      throw new VegaError("Unknown", `install failed to launch: ${result.error.message}`, {
+      throw new VegastackError("Unknown", `install failed to launch: ${result.error.message}`, {
         cause: result.error,
       });
     }

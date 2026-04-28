@@ -15,7 +15,7 @@ Wall-clock: ~25 min
 - E7 MCP server URL not finalized; defaulted to `https://mcp.vegastack.com/sse` in:
   - `.claude-plugin/mcp/mcp.json`
   - `gemini-extension.json` (top-level)
-  - `src/agents/continue.ts` (overridable via `VEGA_MCP_URL`)
+  - `src/agents/continue.ts` (overridable via `VEGASTACK_MCP_URL`)
   - When E7 publishes the final URL, we can update via the env var or a follow-up PR.
   - Modern CF docs prefer `/mcp` streamable-http over `/sse` (deprecated upstream) — but every MCP client today still consumes SSE. Coordinate with E7 on which we ship.
 - E2 envelope = `/tmp/synthesis/contracts/discover-types.ts`. SKILL.md describes that envelope verbatim (`schema_version: 1`, `provider_confidence`, `score_norm`, `manifest_entry.blocks`).
@@ -81,7 +81,7 @@ Net: ~1900 LOC added (~1100 src/lib + scripts + agents, ~500 tests, ~300 SKILL.m
 ## What's left for the audit team
 - Verify the `.claude-plugin/plugin.json` schema matches whatever Anthropic ships in late April 2026 — we used the documented April fields but Claude Code is iterating fast.
 - Verify the Cloudflare MCP URL pattern once E7 publishes; the SSE vs `/mcp` streamable-http choice can be revisited.
-- Consider whether to add a `vega skills install --agent all` flag that uses the `ALL_RENDERERS` registry (currently the `vega skills install` command consumes the legacy `ALL_AGENTS` registry only — the renderer abstraction is shipped but the CLI command still uses the legacy one).
+- Consider whether to add a `vegastack skills install --agent all` flag that uses the `ALL_RENDERERS` registry (currently the `vegastack skills install` command consumes the legacy `ALL_AGENTS` registry only — the renderer abstraction is shipped but the CLI command still uses the legacy one).
 
 ## Contract issues raised
 None.

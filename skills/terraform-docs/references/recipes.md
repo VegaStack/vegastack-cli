@@ -69,7 +69,7 @@ Each `RecipeMatch` mirrors the TOML plus a `scaffold_hcl: string` field with the
 ## Composing HCL from a recipe
 
 1. Read `scaffold_hcl` end to end. The full fragment is a starting point — substitute the user's actual values (zone IDs, account IDs, hostnames, region) for the `var.*` placeholders.
-2. Resolve any per-resource gaps with one `vega tf --provider <p> "<resource_name>"` per gap. The recipe doesn't restate the full `manifest_entry` for each resource; it assumes you'll pull those separately when needed.
+2. Resolve any per-resource gaps with one `vegastack tf --provider <p> "<resource_name>"` per gap. The recipe doesn't restate the full `manifest_entry` for each resource; it assumes you'll pull those separately when needed.
 3. Honor each pitfall. `severity: "error"` means the HCL won't apply; `severity: "warn"` means it'll apply but the user will hit confusion later.
 4. Cite the recipe ID in your reply alongside the per-resource citations.
 

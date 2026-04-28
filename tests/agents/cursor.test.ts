@@ -8,7 +8,7 @@ import { cursorRulePath } from "../../src/lib/paths.js";
 let cwd: string;
 
 beforeEach(() => {
-  cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vega-cursor-"));
+  cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-cursor-"));
 });
 afterEach(() => {
   fs.rmSync(cwd, { recursive: true, force: true });

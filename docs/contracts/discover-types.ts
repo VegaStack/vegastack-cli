@@ -1,5 +1,5 @@
 // Canonical TypeScript contract for the v0.1 discover envelope.
-// This file is THE SOURCE OF TRUTH for the response shape produced by `vega tf` and consumed by:
+// This file is THE SOURCE OF TRUTH for the response shape produced by `vegastack tf` and consumed by:
 //   - the SKILL.md (E5)
 //   - the eval runner (E6)
 //   - the MCP server (E7)

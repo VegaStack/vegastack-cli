@@ -78,7 +78,7 @@ describe("loadRecipes — happy path", () => {
 describe("loadRecipes — empty / missing dirs", () => {
   let tmp: string;
   beforeEach(() => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vega-rec-"));
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-rec-"));
   });
   afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));
 

@@ -24,7 +24,7 @@
 | `scripts/tag-release.js` | Major extension — fetches bundle CalVer + sha256 from R2 manifest; pins them into `package.json`; commits + pushes; then runs idempotent tag flow. Pure pin function exported for unit tests. | +130 / -3 |
 | `tests/scripts/tag-release.test.ts` | NEW — 7 tests covering pin idempotency, channel selection, sha-prefix handling, flat manifest fallback, missing-channel + missing-fields error paths | +95 |
 | `CONTRIBUTING.md` | Added Wrangler "every non-breaking change ships as patch" rule paragraph | +9 |
-| `docs/INSTALL.md` | NEW — end-user install doc covering npm install → postinstall → R2 fetch → atomic swap; `vega doctor --verify-attestations`; airgap path noted as v0.2; env vars; troubleshooting; channel matrix | +160 |
+| `docs/INSTALL.md` | NEW — end-user install doc covering npm install → postinstall → R2 fetch → atomic swap; `vegastack doctor --verify-attestations`; airgap path noted as v0.2; env vars; troubleshooting; channel matrix | +160 |
 
 ### Bundle repo `/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers/`
 
@@ -72,7 +72,7 @@ None. The `manifest.schema.json` and `discover-types.ts` contracts are read-only
 
 1. End-to-end test of `release.yml` requires the npmjs.com trusted-publisher entry plus a real tag — I've added `workflow_dispatch` so it can be invoked once that's set up without cutting a real semver tag.
 2. Daily cron in `build-and-publish.yml` needs ~24h to actually fire. The runbook has the `dry-run=true` smoke-test path for immediate verification.
-3. Verify the bundle pin round-trip: cut a fake `vega-bot` PR merge → `tag-release.js` should fetch from R2 → write to `package.json` → commit → tag → trigger publish.
+3. Verify the bundle pin round-trip: cut a fake `vegastack-bot` PR merge → `tag-release.js` should fetch from R2 → write to `package.json` → commit → tag → trigger publish.
 4. Confirm the `cosign sign-blob` keyless flow works end-to-end on a Sigstore-Fulcio test cert (the workflow has `id-token: write` set per-job).
 5. CORS rule on R2 needs functional verification by E8 against the deployed dashboard.
 
@@ -82,4 +82,4 @@ None. The `manifest.schema.json` and `discover-types.ts` contracts are read-only
 - PostHog telemetry — E2 ships the no-op stubs.
 - `stable` channel — documented as v0.2 in RELEASE.md (only `latest` ships in v0.1).
 - Cosign-signing the **CLI** tarball — npm provenance is sufficient per brief; only the **bundle** is cosign-signed.
-- `vega update`, `update-notifier`, `bundle-paths.ts`, `npm/install.js` per-shard fetcher — these belong to the auto-update scope; the brief restricted me to the release-pipeline scope (workflows + tag-release.js + docs + changesets config + package.json fields). The CLI runtime side of the auto-update story is for E2 (or a follow-up E4 cycle) to wire.
+- `vegastack update`, `update-notifier`, `bundle-paths.ts`, `npm/install.js` per-shard fetcher — these belong to the auto-update scope; the brief restricted me to the release-pipeline scope (workflows + tag-release.js + docs + changesets config + package.json fields). The CLI runtime side of the auto-update story is for E2 (or a follow-up E4 cycle) to wire.

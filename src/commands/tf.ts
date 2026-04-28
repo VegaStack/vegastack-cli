@@ -1,4 +1,4 @@
-// `vega tf <query>` — runtime discovery command. Returns the v0.1 JSON envelope.
+// `vegastack tf <query>` — runtime discovery command. Returns the v0.1 JSON envelope.
 //
 // Flags:
 //   --provider <p>     force a provider (validated against bundle's providers list)
@@ -22,7 +22,7 @@
 //                   NOTE: the new default (E2) is a soft-breaking change for callers
 //                   that relied on the full example body without --full-examples.
 //
-// Side effect: sets $VEGA_BUNDLE in the environment so callers (e.g. SKILL.md
+// Side effect: sets $VEGASTACK_BUNDLE in the environment so callers (e.g. SKILL.md
 // shell snippets) can run additional `jq` queries against the bundle root.
 
 import { readFileSync } from "node:fs";
@@ -31,7 +31,7 @@ import { fileURLToPath } from "node:url";
 import { discover } from "../lib/discover.js";
 import { bundleDir } from "../lib/paths.js";
 import { log, printError } from "../lib/log.js";
-import { VegaError } from "../lib/errors.js";
+import { VegastackError } from "../lib/errors.js";
 
 export interface TfOptions {
   provider?: string;
@@ -65,16 +65,16 @@ export async function runTf(query: string, opts: TfOptions): Promise<number> {
 
   if (!query || query.trim() === "") {
     return printError(
-      new VegaError(
+      new VegastackError(
         "ValidationError",
-        'usage: vega tf "<natural-language query>" [--provider <p>] [--max <N>]',
+        'usage: vegastack tf "<natural-language query>" [--provider <p>] [--max <N>]',
       ),
     );
   }
 
-  // Set $VEGA_BUNDLE so any downstream `jq` / `rg` shell call from a SKILL.md
+  // Set $VEGASTACK_BUNDLE so any downstream `jq` / `rg` shell call from a SKILL.md
   // snippet can target the bundle directly. Closes a SKILL.md drift.
-  process.env.VEGA_BUNDLE = bundleDir();
+  process.env.VEGASTACK_BUNDLE = bundleDir();
 
   try {
     const args: {
@@ -111,7 +111,7 @@ export async function runTf(query: string, opts: TfOptions): Promise<number> {
 function printSchema(): number {
   // The schema is shipped beside the manifest schema in the bundle, but
   // for v0.1 we ship a derived envelope schema next to the CLI source so
-  // `vega tf --json-schema` works even before any bundle is installed.
+  // `vegastack tf --json-schema` works even before any bundle is installed.
   // We bundle it as a const string at build time via tsc.
   const schema = envelopeSchema();
   process.stdout.write(JSON.stringify(schema, null, 2) + "\n");

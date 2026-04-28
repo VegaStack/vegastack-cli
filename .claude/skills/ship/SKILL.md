@@ -16,7 +16,7 @@ The actual `npm publish` is performed by `.github/workflows/publish-internal.yml
 - **Bundle is a separate repo** (`engg-vegastack-agent-tf-providers`). It ships on its own daily cron via `build-and-publish.yml`. This skill never touches it.
 - **App deploys are automatic.** Cloudflare Workers Builds watches the repo and redeploys `apps/mcp` + `apps/dashboard` on every push to main. This skill never invokes `wrangler deploy`.
 - **The dormant `release.yml`** is the future public-npm path with cosign + SLSA. It auto-trigger on `v*` is commented out. This skill never modifies or invokes it.
-- **`prepublishOnly` guard** at `scripts/check-bundle-pin.js` refuses to publish if `expectedBundleSha` is the placeholder. The CI workflow sets `VEGA_ALLOW_PENDING_BUNDLE_SHA=1` to bypass for v0.1 internal builds. **Never bypass the guard locally** — locally the guard's role is to remind you that the bundle SHA is still stub-pinned, which matters when v1.0 ships publicly.
+- **`prepublishOnly` guard** at `scripts/check-bundle-pin.js` refuses to publish if `expectedBundleSha` is the placeholder. The CI workflow sets `VEGASTACK_ALLOW_PENDING_BUNDLE_SHA=1` to bypass for v0.1 internal builds. **Never bypass the guard locally** — locally the guard's role is to remind you that the bundle SHA is still stub-pinned, which matters when v1.0 ships publicly.
 
 ## Steps
 
@@ -238,10 +238,10 @@ Watch the workflow run, then verify the package landed:
      //npm.pkg.github.com/:_authToken=ghp_<your_PAT_with_read:packages>
 
      # then
-     VEGA_SKIP_POSTINSTALL=1 npm i -g @vegastack/cli@<X.Y.Z>
-     export VEGA_BUNDLE_DIR=/path/to/local/bundle/dev/tree
-     vega doctor
-     vega tf "S3 bucket with versioning"
+     VEGASTACK_SKIP_POSTINSTALL=1 npm i -g @vegastack/cli@<X.Y.Z>
+     export VEGASTACK_BUNDLE_DIR=/path/to/local/bundle/dev/tree
+     vegastack doctor
+     vegastack tf "S3 bucket with versioning"
    ```
 
 If anything in this verification fails (workflow non-zero, package missing, install crash on a fresh machine), do not move on. Surface the exact failure mode to the user — silent breakage is the worst outcome of a release.
@@ -253,7 +253,7 @@ If anything in this verification fails (workflow non-zero, package missing, inst
 - **Always `git pull --rebase` before push.** Never force-push.
 - **`Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>`** trailer is mandatory on every commit.
 - **Never trigger `publish-internal.yml` manually** — the `git push --tags` is the only correct trigger.
-- **Never bypass the `prepublishOnly` guard locally** — only CI bypasses, via the `VEGA_ALLOW_PENDING_BUNDLE_SHA=1` env var that the workflow already sets.
+- **Never bypass the `prepublishOnly` guard locally** — only CI bypasses, via the `VEGASTACK_ALLOW_PENDING_BUNDLE_SHA=1` env var that the workflow already sets.
 - **Never modify `release.yml`** (the dormant public-npm workflow) as part of a v0.1 ship.
 - **Never touch the bundle repo (`engg-vegastack-agent-tf-providers`)** as part of a CLI ship — the bundle has its own daily release cron.
 - **Never invoke `wrangler deploy` for `apps/mcp` or `apps/dashboard`** — Cloudflare Workers Builds handles those automatically on push to main.

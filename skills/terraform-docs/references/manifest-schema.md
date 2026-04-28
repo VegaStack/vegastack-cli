@@ -133,35 +133,35 @@ Each resource carries `"schema_origin": "sdkv2" | "plugin_framework" | "mixed"`.
 
 ```bash
 # All required args of a resource (top level only — sub-block args are under .blocks.*)
-jq '.resources.aws_db_instance.required_args[].name' "$VEGA_BUNDLE/aws/MANIFEST.json"
+jq '.resources.aws_db_instance.required_args[].name' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
 
 # All sub-block names for a resource
-jq '.resources.aws_db_instance.blocks | keys' "$VEGA_BUNDLE/aws/MANIFEST.json"
+jq '.resources.aws_db_instance.blocks | keys' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
 
 # Required args inside a specific sub-block
-jq '.resources.aws_db_instance.blocks.s3_import.required_args[].name' "$VEGA_BUNDLE/aws/MANIFEST.json"
+jq '.resources.aws_db_instance.blocks.s3_import.required_args[].name' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
 
 # Is this resource deprecated?
-jq '.resources.aws_s3_bucket | {dep: .deprecated, alt: .suggested_alternative}' "$VEGA_BUNDLE/aws/MANIFEST.json"
+jq '.resources.aws_s3_bucket | {dep: .deprecated, alt: .suggested_alternative}' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
 
 # Files where a particular argument appears
-jq '.argument_index.health_check' "$VEGA_BUNDLE/aws/MANIFEST.json"
+jq '.argument_index.health_check' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
 
 # Companion resources
-jq '.recommended_companions.aws_instance' "$VEGA_BUNDLE/aws/MANIFEST.json"
+jq '.recommended_companions.aws_instance' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
 
 # What does this resource refer to in upstream HCL examples?
-jq '.hcl_references.aws_lb' "$VEGA_BUNDLE/aws/MANIFEST.json"
+jq '.hcl_references.aws_lb' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
 
 # All resources in a subcategory
-jq '.subcategories["RDS (Relational Database)"]' "$VEGA_BUNDLE/aws/MANIFEST.json"
+jq '.subcategories["RDS (Relational Database)"]' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
 
 # All synthetic subcategories (filename prefixes — Cloudflare in particular)
-jq '.synthetic_subcategories | keys' "$VEGA_BUNDLE/cloudflare/MANIFEST.json"
+jq '.synthetic_subcategories | keys' "$VEGASTACK_BUNDLE/cloudflare/MANIFEST.json"
 
 # Guide files with the "migrate" intent
 jq '.guides | to_entries | map(select(.value.intent_tags | contains(["migrate"])))' \
-   "$VEGA_BUNDLE/aws/MANIFEST.json"
+   "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
 ```
 
 ## Validation

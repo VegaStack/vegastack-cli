@@ -35,7 +35,7 @@ jobs:
           cache: npm
       - run: npm ci
         env:
-          VEGA_SKIP_POSTINSTALL: "1"
+          VEGASTACK_SKIP_POSTINSTALL: "1"
       - run: npm run build
 
       - name: Regenerate skills

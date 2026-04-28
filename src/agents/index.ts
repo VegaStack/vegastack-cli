@@ -2,7 +2,7 @@
 //
 // Two surfaces are exported:
 //   - ALL_AGENTS    — legacy synchronous AgentInstaller registry, consumed
-//                     by `vega skills install` today.
+//                     by `vegastack skills install` today.
 //   - ALL_RENDERERS — async AgentRenderer registry, the v0.1 abstraction
 //                     used by tests and forthcoming MCP/installer flows.
 

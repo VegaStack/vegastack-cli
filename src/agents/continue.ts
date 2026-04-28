@@ -17,7 +17,7 @@
 // Cloudflare's docs, the MCP spec, and the Continue/Codex clients shipping
 // today). The legacy `/sse` endpoint is still served by `apps/mcp/` for
 // pre-Apr-2026 clients (notably Claude Desktop) and can be selected via
-// `VEGA_MCP_URL=https://mcp.vegastack.com/sse`.
+// `VEGASTACK_MCP_URL=https://mcp.vegastack.com/sse`.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -26,17 +26,17 @@ import { existsOrLink, removeIfExists } from "../lib/fs-utils.js";
 import { continueMcpServerPath } from "../lib/paths.js";
 import type { AgentRenderer, InstallContext, InstallResult, Scope } from "./types.js";
 
-const DEFAULT_MCP_URL = process.env.VEGA_MCP_URL ?? "https://mcp.vegastack.com/mcp";
+const DEFAULT_MCP_URL = process.env.VEGASTACK_MCP_URL ?? "https://mcp.vegastack.com/mcp";
 
 function renderYaml(mcpUrl: string): string {
   // We pick the transport based on the URL suffix so that an operator who
-  // points VEGA_MCP_URL at the legacy `/sse` endpoint still gets a working
+  // points VEGASTACK_MCP_URL at the legacy `/sse` endpoint still gets a working
   // YAML. apps/mcp/ ships both transports indefinitely; this is just the
   // renderer's default.
   const transport = /\/sse(?:$|[?#])/.test(mcpUrl) ? "sse" : "streamable-http";
   return [
     "# Managed by @vegastack/cli — do not hand-edit.",
-    "# Re-run `vega skills install --agent continue` to regenerate.",
+    "# Re-run `vegastack skills install --agent continue` to regenerate.",
     "name: vegastack-tf",
     "version: 0.1.0",
     "schema: v1",
@@ -45,7 +45,7 @@ function renderYaml(mcpUrl: string): string {
     `    url: ${mcpUrl}`,
     `    transport: ${transport}`,
     "    description: |",
-    "      Vegastack Terraform docs harness. Mirrors `vega tf` over MCP for",
+    "      Vegastack Terraform docs harness. Mirrors `vegastack tf` over MCP for",
     "      Continue. Returns the same four-channel envelope (knowledge,",
     "      recipes, files, concept_aliases_used) the CLI does.",
     "",

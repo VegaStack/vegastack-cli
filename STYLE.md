@@ -15,10 +15,10 @@ This file is for code reviewers. Cite it in PR comments by section.
 
 ## Errors
 
-- **Throw `VegaError`**, never plain `Error`, in command handlers. Each variant
+- **Throw `VegastackError`**, never plain `Error`, in command handlers. Each variant
   has a stable exit code and a `hint()` so the user gets _problem → cause → fix_.
 - **Catch only what you understand.** `try/catch` should narrow to a specific
-  `VegaError` subtype or rethrow.
+  `VegastackError` subtype or rethrow.
 - **Never silently swallow errors.** If a path is "best-effort," call it out
   with `log.warn` and continue.
 
@@ -60,12 +60,12 @@ This file is for code reviewers. Cite it in PR comments by section.
   `tests/setup.ts` for any test that touches the filesystem.
 - **Mock `process.platform` in agent tests** to verify Windows fallbacks
   without needing a Windows runner.
-- **Snapshot tests for JSON output** (e.g. `vega doctor --json`) should mask
+- **Snapshot tests for JSON output** (e.g. `vegastack doctor --json`) should mask
   per-machine paths via `expect.stringMatching` or normalize-then-snapshot.
 
 ## Helpers (rare; v0.2+)
 
-If you're adding a `+helper` command (e.g. a future `vega tf import`), it must:
+If you're adding a `+helper` command (e.g. a future `vegastack tf import`), it must:
 
 - Compose at least two CLI calls or transform the response in a non-trivial way.
 - Do something that can't be expressed as a one-liner shell pipeline of

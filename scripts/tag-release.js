@@ -2,7 +2,7 @@
 // Idempotent tag-and-push helper invoked by changesets/action on the
 // "Version Packages" PR merge.
 //
-// On vega-bot release cut, this script:
+// On vegastack-bot release cut, this script:
 //   1. Fetches the current bundle CalVer + sha256 from
 //      https://bundles.vegastack.com/manifest.json (latest channel by default).
 //   2. Writes them into package.json as `expectedBundleVersion` and
@@ -19,8 +19,8 @@ import { resolve } from "node:path";
 
 const PKG_PATH = resolve("package.json");
 const MANIFEST_URL =
-  process.env.VEGA_BUNDLE_MANIFEST_URL || "https://bundles.vegastack.com/manifest.json";
-const CHANNEL = process.env.VEGA_RELEASE_CHANNEL || "latest";
+  process.env.VEGASTACK_BUNDLE_MANIFEST_URL || "https://bundles.vegastack.com/manifest.json";
+const CHANNEL = process.env.VEGASTACK_RELEASE_CHANNEL || "latest";
 
 function run(cmd, args, opts = {}) {
   const result = spawnSync(cmd, args, { encoding: "utf8", ...opts });

@@ -5,7 +5,7 @@ Bringing an existing cloud / SaaS resource under Terraform management starts wit
 ## The single workflow
 
 ```bash
-vega tf "import existing <provider> <resource> <hint>"
+vegastack tf "import existing <provider> <resource> <hint>"
 ```
 
 `files[0].manifest_entry.import_syntax` returns `{command, id_format}`:
@@ -54,7 +54,7 @@ When `manifest_entry.import_syntax` is `null`, the resource is intentionally not
 - **Workspace before import.** `terraform workspace show` — importing into `default` when you meant `prod` is silent and disastrous.
 - **Cloudflare v5 rename.** Importing an old `cloudflare_record`? Use the new `cloudflare_dns_record` name (knowledge card `cloudflare-resource-renames-v5`); state migration required.
 - **Vault KV v2 path-vs-API confusion.** Resource path is `secret/foo`; import API path includes `data/` (`secret/data/foo`). See `vault-kv-v2-mount`.
-- **Importing a resource set.** If the user wants the full companion stack (e.g. `aws_instance` → vpc/subnet/sg/igw/route_table), run a separate `vega tf` per companion to get each `import_syntax`. The harness intentionally doesn't chain — users typically have *some* companions already managed.
+- **Importing a resource set.** If the user wants the full companion stack (e.g. `aws_instance` → vpc/subnet/sg/igw/route_table), run a separate `vegastack tf` per companion to get each `import_syntax`. The harness intentionally doesn't chain — users typically have *some* companions already managed.
 
 ## Citation
 

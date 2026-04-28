@@ -18,7 +18,7 @@ let bundleSrc: string;
 let bundleTar: string;
 
 beforeEach(() => {
-  workspace = fs.mkdtempSync(path.join(os.tmpdir(), "vega-install-it-"));
+  workspace = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-install-it-"));
   // Build a tiny stub bundle.
   bundleSrc = path.join(workspace, "src");
   fs.mkdirSync(bundleSrc, { recursive: true });
@@ -72,8 +72,8 @@ describe("npm/install.js postinstall", () => {
   it("downloads, verifies, and extracts a stub bundle via file://", () => {
     const targetDir = path.join(workspace, "target");
     const r = runInstall({
-      VEGA_BUNDLE_DIR: targetDir,
-      VEGA_BUNDLE_URL: `file://${bundleTar}`,
+      VEGASTACK_BUNDLE_DIR: targetDir,
+      VEGASTACK_BUNDLE_URL: `file://${bundleTar}`,
     });
     expect(r.status).toBe(0);
     expect(r.stderr).toContain("checksum verified");
@@ -86,8 +86,8 @@ describe("npm/install.js postinstall", () => {
     fs.appendFileSync(bundleTar, "extra bytes");
     const targetDir = path.join(workspace, "target");
     const r = runInstall({
-      VEGA_BUNDLE_DIR: targetDir,
-      VEGA_BUNDLE_URL: `file://${bundleTar}`,
+      VEGASTACK_BUNDLE_DIR: targetDir,
+      VEGASTACK_BUNDLE_URL: `file://${bundleTar}`,
     });
     // install.js never fails npm install — exit 0 always.
     expect(r.status).toBe(0);
@@ -95,12 +95,12 @@ describe("npm/install.js postinstall", () => {
     expect(fs.existsSync(path.join(targetDir, "MANIFEST.json"))).toBe(false);
   });
 
-  it("VEGA_SKIP_POSTINSTALL=1 short-circuits the download", () => {
+  it("VEGASTACK_SKIP_POSTINSTALL=1 short-circuits the download", () => {
     const targetDir = path.join(workspace, "target");
     const r = runInstall({
-      VEGA_BUNDLE_DIR: targetDir,
-      VEGA_BUNDLE_URL: `file://${bundleTar}`,
-      VEGA_SKIP_POSTINSTALL: "1",
+      VEGASTACK_BUNDLE_DIR: targetDir,
+      VEGASTACK_BUNDLE_URL: `file://${bundleTar}`,
+      VEGASTACK_SKIP_POSTINSTALL: "1",
     });
     expect(r.status).toBe(0);
     expect(r.stderr).toMatch(/skipping bundle download/);
@@ -115,8 +115,8 @@ describe("npm/install.js postinstall", () => {
     };
     fs.writeFileSync(path.join(targetDir, ".version"), pkg.version);
     const r = runInstall({
-      VEGA_BUNDLE_DIR: targetDir,
-      VEGA_BUNDLE_URL: `file://${bundleTar}`,
+      VEGASTACK_BUNDLE_DIR: targetDir,
+      VEGASTACK_BUNDLE_URL: `file://${bundleTar}`,
     });
     expect(r.status).toBe(0);
     expect(r.stderr).toMatch(/already installed/);
@@ -124,8 +124,8 @@ describe("npm/install.js postinstall", () => {
 
   it("rejects non-https URLs", () => {
     const r = runInstall({
-      VEGA_BUNDLE_DIR: path.join(workspace, "target"),
-      VEGA_BUNDLE_URL: `http://insecure.example.com/bundle.tar.gz`,
+      VEGASTACK_BUNDLE_DIR: path.join(workspace, "target"),
+      VEGASTACK_BUNDLE_URL: `http://insecure.example.com/bundle.tar.gz`,
     });
     // Still exits 0 (postinstall never fails npm), but the error is logged.
     expect(r.status).toBe(0);
@@ -138,8 +138,8 @@ describe("npm/install.js postinstall", () => {
     fs.writeFileSync(`${bundleTar}.sha256`, `${sha}  stub-bundle.tar.gz\n`);
 
     const r = runInstall({
-      VEGA_BUNDLE_DIR: path.join(workspace, "target"),
-      VEGA_BUNDLE_URL: `file://${bundleTar}`,
+      VEGASTACK_BUNDLE_DIR: path.join(workspace, "target"),
+      VEGASTACK_BUNDLE_URL: `file://${bundleTar}`,
     });
     expect(r.status).toBe(0);
     expect(r.stderr).toMatch(/suspiciously small/);

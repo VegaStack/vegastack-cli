@@ -12,7 +12,7 @@ import { aiderConfPath, aiderConventionsPath } from "../../src/lib/paths.js";
 let cwd: string;
 
 beforeEach(() => {
-  cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vega-aider-"));
+  cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-aider-"));
 });
 afterEach(() => {
   fs.rmSync(cwd, { recursive: true, force: true });

@@ -87,7 +87,7 @@ All four READMEs were fetched via `gh api repos/<owner>/<repo>/readme --jq '.con
   that asserts the shipped JSON is correct.
 - `continue.ts` derives the YAML `transport:` field from the URL suffix
   (`/sse$` ⇒ `sse`, else ⇒ `streamable-http`) so an operator who pins the
-  legacy URL via `VEGA_MCP_URL` still gets a working YAML. Doc comment in
+  legacy URL via `VEGASTACK_MCP_URL` still gets a working YAML. Doc comment in
   the source explains both transports remain supported by `apps/mcp/`.
 - `mergisi/awesome-openclaw-agents` was NOT submitted to. Their catalog
   ships in-repo `SOUL.md` agents (a different artifact from our SKILL.md);

@@ -80,7 +80,7 @@ Source `cloudflare_workers_script` ranks #1 with strong lead. ✓ PASS
 
 ## C5 verification: "Cloudflare Workers with D1 database and R2 bucket"
 
-Command: `VEGA_BUNDLE_DIR=... node dist/cli.js tf "Cloudflare Workers with D1 database and R2 bucket" --raw --no-pretty`
+Command: `VEGASTACK_BUNDLE_DIR=... node dist/cli.js tf "Cloudflare Workers with D1 database and R2 bucket" --raw --no-pretty`
 
 Top-10 results:
 

@@ -55,7 +55,7 @@ Reviewed `npm/install.js` (606 LOC) and `npm/safe-tar.js` (251 LOC).
 | Atomic `.version` file write | **PASS** | `install.js:563-567,382` |
 | **Atomic swap to `bundle.previous` on failure** | **FAIL — partial** | see finding below |
 | **TLS pinning OR npm-provenance-rooted SHA chain present** | **PASS (provenance chain only)** | npm OIDC + SLSA attest produces provenance signing `package.json#expectedBundleSha`; the CLI does not pin TLS certs but does not need to once the SHA is provenance-rooted |
-| **PII not leaked in error messages** | **MOSTLY** | `$HOME` masked; proxy creds masked; `VEGA_BUNDLE_URL` echoed verbatim (acceptable — user-supplied) |
+| **PII not leaked in error messages** | **MOSTLY** | `$HOME` masked; proxy creds masked; `VEGASTACK_BUNDLE_URL` echoed verbatim (acceptable — user-supplied) |
 
 ### Finding: `bundle.previous` rollback artifact does not exist
 
@@ -70,10 +70,10 @@ to `${dir}.stale-${randomSuffix()}`, and `install.js:385`
 This contradicts:
 - `docs/INSTALL.md:76-77` — "previous bundle generation is kept at
   `<root>.previous` for one-step rollback"
-- `docs/INSTALL.md:168` — "run `vega update --rollback`"
+- `docs/INSTALL.md:168` — "run `vegastack update --rollback`"
 - `docs/planning/06-research-distribution.md:30,34` — same promise
 
-There is **no `vega update` command** (not in `cli.ts`, not in
+There is **no `vegastack update` command** (not in `cli.ts`, not in
 `commands/`). It's a v0.2 feature per the planning doc.
 
 **Severity: medium.** No security exposure — just a documentation gap
@@ -109,7 +109,7 @@ path-confined by `safe-tar`, but content is whatever the CDN serves.**
 | `cosign sign-blob --yes` for full bundle | **PASS** | `build-and-publish.yml:221-224` |
 | `id-token: write` on shard-and-sign job | **PASS** | `build-and-publish.yml:160-162` |
 | **CLI verifies `cosign sign-blob` output** | **FAIL — not implemented in v0.1** | no `sigstore`/`cosign`/`fulcio`/`rekor` reference in `src/` or `npm/` (only doc comments) — confirmed by grep |
-| `vega doctor --verify-attestations` exists | **FAIL** | only `--verify-bundle` is wired (`cli.ts:108-111`); `doctor.ts:19-89` schema-validates JSON but does not call cosign |
+| `vegastack doctor --verify-attestations` exists | **FAIL** | only `--verify-bundle` is wired (`cli.ts:108-111`); `doctor.ts:19-89` schema-validates JSON but does not call cosign |
 
 ### Recommendation: keep `attest-build-provenance@v2` for v0.1
 
@@ -219,14 +219,14 @@ gated on interactive prompts. Keep as-is for v0.1.
 
 ### Verdict: **package surface is clean, tight, and ships exactly what is needed.** Nothing leaks.
 
-## A2.6 — `vega doctor --verify-attestations` end-to-end
+## A2.6 — `vegastack doctor --verify-attestations` end-to-end
 
 **Reconciliation question:** Is there ANY path in v0.1 for an end user
 to verify the bundle they downloaded was signed by the project?
 
 **Answer: NO.**
 
-- `INSTALL.md:51-65` documents `vega doctor --verify-attestations` with
+- `INSTALL.md:51-65` documents `vegastack doctor --verify-attestations` with
   Sigstore re-verification, Rekor inclusion proofs, pinned-Fulcio-root
   airgap support — **none of this exists in v0.1.**
 - `cli.ts:108` only wires `--verify-bundle` (boolean).
@@ -251,7 +251,7 @@ cosign verify-blob \
   <hex>.tar.gz
 ```
 
-But this is unsigned by `vega doctor` — the user has to know to do it,
+But this is unsigned by `vegastack doctor` — the user has to know to do it,
 remember the OIDC issuer/identity regex, and have cosign installed.
 
 ### Recommendations
@@ -294,7 +294,7 @@ remember the OIDC issuer/identity regex, and have cosign installed.
 
 4. **Sigstore signed but unverified by CLI** — pipeline emits
    `.sigstore` for every shard and full bundle but
-   `npm/install.js` and `vega doctor` never call `cosign verify-blob`.
+   `npm/install.js` and `vegastack doctor` never call `cosign verify-blob`.
    **v0.2 deferral acknowledged.** Mitigation: add manual `cosign
    verify-blob` recipe to `SECURITY.md` and mark `--verify-attestations`
    as v0.2 in `INSTALL.md`. **Severity: low for v0.1.** Pinned-SHA

@@ -1,4 +1,4 @@
-// `vega doctor` — environment health check.
+// `vegastack doctor` — environment health check.
 //
 // Verifies Node, bundle presence, schema-version, schema-file presence,
 // jq, ripgrep, and reports per-agent install status.
@@ -55,7 +55,7 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
     ok: bundle.installed,
     detail: bundle.installed
       ? `v${bundle.version ?? "?"} at ${bundle.path} (${bundle.providerCount ?? "?"} providers, schema_version=${bundle.schemaVersion ?? "?"}, generated ${bundle.generatedAt ?? "?"})`
-      : `not installed at ${bundle.path}${bundle.error ? ` — ${bundle.error}` : " — run 'vega install'"}`,
+      : `not installed at ${bundle.path}${bundle.error ? ` — ${bundle.error}` : " — run 'vegastack install'"}`,
   });
 
   // Schema file presence (the JSON Schema E1 ships).
@@ -65,7 +65,7 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
     ok: existsSync(schemaPath),
     detail: existsSync(schemaPath)
       ? schemaPath
-      : `not found at ${schemaPath} — run 'vega refresh' (E1 emits this in v0.1)`,
+      : `not found at ${schemaPath} — run 'vegastack refresh' (E1 emits this in v0.1)`,
   });
 
   // Optional tools
@@ -97,7 +97,7 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
       name: "CLI version",
       ok: !stale,
       detail: stale
-        ? `${currentCli} (newer available: ${latestCli} — run \`vega update\`)`
+        ? `${currentCli} (newer available: ${latestCli} — run \`vegastack update\`)`
         : `${currentCli} (latest)`,
     });
   }
@@ -188,7 +188,7 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
     if (hostInstalled && skillRegistered) log.ok(line);
     else log.info(line);
     if (hostInstalled && !skillRegistered) {
-      log.info(`  → run \`vega skills install --agent ${ar.agent}\` to register`);
+      log.info(`  → run \`vegastack skills install --agent ${ar.agent}\` to register`);
     } else if (!hostInstalled && skillRegistered) {
       log.info(
         `  → host not detected (${ar.host?.evidence ?? "?"}); skill is an orphan, safe to remove`,

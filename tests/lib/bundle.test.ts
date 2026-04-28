@@ -3,20 +3,20 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { readBundleStatus, requireBundle } from "../../src/lib/bundle.js";
-import { VegaError } from "../../src/lib/errors.js";
+import { VegastackError } from "../../src/lib/errors.js";
 
 let workspace: string;
 let originalEnv: string | undefined;
 
 beforeEach(() => {
-  workspace = fs.mkdtempSync(path.join(os.tmpdir(), "vega-bundle-test-"));
-  originalEnv = process.env.VEGA_BUNDLE_DIR;
-  process.env.VEGA_BUNDLE_DIR = workspace;
+  workspace = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-bundle-test-"));
+  originalEnv = process.env.VEGASTACK_BUNDLE_DIR;
+  process.env.VEGASTACK_BUNDLE_DIR = workspace;
 });
 afterEach(() => {
   fs.rmSync(workspace, { recursive: true, force: true });
-  if (originalEnv !== undefined) process.env.VEGA_BUNDLE_DIR = originalEnv;
-  else delete process.env.VEGA_BUNDLE_DIR;
+  if (originalEnv !== undefined) process.env.VEGASTACK_BUNDLE_DIR = originalEnv;
+  else delete process.env.VEGASTACK_BUNDLE_DIR;
 });
 
 const VALID_ROOT = {
@@ -107,11 +107,11 @@ describe("readBundleStatus", () => {
 describe("requireBundle", () => {
   it("throws BundleMissing when bundle dir missing", () => {
     fs.rmSync(workspace, { recursive: true, force: true });
-    expect(() => requireBundle()).toThrow(VegaError);
+    expect(() => requireBundle()).toThrow(VegastackError);
     try {
       requireBundle();
     } catch (e) {
-      expect((e as VegaError).kind).toBe("BundleMissing");
+      expect((e as VegastackError).kind).toBe("BundleMissing");
     }
   });
 
@@ -125,7 +125,7 @@ describe("requireBundle", () => {
       requireBundle();
       expect.fail("should have thrown");
     } catch (e) {
-      expect((e as VegaError).kind).toBe("BundleCorrupt");
+      expect((e as VegastackError).kind).toBe("BundleCorrupt");
     }
   });
 
@@ -135,7 +135,7 @@ describe("requireBundle", () => {
       requireBundle();
       expect.fail("should have thrown");
     } catch (e) {
-      expect((e as VegaError).kind).toBe("BundleVersionMismatch");
+      expect((e as VegastackError).kind).toBe("BundleVersionMismatch");
     }
   });
 

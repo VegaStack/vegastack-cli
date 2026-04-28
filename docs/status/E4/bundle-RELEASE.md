@@ -194,11 +194,11 @@ does not have an STS endpoint.
 ## Coming in v0.2
 
 - **`stable` channel.** Bundle promoted to `stable` after ≥7 days on
-  `latest` with eval lift unchanged or improving. `vega install --channel stable`
-  pins to it. Promotion command: `vega-bot promote stable <CALVER>`.
+  `latest` with eval lift unchanged or improving. `vegastack install --channel stable`
+  pins to it. Promotion command: `vegastack-bot promote stable <CALVER>`.
 - **Quarterly airgap drop.** `airgap-<CALVER>.tar.gz` containing the
   bundle + Sigstore bundle + verify.sh / verify.ps1 + pinned Fulcio
-  root, downloadable from GH Releases. `vega install --offline <path>`
+  root, downloadable from GH Releases. `vegastack install --offline <path>`
   on the user side.
 - **CLI tarball cosign signing.** v0.1 ships npm provenance only; v0.2
   adds `cosign sign-blob` for the npm tarball as well, for parity.

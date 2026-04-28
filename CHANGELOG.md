@@ -4,6 +4,22 @@ All notable changes to `@vegastack/cli` are documented here. The format is based
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-04-28
+
+Project-wide rename to a single brand: the CLI, plugin, internal symbols, and env vars now all use `vegastack`/`VEGASTACK_` instead of the mix of `vega` (binary), `terraform-providers-kit` (plugin), and `VEGA_*` (env). Terraform was the first knowledge pack; the surface name no longer pre-commits us to it. Also moves the Claude Code plugin layout to the spec-default locations so reload picks up commands, hooks, and the MCP server.
+
+### Changed (BREAKING)
+
+- CLI binary renamed `vega` → `vegastack`. All subcommands move with it: `vegastack tf`, `vegastack doctor`, `vegastack install`, `vegastack update`, `vegastack skills install`, etc. No `vega` shim is shipped.
+- Env vars renamed `VEGA_*` → `VEGASTACK_*` (`VEGASTACK_BUNDLE_DIR`, `VEGASTACK_BUNDLE_URL`, `VEGASTACK_FORCE_UNLOCK`, …).
+- Claude Code plugin renamed `terraform-providers-kit` → `vegastack-cli`. Install dir moves from `~/.claude/plugins/terraform-providers-kit/` to `~/.claude/plugins/vegastack-cli/`. Re-run `vegastack skills install --agent claude-code --force` after upgrading.
+- Cloudflare Worker Durable Object class renamed `VegaMcp` → `VegastackMcp`. Migration `v1` rewritten clean (no deploy had occurred); deployers of pre-rename builds must wipe DO state before deploying.
+- Internal TypeScript symbols renamed: `VegaError` → `VegastackError`, `VegaErrorKind`, `VegaErrorJson`, `asVegaError` correspondingly.
+
+### Fixed
+
+- Claude Code plugin commands (`/tf`), hooks, and MCP server now load on install. Previously the manifest pointed `commands`, `hooks`, and `mcpServers` at paths inside `.claude-plugin/`, but the [plugin spec](https://code.claude.com/docs/en/plugins-reference) resolves those fields against the plugin root — so reload reported `0 hooks · 0 plugin MCP servers` and `/tf` did not match. Files moved to the spec-default locations: `commands/`, `hooks/hooks.json`, and `.mcp.json` at the plugin root; the redundant override fields in `plugin.json` are gone.
+
 ## [0.1.4] - 2026-04-28
 
 Stops `vega install` from silently lying about "another install in progress" when the real problem is a bad `VEGA_BUNDLE_DIR` or filesystem permissions. The previous code conflated three distinct failure modes (placeholder env value, lock infrastructure failure, real lock contention) into one misleading message.

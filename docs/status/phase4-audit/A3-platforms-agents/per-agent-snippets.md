@@ -4,7 +4,7 @@ For each agent, the config a user pastes (or the command they run) to enable
 vegastack. Each snippet was verified against E5's actual renderer output and
 E7's MCP server endpoints + handshakes.
 
-The CLI command path (`vega skills install --agent ...`) is the preferred
+The CLI command path (`vegastack skills install --agent ...`) is the preferred
 install for the four legacy agents (Claude Code, Codex, Cursor, Gemini). For
 the two new renderers (Continue, Aider) the CLI command path is BROKEN until
 punch-list #3 lands — they require a direct renderer invocation OR the manual
@@ -24,22 +24,22 @@ Both are served by the same `apps/mcp/` Worker (verified live: `wrangler dev` on
 
 ```bash
 npm i -g @vegastack/cli
-vega install                                     # downloads ~12 MB docs bundle
-vega skills install --agent claude-code          # links the plugin
+vegastack install                                     # downloads ~12 MB docs bundle
+vegastack skills install --agent claude-code          # links the plugin
 # inside Claude Code:
 /reload-plugins
 ```
 
-This links the package dir into `~/.claude/plugins/terraform-providers-kit/` (symlink on macOS/Linux/WSL, recursive copy on Windows non-admin). Subsequent `npm i -g @vegastack/cli@latest` updates the plugin automatically via the symlink.
+This links the package dir into `~/.claude/plugins/vegastack-cli/` (symlink on macOS/Linux/WSL, recursive copy on Windows non-admin). Subsequent `npm i -g @vegastack/cli@latest` updates the plugin automatically via the symlink.
 
 ### What gets written
 
-`~/.claude/plugins/terraform-providers-kit/.claude-plugin/plugin.json`:
+`~/.claude/plugins/vegastack-cli/.claude-plugin/plugin.json`:
 
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/hesreallyhim/claude-code-json-schema/main/plugin.schema.json",
-  "name": "terraform-providers-kit",
+  "name": "vegastack-cli",
   "version": "0.1.0",
   "description": "Local, deterministic Terraform docs harness for 31 providers ...",
   "skills": "./skills/",
@@ -49,7 +49,7 @@ This links the package dir into `~/.claude/plugins/terraform-providers-kit/` (sy
 }
 ```
 
-`~/.claude/plugins/terraform-providers-kit/.claude-plugin/mcp/mcp.json` (E5 default; per punch-list #2 should switch to `/mcp`):
+`~/.claude/plugins/vegastack-cli/.claude-plugin/mcp/mcp.json` (E5 default; per punch-list #2 should switch to `/mcp`):
 
 ```jsonc
 {
@@ -84,8 +84,8 @@ For Claude Code releases that support StreamableHTTP, swap mcp.json to:
 
 ```bash
 npm i -g @vegastack/cli
-vega install
-vega skills install --agent codex                # global; project also OK
+vegastack install
+vegastack skills install --agent codex                # global; project also OK
 # in your next Codex session, list with:
 codex /skills
 ```
@@ -111,14 +111,14 @@ This is the modern transport — verified live against `apps/mcp/`'s `/mcp` endp
 ```bash
 cd <your-terraform-project>
 npm i -g @vegastack/cli                          # only once, system-wide
-vega install
-vega skills install --agent cursor --scope project
+vegastack install
+vegastack skills install --agent cursor --scope project
 # Cursor reloads the rule on next save of any .tf/.hcl
 ```
 
-This drops the rule into `<cwd>/.cursor/rules/terraform-providers-kit.mdc` with `description`, `globs: ["**/*.tf", "**/*.tfvars", "**/*.hcl", "**/main.tf", "**/variables.tf", "**/terraform.tfvars"]`, and `alwaysApply: false`.
+This drops the rule into `<cwd>/.cursor/rules/vegastack-cli.mdc` with `description`, `globs: ["**/*.tf", "**/*.tfvars", "**/*.hcl", "**/main.tf", "**/variables.tf", "**/terraform.tfvars"]`, and `alwaysApply: false`.
 
-**Known issue (audit finding):** re-running `vega skills install --agent cursor --scope project` exits 1 with `destination exists; pass --force` even when the on-disk file is byte-identical to what we'd write. Workaround: pass `--force`. Tracked as A3 SHOULD-FIX #3.
+**Known issue (audit finding):** re-running `vegastack skills install --agent cursor --scope project` exits 1 with `destination exists; pass --force` even when the on-disk file is byte-identical to what we'd write. Workaround: pass `--force`. Tracked as A3 SHOULD-FIX #3.
 
 ### MCP server config (Cursor settings → MCP)
 
@@ -142,7 +142,7 @@ This drops the rule into `<cwd>/.cursor/rules/terraform-providers-kit.mdc` with 
 
 ```bash
 cd <your-terraform-project>
-vega skills install --agent gemini --scope project
+vegastack skills install --agent gemini --scope project
 # This writes <cwd>/gemini-extension.json + <cwd>/CONTEXT.md
 ```
 
@@ -152,7 +152,7 @@ The CLI's `--agent gemini` route currently uses the legacy project-only installe
 
 ```bash
 # After punch-list #3 fix:
-vega skills install --agent gemini --scope global
+vegastack skills install --agent gemini --scope global
 # → writes ~/.gemini-extensions/vegastack/{gemini-extension.json,
 #                                         skills/terraform-docs/SKILL.md,
 #                                         commands/tf.toml}
@@ -181,7 +181,7 @@ vega skills install --agent gemini --scope global
 ```toml
 description = "Search Terraform docs (local, deterministic, no network)."
 prompt = """
-Run `vega tf "{{args}}"` and read the returned JSON envelope on stdout. ...
+Run `vegastack tf "{{args}}"` and read the returned JSON envelope on stdout. ...
 """
 ```
 
@@ -193,7 +193,7 @@ After install, run `gemini extensions list` to confirm and reload the session.
 
 ### CURRENT STATE: CLI install BROKEN (punch-list #3)
 
-`vega skills install --agent continue` returns `unknown agent(s): continue. Valid: claude-code, codex, cursor, gemini, all`. Renderer ships in code (`src/agents/continue.ts`) but `src/commands/skills.ts` doesn't reach it. **This blocks all Continue.dev users until #3 lands.**
+`vegastack skills install --agent continue` returns `unknown agent(s): continue. Valid: claude-code, codex, cursor, gemini, all`. Renderer ships in code (`src/agents/continue.ts`) but `src/commands/skills.ts` doesn't reach it. **This blocks all Continue.dev users until #3 lands.**
 
 ### Manual config (workaround until #3 fix)
 
@@ -209,7 +209,7 @@ mcpServers:
     url: https://mcp.vegastack.com/sse
     transport: sse
     description: |
-      Vegastack Terraform docs harness. Mirrors `vega tf` over MCP for
+      Vegastack Terraform docs harness. Mirrors `vegastack tf` over MCP for
       Continue. Returns the same four-channel envelope (knowledge,
       recipes, files, concept_aliases_used) the CLI does.
 ```
@@ -237,7 +237,7 @@ Continue.dev's modern client speaks StreamableHTTP. Verified live — `POST /mcp
 
 ### CURRENT STATE: CLI install BROKEN (punch-list #3)
 
-`vega skills install --agent aider` returns `unknown agent(s): aider`. Renderer ships in code (`src/agents/aider.ts`) but isn't reachable from CLI. **Blocks all Aider users until #3 lands.**
+`vegastack skills install --agent aider` returns `unknown agent(s): aider`. Renderer ships in code (`src/agents/aider.ts`) but isn't reachable from CLI. **Blocks all Aider users until #3 lands.**
 
 ### Manual install (workaround)
 
@@ -253,7 +253,7 @@ Splunk, PagerDuty, Okta, Auth0, CrowdStrike, 1Password, MongoDB Atlas,
 Snowflake, Redis Cloud, ClickHouse, Pinecone, Ansible, and the standard
 utility providers), invoke the local CLI before writing HCL:
 
-    vega tf "<the user's request, in natural language>"
+    vegastack tf "<the user's request, in natural language>"
 
 The response is one JSON envelope with four channels:
 
@@ -269,10 +269,10 @@ Hard rules:
   files[].manifest_entry (top-level or .blocks.*), it doesn't exist.
 - Never fabricate import IDs. Use manifest_entry.import_syntax.command.
 - Respect deprecated:true — tell the user before writing code.
-- One provider per vega tf call; multi-provider work uses recipes[].
+- One provider per vegastack tf call; multi-provider work uses recipes[].
 - Cite citations[] (file paths + knowledge-card / recipe IDs) in your reply.
 
-If `vega` isn't on PATH, run `npm i -g @vegastack/cli` and `vega install`.
+If `vegastack` isn't on PATH, run `npm i -g @vegastack/cli` and `vegastack install`.
 ```
 
 2. Patch `~/.aider.conf.yml` to load it:
@@ -304,9 +304,9 @@ npx mcp-remote https://mcp.vegastack.com/mcp
 
 | Agent | CLI install works | Manual snippet works | MCP transport (verified) | Path written |
 |---|---|---|---|---|
-| Claude Code | yes | yes | `/sse` (default) and `/mcp` (modern variant) | `~/.claude/plugins/terraform-providers-kit/` |
+| Claude Code | yes | yes | `/sse` (default) and `/mcp` (modern variant) | `~/.claude/plugins/vegastack-cli/` |
 | Codex | yes | yes | `/mcp` streamable-http | `~/.agents/skills/terraform-docs/` + `~/.codex/AGENTS.md` |
-| Cursor | yes (project only; idempotency bug) | yes | `/sse` (Cursor settings) | `<cwd>/.cursor/rules/terraform-providers-kit.mdc` |
+| Cursor | yes (project only; idempotency bug) | yes | `/sse` (Cursor settings) | `<cwd>/.cursor/rules/vegastack-cli.mdc` |
 | Gemini | yes (legacy project layout) | yes (modern global layout) | `/sse` | `<cwd>/gemini-extension.json` (legacy) or `~/.gemini-extensions/vegastack/...` (modern) |
 | Continue | **NO (punch-list #3)** | yes | `/sse` today; **switch to `/mcp` per punch-list #2** | `~/.continue/mcpServers/vegastack-tf.yaml` |
 | Aider | **NO (punch-list #3)** | yes | n/a (mcp-remote proxy) | `~/.aider/CONVENTIONS.vegastack.md` + `~/.aider.conf.yml` |

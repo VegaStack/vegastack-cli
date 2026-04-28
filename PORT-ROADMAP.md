@@ -3,7 +3,7 @@
 ## Status: ✅ shipped
 
 The native TypeScript discoverer is in `src/lib/discover/` and is the default
-runtime for `vega tf`. Python is no longer required to install or use the
+runtime for `vegastack tf`. Python is no longer required to install or use the
 CLI. This document is kept for historical context and as a reference for any
 future v0.3 retrievals work (common-query cache, trigram body index).
 
@@ -87,8 +87,8 @@ Items considered during the v0.2 design but explicitly deferred:
 
 ## Migration path for users
 
-Zero user action. The npm postinstall fetches the same bundle; `vega tf`
-swaps Python shell-out for native code. `vega doctor` no longer reports a
+Zero user action. The npm postinstall fetches the same bundle; `vegastack tf`
+swaps Python shell-out for native code. `vegastack doctor` no longer reports a
 Python check. The bundle's `scripts/discover.py` stays in place for
-backwards compat (anyone aliasing `python3 $VEGA_BUNDLE/scripts/discover.py`
+backwards compat (anyone aliasing `python3 $VEGASTACK_BUNDLE/scripts/discover.py`
 directly is unaffected), but the CLI never invokes it.

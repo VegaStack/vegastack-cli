@@ -50,13 +50,13 @@ flowchart LR
   npm --> loader
   loader --> bundle[~/.config/vegastack/bundle/<br/>per-provider MANIFEST.json + raw markdown<br/>knowledge/ recipes/ aliases/]
   bundle --> harness
-  harness[vega tf · vega skills · vega doctor · vega update · vega mcp serve]
+  harness[vegastack tf · vegastack skills · vegastack doctor · vegastack update · vegastack mcp serve]
   harness --> renderers[Per-agent renderers<br/>Claude · Codex · Cursor · Gemini · Continue · Aider · gh-skill]
   renderers --> claude[~/.claude/plugins/]
   renderers --> codex[~/.codex/skills/]
   renderers --> cursor[~/.cursor/rules/]
   renderers --> gemini[~/.gemini-extensions/]
-  agentloop[Agent harness loop<br/>SKILL.md trigger → bash 'vega tf ...' → reads four-channel envelope]
+  agentloop[Agent harness loop<br/>SKILL.md trigger → bash 'vegastack tf ...' → reads four-channel envelope]
   claude --> agentloop
   codex --> agentloop
   cursor --> agentloop
@@ -328,11 +328,11 @@ All paths absolute. Net LOC delta. **Risk** weighted by harness blast-radius. `c
 |---|---|---|---|---|
 | `cli/.github/workflows/release-changesets.yml` | OIDC trusted publishing (`id-token: write`); cosign sign-blob; CycloneDX SBOM step | +60/-10 | R5 §4 | med |
 | `bundle/.github/workflows/build-and-publish.yml` (extend) | Per-provider tar.gz+.sha256; cosign→.sigstore; upload R2 + GH Releases mirror | +200 | R5 §3 §4 | high |
-| **NEW** `cli/src/commands/update.ts` | `vega update [--rollback] [--channel latest\|stable]`; atomic-swap to `bundle.previous` | +180 | R5 §2 | med |
-| **NEW** `cli/src/lib/update-notifier.ts` | gh-cli 24h state-file pattern at `~/.cache/vegastack/update.yml`; honors `NO_UPDATE_NOTIFIER`, `DO_NOT_TRACK`, `VEGA_NO_UPDATE_NOTIFIER`, `CI`, `VEGA_OFFLINE` | +180 | R5 §2 | low |
+| **NEW** `cli/src/commands/update.ts` | `vegastack update [--rollback] [--channel latest\|stable]`; atomic-swap to `bundle.previous` | +180 | R5 §2 | med |
+| **NEW** `cli/src/lib/update-notifier.ts` | gh-cli 24h state-file pattern at `~/.cache/vegastack/update.yml`; honors `NO_UPDATE_NOTIFIER`, `DO_NOT_TRACK`, `VEGASTACK_NO_UPDATE_NOTIFIER`, `CI`, `VEGASTACK_OFFLINE` | +180 | R5 §2 | low |
 | `cli/npm/install.js` | Read R2 root manifest, diff shard digests, fetch only changed per-provider shards | +250/-50 | R5 §3 | high |
 | **NEW** `cli/src/lib/bundle-paths.ts` | Windows `%LOCALAPPDATA%` fallback; long-path-aware | +90 | R5 §5 | low |
-| **NEW** `cli/src/commands/mcp.ts` (v0.3) | `vega mcp serve` — stdio MCP wrapper, qmd-shaped tool set | +220 | R1 §10 | med |
+| **NEW** `cli/src/commands/mcp.ts` (v0.3) | `vegastack mcp serve` — stdio MCP wrapper, qmd-shaped tool set | +220 | R1 §10 | med |
 
 ## E5 — SKILL & docs rewrite
 
@@ -340,7 +340,7 @@ All paths absolute. Net LOC delta. **Risk** weighted by harness blast-radius. `c
 |---|---|---|---|---|
 | `cli/skills/terraform-docs/SKILL.md` | Rewrite per §5 (~150 lines body + frontmatter w/ WHEN-NOT) | net 0 | F3 | med |
 | `cli/skills/terraform-docs/references/*.md` | Rewrite to match v2 envelope; add `eval-baseline.md`, `troubleshooting.md` | +200/-100 | F3 | low |
-| `cli/.claude-plugin/plugin.json` | Add `version`, `keywords`, `skills`, `commands`, `monitors`, `hooks` (SessionStart → `vega doctor --json`) | +40/-5 | R1 §2 | low |
+| `cli/.claude-plugin/plugin.json` | Add `version`, `keywords`, `skills`, `commands`, `monitors`, `hooks` (SessionStart → `vegastack doctor --json`) | +40/-5 | R1 §2 | low |
 | `cli/gemini-extension.json` + `commands/tf.toml` | Native `/tf` slash command | +30 | R1 §6 | low |
 | `cli/cursor-rule.mdc` | File-Scoped `globs: ["**/*.tf","**/*.hcl"]`, WHEN/WHEN-NOT description | +25/-10 | R1 §5 | low |
 | **NEW** `cli/src/agents/{continue,aider}.ts` | Renderers writing `~/.continue/config.json` patch + `CONVENTIONS.md` block | +180 | R5 §6 | low |
@@ -393,7 +393,7 @@ All paths absolute. Net LOC delta. **Risk** weighted by harness blast-radius. `c
 
 **Baseline-vs-skill methodology** (`evals/runner.ts`):
 
-1. **Baseline run**: Claude Sonnet 4.7 (or whatever current model) given prompt only, no `vega tf` available. Score each `expectations[]` independently with a simple LLM-as-judge prompt asking yes/no per expectation.
+1. **Baseline run**: Claude Sonnet 4.7 (or whatever current model) given prompt only, no `vegastack tf` available. Score each `expectations[]` independently with a simple LLM-as-judge prompt asking yes/no per expectation.
 2. **With-skill run**: same model + same prompt + skills directory mounted (Anthropic SDK harness with bash tool, no MCP). Same scoring.
 3. **Lift = `(with_skill_pct − baseline_pct) / (1 − baseline_pct)`** — fraction of remaining error closed. One headline number per quarterly release.
 
@@ -439,7 +439,7 @@ description: |
   (different DSLs); Terraform Cloud workspace administration (separate API).
 license: MIT
 compatibility: Claude Code, Codex CLI, Cursor, Gemini, Continue, Aider
-allowed-tools: Bash(vega:*) Bash(jq:*) Read Grep Glob
+allowed-tools: Bash(vegastack:*) Bash(jq:*) Read Grep Glob
 metadata:
   homepage: https://github.com/vegastack/vegastack-cli
   schema_version: "2"
@@ -454,7 +454,7 @@ WHEN-NOT closes the R1 §1 finding ("agents underfire it").
 | section | words | content |
 |---|---|---|
 | **Why this skill exists** | 80 | One paragraph, no bullets — model context. |
-| **The single command** | 100 | `vega tf "<query>"`; one tool call per task. |
+| **The single command** | 100 | `vegastack tf "<query>"`; one tool call per task. |
 | **Mental model: four channels** | 200 | The table; populated by loaders, not promised emptily. |
 | **Core workflow (3 steps)** | 250 | Discover → read envelope (knowledge → recipes → files → aliases) → cite. |
 | **When you DO need follow-ups** | 150 | The 3 cases (broad survey, companion-of-companion, prose around examples). |
@@ -473,18 +473,18 @@ WHEN-NOT closes the R1 §1 finding ("agents underfire it").
 | `references/knowledge-cards.md` | keep, expand: list all 16 cards with id + trigger |
 | `references/recipes.md` | keep, expand: list all 10 recipes |
 | `references/concept-aliases.md` | keep, replace with table of 28 aliases per provider |
-| **NEW** `references/eval-baseline.md` | published lift numbers; "if you see <issue>, run `vega tf --debug`" |
-| **NEW** `references/troubleshooting.md` | reads `vega doctor` output; common failure modes |
+| **NEW** `references/eval-baseline.md` | published lift numbers; "if you see <issue>, run `vegastack tf --debug`" |
+| **NEW** `references/troubleshooting.md` | reads `vegastack doctor` output; common failure modes |
 
 ## 5.4 Per-agent renderer surface (R5 §6)
 
 | agent | what they get | renderer outputs |
 |---|---|---|
-| Claude Code | full SKILL.md + plugin.json + monitors freshness watcher + SessionStart hook | symlinks `~/.claude/plugins/terraform-providers-kit/` → bundle |
+| Claude Code | full SKILL.md + plugin.json + monitors freshness watcher + SessionStart hook | symlinks `~/.claude/plugins/vegastack-cli/` → bundle |
 | Codex CLI | SKILL.md only (Codex reads metadata only until matched) | `~/.codex/skills/terraform-docs/SKILL.md` |
 | Cursor | `.mdc` rule with WHEN-NOT + `globs: ["**/*.tf","**/*.hcl"]` | `~/.cursor/rules/vegastack-terraform.mdc` |
 | Gemini | `gemini-extension.json` + `commands/tf.toml` for `/tf` slash command | `~/.gemini-extensions/vegastack/` |
-| Continue | MCP server config snippet pointing at `vega mcp serve` | `~/.continue/config.json` patch + dry-run preview |
+| Continue | MCP server config snippet pointing at `vegastack mcp serve` | `~/.continue/config.json` patch + dry-run preview |
 | Aider | `CONVENTIONS.md` block (markdown, appended idempotently) | `CONVENTIONS.md` patch in CWD or `~` |
 
 All renderers read the **same canonical `bundle/skill.json`** + body markdown. When Cursor's `.mdc` syntax changes in 2027, only `cursor.ts` changes.
@@ -497,12 +497,12 @@ All renderers read the **same canonical `bundle/skill.json`** + body markdown. W
 
 | surface | change | breaking? |
 |---|---|---|
-| `vega tf` exit codes 0/2/3 | unchanged | no |
+| `vegastack tf` exit codes 0/2/3 | unchanged | no |
 | envelope shape | superset: adds knowledge/recipes/concept_aliases_used/citations/score_norm/bundle_version/provider_confidence/schema_version | additive — no |
 | `--raw` | unchanged; also omits new loader channels | no |
 | `provider` typed `string\|undefined` → `string` (when `status:"ok"`) | strictly safer; one-session stderr deprecation warning in v0.2; removed in v0.3 | minor |
-| `vega doctor` python3 row | dropped (native port shipped) | minor; release-noted |
-| `$VEGA_BUNDLE` env | set by `runTf()` wrapper, restoring doc-drifted contract | no |
+| `vegastack doctor` python3 row | dropped (native port shipped) | minor; release-noted |
+| `$VEGASTACK_BUNDLE` env | set by `runTf()` wrapper, restoring doc-drifted contract | no |
 | MANIFEST schema v4 → v2 (renumbered) | additive only; v1 readers see all expected fields | no |
 
 ## 6.2 Manifest schema migration
@@ -514,7 +514,7 @@ Additive-only. New keys (`blocks`, `recommended_companions`, `description_token_
 | bump | gate |
 |---|---|
 | **v0.2** | F1/F2/F3/F4/F10/F11/F12/F13/F20 closed · ≥30 evals green at ≥80% · parity test green · python3 removed · per-stage units for tier1/tier2/scoring/enrich |
-| **v0.3** | CalVer bundle live · R2+GH hybrid 30 days incident-free · renderer abstraction shipped · PostHog telemetry deployed · `vega update --rollback` in CI · quarterly airgap |
+| **v0.3** | CalVer bundle live · R2+GH hybrid 30 days incident-free · renderer abstraction shipped · PostHog telemetry deployed · `vegastack update --rollback` in CI · quarterly airgap |
 | **v1.0** | ≥3 months on v0.3 no criticals · public eval lift ≥40% sustained 8 weeks · gh-skill 1.0 shim · Verdaccio mirror documented · stable-channel SLA · OIDC+sigstore only (no NPM_TOKEN, no GPG) |
 
 ---
@@ -523,7 +523,7 @@ Additive-only. New keys (`blocks`, `recommended_companions`, `description_token_
 
 **Changesets** — keep `@changesets/cli`. `.changeset/config.json`: `baseBranch:"main"`, `access:"public"`, `commit:false` (bot opens Version Packages PR), `changelog:@changesets/changelog-github`. `CONTRIBUTING.md` documents Wrangler rule: every non-breaking change ships as patch; no minor for CLI until v1.0.
 
-**Dist tags** — `latest` (every merge to main; CalVer bundle daily), `stable` (bundle ≥7 days old + eval lift unchanged or up; manual `vega-bot promote stable <ver>`), `next` (v1.0 RC line). `vega install` defaults to `latest`; regulated users `--channel stable`.
+**Dist tags** — `latest` (every merge to main; CalVer bundle daily), `stable` (bundle ≥7 days old + eval lift unchanged or up; manual `vegastack-bot promote stable <ver>`), `next` (v1.0 RC line). `vegastack install` defaults to `latest`; regulated users `--channel stable`.
 
 **Daily cron** (`bundle/.github/workflows/sync.yml`, extending the existing upstream-sync job):
 1. Sync upstream provider docs (existing).
@@ -547,11 +547,11 @@ bundles.vegastack.com/
 
 Custom domain via Cloudflare R2 (we already run on CF). Egress free, Anycast global.
 
-**Sigstore** — GH Actions `id-token: write`; `sigstore/cosign-installer@v3` → `cosign sign-blob --yes`. Fulcio root pinned only for airgap (v0.3). `vega doctor --verify-attestations` (v0.3) does cosign verify-blob.
+**Sigstore** — GH Actions `id-token: write`; `sigstore/cosign-installer@v3` → `cosign sign-blob --yes`. Fulcio root pinned only for airgap (v0.3). `vegastack doctor --verify-attestations` (v0.3) does cosign verify-blob.
 
-**`vega update`** — `update` bumps bundle to channel default; `--rollback` atomic-swaps pointer to `bundle.previous` (one-generation kept on disk; POSIX rename / Windows `MoveFileEx MOVEFILE_REPLACE_EXISTING`); `--channel stable\|latest` switches; `--offline <path>` extracts an airgap tarball.
+**`vegastack update`** — `update` bumps bundle to channel default; `--rollback` atomic-swaps pointer to `bundle.previous` (one-generation kept on disk; POSIX rename / Windows `MoveFileEx MOVEFILE_REPLACE_EXISTING`); `--channel stable\|latest` switches; `--offline <path>` extracts an airgap tarball.
 
-**Telemetry stays a v0.3 ship.** v0.2 includes only no-op `vega telemetry status|enable|disable|purge` stubs so users can pre-write configs. PostHog EU endpoint, opt-in prompt UX, and shipped fields per R5 §7.
+**Telemetry stays a v0.3 ship.** v0.2 includes only no-op `vegastack telemetry status|enable|disable|purge` stubs so users can pre-write configs. PostHog EU endpoint, opt-in prompt UX, and shipped fields per R5 §7.
 
 ---
 
@@ -562,14 +562,14 @@ Top 10 by `impact × likelihood`. Owner = E#-team.
 | # | risk | trigger | impact | likelihood | mitigation | owner |
 |---|---|---|---|---|---|---|
 | 1 | **F1/F2 fix introduces regressions in `required_args`** — agents that grew to depend on the over-broad list write broken HCL | first agent uses `aws_db_instance.required_args` after fix and gets 4 not 8 | HIGH | MED | parity test gates merge; release notes call out top-affected resources; eval A1/A2 lift the canary | E1 + E6 |
-| 2 | **R2 + GH hybrid loader has a bad day** (R2 outage during release) | first 2026-Q3 R2 incident | HIGH | LOW-MED | GH Releases mirror always live; install.js falls back automatically; `vega doctor` reports "primary CDN unreachable, mirror used" | E4 |
+| 2 | **R2 + GH hybrid loader has a bad day** (R2 outage during release) | first 2026-Q3 R2 incident | HIGH | LOW-MED | GH Releases mirror always live; install.js falls back automatically; `vegastack doctor` reports "primary CDN unreachable, mirror used" | E4 |
 | 3 | **Sigstore Fulcio root rotates** mid-release | annual key rotation (precedented) | MED | MED | Pin Fulcio root in airgap mode only; online mode uses live trust root; document rotation procedure | E4 |
-| 4 | **`vega tf --debug` exposes internal score scaling** that becomes de-facto API | a power user scripts against `score` not `score_norm` | MED | HIGH | Mark `score` "internal, may change"; `score_norm` documented stable; eval-runner uses `score_norm` only | E2 |
-| 5 | **Per-provider score normalization breaks user perception** ("my CF score went from 70 to 35!") | first user file an issue post-v0.2 | MED | MED | Release notes; `vega tf --debug` shows raw + norm; default UI shows norm only | E2 |
-| 6 | **Knowledge-card freshness rot** — a card we ship becomes wrong | upstream provider change post-card-author | MED-HIGH | MED | Cards carry `date_authored` + `authoritative_source`; quarterly review checklist; eval A12 catches obvious staleness; `vega doctor --check-cards` (v0.3) flags >180-day-old cards | E3 |
+| 4 | **`vegastack tf --debug` exposes internal score scaling** that becomes de-facto API | a power user scripts against `score` not `score_norm` | MED | HIGH | Mark `score` "internal, may change"; `score_norm` documented stable; eval-runner uses `score_norm` only | E2 |
+| 5 | **Per-provider score normalization breaks user perception** ("my CF score went from 70 to 35!") | first user file an issue post-v0.2 | MED | MED | Release notes; `vegastack tf --debug` shows raw + norm; default UI shows norm only | E2 |
+| 6 | **Knowledge-card freshness rot** — a card we ship becomes wrong | upstream provider change post-card-author | MED-HIGH | MED | Cards carry `date_authored` + `authoritative_source`; quarterly review checklist; eval A12 catches obvious staleness; `vegastack doctor --check-cards` (v0.3) flags >180-day-old cards | E3 |
 | 7 | **TS port + Python builder drift** (the constants-table problem) | one team adds an alias only on one side | HIGH | HIGH (was) → LOW (with externalization) | Externalize all alias/keyword tables into manifest.json (E1); TS becomes pure consumer; parity test on 50 evals | E1 + E2 |
-| 8 | **Per-shard download breaks behind corporate proxies** that strip Range headers | first enterprise install ticket | MED | MED | `VEGA_NO_RANGE=1` env var falls back to full-tarball download; doctor probes Range support | E4 |
-| 9 | **gh-skill spec changes between now and 1.0** (it's still beta) | breaking spec shift in `gh skill` | LOW | MED | Defer integration to v1.0; ship `vega skills install` with our own shape now | E5 |
+| 8 | **Per-shard download breaks behind corporate proxies** that strip Range headers | first enterprise install ticket | MED | MED | `VEGASTACK_NO_RANGE=1` env var falls back to full-tarball download; doctor probes Range support | E4 |
+| 9 | **gh-skill spec changes between now and 1.0** (it's still beta) | breaking spec shift in `gh skill` | LOW | MED | Defer integration to v1.0; ship `vegastack skills install` with our own shape now | E5 |
 | 10 | **Eval LLM-as-judge is noisy** — lift number jitters week-to-week | week-1 lift differs from week-2 by 8pp on identical bundle | MED | HIGH | Run each prompt 3× and median; report 80% CI; gate on rolling 4-week median for promotion to `stable` | E6 |
 
 Demoted from top-10 (still tracked): native binary distribution (we explicitly chose Node); MCP-by-default rerank (deferred indefinitely); content-authoring bottleneck (16 cards + 10 recipes is one engineer-week of writing).
@@ -583,7 +583,7 @@ Maximum 8. Each: framing → default → trade-off.
 1. **Is bundle hosted on `bundles.vegastack.com` (R2) or `cdn.vegastack.com`?** R5 §3 picks R2 + custom domain.
    - **Default if you don't answer:** `bundles.vegastack.com` (more descriptive, room for non-bundle assets later).
    - **Trade-off:** the more-explicit subdomain is easy to migrate; CNAME-only.
-2. **Do we ship an MCP server (`vega mcp serve`) in v0.2 or v0.3?** R1 §10 says one binary unlocks Continue/Aider/Cline.
+2. **Do we ship an MCP server (`vegastack mcp serve`) in v0.2 or v0.3?** R1 §10 says one binary unlocks Continue/Aider/Cline.
    - **Default:** v0.3. Lets v0.2 focus on F1/F2/F3 fixes.
    - **Trade-off:** ~220 LOC + tests; v0.2 ships without MCP and Continue/Aider users wait one release.
 3. **Recipes content format — TOML or YAML?** R4 §3 sketched TOML; YAML matches knowledge-card frontmatter.

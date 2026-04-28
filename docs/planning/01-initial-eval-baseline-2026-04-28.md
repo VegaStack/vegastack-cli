@@ -1,6 +1,6 @@
 # Initial 12-prompt baseline eval — 2026-04-28
 
-This is the eval run that triggered the v0.1 modernization plan. It was performed against the as-shipped `vega tf` v0.1 harness, using the bundle at `/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers` (31 providers, generated 270426 17:50 IST).
+This is the eval run that triggered the v0.1 modernization plan. It was performed against the as-shipped `vegastack tf` v0.1 harness, using the bundle at `/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers` (31 providers, generated 270426 17:50 IST).
 
 Raw discovery JSON for every prompt is preserved at `docs/evals/raw/{A1..D3}.json`.
 
@@ -8,7 +8,7 @@ Raw discovery JSON for every prompt is preserved at `docs/evals/raw/{A1..D3}.jso
 
 ## TL;DR — the report that started everything
 
-The single most important finding outweighed everything else: **the `vega tf` v0.1 envelope did not match what `skills/terraform-docs/SKILL.md` describes.** The skill body promises an enriched response with `manifest_entry`, `example_usage`, `knowledge[]`, `recipes[]`, `concept_aliases_used[]`, and `citations[]` inline. The harness actually returned:
+The single most important finding outweighed everything else: **the `vegastack tf` v0.1 envelope did not match what `skills/terraform-docs/SKILL.md` describes.** The skill body promises an enriched response with `manifest_entry`, `example_usage`, `knowledge[]`, `recipes[]`, `concept_aliases_used[]`, and `citations[]` inline. The harness actually returned:
 
 ```json
 { "status", "query", "provider", "tokens", "tiers_used", "files":[{path,score,tier,reasons}], "count" }
@@ -25,18 +25,18 @@ N/A scored as **2** (not relevant ≠ failure).
 
 | Prompt | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | Total /20 | Tool calls | Wall-clock |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| A1 S3+versioning+SSE       | 2 | 2 | 1 | 2 | 2 | 2 | 2 | 2 | 2 | 1 | **18** | 4 (1 vega, 3 jq) | ~6 s |
-| A2 Cloudflare DNS A        | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | **20** | 2 (1 vega, 1 jq) | ~3 s |
-| A3 Datadog ECS-CPU monitor | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | **20** | 2 (1 vega, 1 jq) | ~3 s |
-| B1 K8s Deploy+Svc+CM       | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 1 | 2 | **19** | 4 (1 vega, 3 jq) | ~5 s |
-| B2 RDS PG + SG + subnet    | 2 | 0 | 2 | 2 | 2 | 1 | 2 | 2 | 1 | 2 | **16** | 5 (1 vega, 4 jq) | ~7 s |
-| B3 Vault PKI               | 1 | 1 | 2 | 2 | 2 | 1 | 2 | 2 | 1 | 0 | **14** | 7 (1 vega, 6 jq) | ~10 s |
-| C1 ECS+ALB+ASG+RDS+DD      | 1 | 0 | 2 | 2 | 2 | 1 | 1 | 2 | 1 | 1 | **13** | 8 (2 vega, 6 jq) | ~14 s |
-| C2 CF Access + ALB + Okta  | 1 | 1 | 2 | 2 | 2 | 1 | 1 | 2 | 1 | 2 | **15** | 7 (3 vega, 4 jq) | ~12 s |
-| C3 GH Actions → ECR → EKS  | 1 | 1 | 2 | 2 | 2 | 0 | 1 | 2 | 1 | 2 | **14** | 7 (3 vega, 4 jq) | ~13 s |
-| D1 S3 native state locking | 0 | 2 | 2 | 2 | 0 | 2 | 2 | 1 | 2 | 2 | **15** | 2 (1 vega, 1 grep) | ~3 s |
-| D2 CF DNS record import    | 1 | 2 | 2 | 2 | 0 | 2 | 2 | 2 | 2 | 2 | **17** | 2 (1 vega, 1 jq) | ~3 s |
-| D3 CF Browser Rendering    | 0 | 2 | 2 | 2 | 0 | 2 | 2 | 1 | 2 | 2 | **15** | 2 (1 vega, 1 jq) | ~3 s |
+| A1 S3+versioning+SSE       | 2 | 2 | 1 | 2 | 2 | 2 | 2 | 2 | 2 | 1 | **18** | 4 (1 vegastack, 3 jq) | ~6 s |
+| A2 Cloudflare DNS A        | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | **20** | 2 (1 vegastack, 1 jq) | ~3 s |
+| A3 Datadog ECS-CPU monitor | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | **20** | 2 (1 vegastack, 1 jq) | ~3 s |
+| B1 K8s Deploy+Svc+CM       | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 1 | 2 | **19** | 4 (1 vegastack, 3 jq) | ~5 s |
+| B2 RDS PG + SG + subnet    | 2 | 0 | 2 | 2 | 2 | 1 | 2 | 2 | 1 | 2 | **16** | 5 (1 vegastack, 4 jq) | ~7 s |
+| B3 Vault PKI               | 1 | 1 | 2 | 2 | 2 | 1 | 2 | 2 | 1 | 0 | **14** | 7 (1 vegastack, 6 jq) | ~10 s |
+| C1 ECS+ALB+ASG+RDS+DD      | 1 | 0 | 2 | 2 | 2 | 1 | 1 | 2 | 1 | 1 | **13** | 8 (2 vegastack, 6 jq) | ~14 s |
+| C2 CF Access + ALB + Okta  | 1 | 1 | 2 | 2 | 2 | 1 | 1 | 2 | 1 | 2 | **15** | 7 (3 vegastack, 4 jq) | ~12 s |
+| C3 GH Actions → ECR → EKS  | 1 | 1 | 2 | 2 | 2 | 0 | 1 | 2 | 1 | 2 | **14** | 7 (3 vegastack, 4 jq) | ~13 s |
+| D1 S3 native state locking | 0 | 2 | 2 | 2 | 0 | 2 | 2 | 1 | 2 | 2 | **15** | 2 (1 vegastack, 1 grep) | ~3 s |
+| D2 CF DNS record import    | 1 | 2 | 2 | 2 | 0 | 2 | 2 | 2 | 2 | 2 | **17** | 2 (1 vegastack, 1 jq) | ~3 s |
+| D3 CF Browser Rendering    | 0 | 2 | 2 | 2 | 0 | 2 | 2 | 1 | 2 | 2 | **15** | 2 (1 vegastack, 1 jq) | ~3 s |
 | **Mean** |   |   |   |   |   |   |   |   |   |   | **16.3 / 20** | 4.3 calls | ~7 s |
 
 ---
@@ -84,4 +84,4 @@ The manifest-pollution bug (over-reported `required_args`) had to be fixed befor
 
 This eval is what triggered the Phase-1 research (R1–R5), the v1.0 synthesis plan (`07-v1-plan-synthesis.md`), and the v0.1 single-shot execution decision.
 
-Reproducible: every "manifest says X" claim in this report is reproducible with the jq commands embedded inline against `$VEGA_BUNDLE_DIR/<provider>/MANIFEST.json` where `VEGA_BUNDLE_DIR=/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers`.
+Reproducible: every "manifest says X" claim in this report is reproducible with the jq commands embedded inline against `$VEGASTACK_BUNDLE_DIR/<provider>/MANIFEST.json` where `VEGASTACK_BUNDLE_DIR=/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers`.

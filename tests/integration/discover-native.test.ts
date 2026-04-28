@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { discover } from "../../src/lib/discover/index.js";
 
 const BUNDLE_ROOT =
-  process.env.VEGA_BUNDLE_DIR_TEST ??
+  process.env.VEGASTACK_BUNDLE_DIR_TEST ??
   "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers";
 
 const HAVE_BUNDLE = fs.existsSync(path.join(BUNDLE_ROOT, "MANIFEST.json"));

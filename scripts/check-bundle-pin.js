@@ -11,10 +11,10 @@
 // publishing the package, so any non-zero exit blocks the publish.
 //
 // Bypass for legitimate cases (e.g. testing the publish pipeline itself):
-//   VEGA_ALLOW_PENDING_BUNDLE_SHA=1 npm publish
+//   VEGASTACK_ALLOW_PENDING_BUNDLE_SHA=1 npm publish
 //
 // Override the package.json path (for tests):
-//   VEGA_PACKAGE_JSON=/path/to/package.json node scripts/check-bundle-pin.js
+//   VEGASTACK_PACKAGE_JSON=/path/to/package.json node scripts/check-bundle-pin.js
 
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -24,15 +24,15 @@ const PLACEHOLDER_SHA = "sha256-PENDING-FIRST-RELEASE";
 const PLACEHOLDER_VERSION = "0.0.0";
 
 function main() {
-  if (process.env.VEGA_ALLOW_PENDING_BUNDLE_SHA === "1") {
+  if (process.env.VEGASTACK_ALLOW_PENDING_BUNDLE_SHA === "1") {
     process.stderr.write(
-      "[check-bundle-pin] VEGA_ALLOW_PENDING_BUNDLE_SHA=1 — bypassing the placeholder check.\n",
+      "[check-bundle-pin] VEGASTACK_ALLOW_PENDING_BUNDLE_SHA=1 — bypassing the placeholder check.\n",
     );
     return 0;
   }
 
   const here = dirname(fileURLToPath(import.meta.url));
-  const pkgPath = process.env.VEGA_PACKAGE_JSON ?? join(here, "..", "package.json");
+  const pkgPath = process.env.VEGASTACK_PACKAGE_JSON ?? join(here, "..", "package.json");
   let pkg;
   try {
     pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
@@ -75,7 +75,7 @@ function main() {
       "\nFix: run `npm run tag-release` after the daily bundle cron has produced a real SHA + CalVer,\n",
     );
     process.stderr.write(
-      "     OR set VEGA_ALLOW_PENDING_BUNDLE_SHA=1 to publish a TOFU build (NOT recommended).\n\n",
+      "     OR set VEGASTACK_ALLOW_PENDING_BUNDLE_SHA=1 to publish a TOFU build (NOT recommended).\n\n",
     );
     return 1;
   }

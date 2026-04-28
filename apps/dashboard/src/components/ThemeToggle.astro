@@ -18,7 +18,7 @@
 <script is:inline>
   // Inline so it runs before paint — no FOUC.
   (function () {
-    const stored = localStorage.getItem("vega-theme");
+    const stored = localStorage.getItem("vegastack-theme");
     const initial = stored === "light" ? "light" : "dark";
     document.documentElement.dataset.theme = initial;
   })();
@@ -32,7 +32,7 @@
 
   function apply(theme: "dark" | "light") {
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem("vega-theme", theme);
+    localStorage.setItem("vegastack-theme", theme);
     if (label) label.textContent = theme === "dark" ? "Dark" : "Light";
     if (dark) dark.hidden = theme !== "dark";
     if (light) light.hidden = theme !== "light";

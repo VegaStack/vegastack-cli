@@ -10,7 +10,7 @@ let homeBackup: string | undefined;
 
 beforeEach(() => {
   // Sandbox HOME so we don't write into real ~/.claude.
-  fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), "vega-claude-home-"));
+  fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-claude-home-"));
   homeBackup = process.env.HOME;
   process.env.HOME = fakeHome;
 });
@@ -85,11 +85,11 @@ describe("claude-code installer", () => {
   });
 
   it("ships an MCP config that defaults to the modern /mcp StreamableHTTP endpoint", () => {
-    // The Claude Code plugin includes .claude-plugin/mcp/mcp.json. The renderer
+    // The Claude Code plugin includes .mcp.json at the plugin root. The renderer
     // links the package directory in, so this file ships verbatim. Defaulting
     // to /mcp matches the convergent 2026 transport; /sse is still served by
     // apps/mcp/ for legacy clients.
-    const mcpJsonPath = path.join(pkgRoot(), ".claude-plugin", "mcp", "mcp.json");
+    const mcpJsonPath = path.join(pkgRoot(), ".mcp.json");
     const mcp = JSON.parse(fs.readFileSync(mcpJsonPath, "utf8")) as {
       mcpServers: Record<string, { type?: string; url: string }>;
     };

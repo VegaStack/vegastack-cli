@@ -128,7 +128,7 @@ What IS observable from the **regression runs** (`/tmp/exec-status/A1/regression
 - `/tmp/exec-status/A1/eval-runner-mock.log` — mock-mode runner stdout
 - `/tmp/exec-status/A1/eval-runner-demo-fixtures.log` — demo-fixtures runner stdout
 - `/tmp/exec-status/A1/12-prompt-regression.md` — per-prompt regression diff (the deliverable)
-- `/tmp/exec-status/A1/regression-runs/{A1..D3}.json` — raw `vega tf` envelope per legacy prompt (17 files)
+- `/tmp/exec-status/A1/regression-runs/{A1..D3}.json` — raw `vegastack tf` envelope per legacy prompt (17 files)
 - `/tmp/exec-status/A1/evals/audit-2026-04-28.json` — mock-mode eval report (audit deliverable)
 - `/tmp/exec-status/A1/evals/audit-2026-04-28-demo-fixtures.json` — demo-fixtures eval report
 

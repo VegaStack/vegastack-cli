@@ -1,13 +1,13 @@
-# `vega tf` CLI reference (v0.1)
+# `vegastack tf` CLI reference (v0.1)
 
 This is the full reference for the single CLI command the SKILL.md body invokes. Load it when the user wants flag-level detail (e.g. `--max`, `--debug`, `--raw`, `--json-schema`), or when you need the exhaustive scoring stages and ambiguity-handling contract. For the dispatch decision tree and 4-channel envelope summary, read the SKILL.md body — this file is the deeper layer of progressive disclosure.
 
-`vega tf` is the deterministic discovery harness shipped in `@vegastack/cli`. It auto-resolves the docs bundle (`~/.config/vegastack/bundle/`), auto-detects the provider, runs an 11-stage manifest scoring pass plus a parallel grep fallback, enriches each top-K hit with `manifest_entry` + `example_usage` inline, and emits a single JSON envelope on stdout.
+`vegastack tf` is the deterministic discovery harness shipped in `@vegastack/cli`. It auto-resolves the docs bundle (`~/.config/vegastack/bundle/`), auto-detects the provider, runs an 11-stage manifest scoring pass plus a parallel grep fallback, enriches each top-K hit with `manifest_entry` + `example_usage` inline, and emits a single JSON envelope on stdout.
 
 ## Synopsis
 
 ```
-vega tf "<query>" [--provider <name>] [--max <N>] [--raw] [--debug]
+vegastack tf "<query>" [--provider <name>] [--max <N>] [--raw] [--debug]
                   [--json-schema] [--bundle <path>]
 ```
 
@@ -21,7 +21,7 @@ vega tf "<query>" [--provider <name>] [--max <N>] [--raw] [--debug]
 | `--full-examples` | off | E2: Restores the full `## Example Usage` section (pre-truncation behavior). Default (no flag) truncates `example_usage` to the first HCL fenced block plus a `... (truncated; pass --full-examples for the rest)` marker. NOTE: the default truncation is a soft-breaking change for callers that relied on the full example body. |
 | `--debug` | off | Includes `timings: {…}` and the raw `score` fields in `files[]`. Power-user diagnostic; default UIs should ignore `score` and use `score_norm`. |
 | `--json-schema` | off | Prints the JSON schema of the response envelope and exits. Useful for tooling. |
-| `--bundle <path>` | from `$VEGA_BUNDLE_DIR` then `~/.config/vegastack/bundle/` | Override the bundle directory. Mostly for tests. |
+| `--bundle <path>` | from `$VEGASTACK_BUNDLE_DIR` then `~/.config/vegastack/bundle/` | Override the bundle directory. Mostly for tests. |
 
 ## Output schema (v0.1)
 
@@ -73,7 +73,7 @@ Side-channel arrays (`knowledge`, `recipes`, `concept_aliases_used`) are always 
 }
 ```
 
-Two options: ask the user which provider they meant, or call `vega tf --provider <name>` once per candidate.
+Two options: ask the user which provider they meant, or call `vegastack tf --provider <name>` once per candidate.
 
 ### Error response
 
@@ -81,7 +81,7 @@ Two options: ask the user which provider they meant, or call `vega tf --provider
 {
   "status": "error",
   "query": "...",
-  "error": "Bundle not installed; run `vega install`.",
+  "error": "Bundle not installed; run `vegastack install`.",
   "code": "BundleMissing"
 }
 ```
@@ -90,11 +90,11 @@ Two options: ask the user which provider they meant, or call `vega tf --provider
 
 | `code` | Meaning |
 |---|---|
-| `BundleMissing` | `~/.config/vegastack/bundle/` doesn't exist or is empty. User should `vega install`. |
+| `BundleMissing` | `~/.config/vegastack/bundle/` doesn't exist or is empty. User should `vegastack install`. |
 | `BundleStale` | Bundle exists but the MANIFEST is older than 14 days. Soft-warning version emits as `warnings[]` in an `ok` response; hard-error version is rare. |
 | `ProviderUnknown` | `--provider <name>` was given but `<name>` isn't in `bundle/MANIFEST.json.providers`. |
 | `ProviderUndetectable` | No `--provider` and the query has no detectable provider signal. Re-tokenize with the user. |
-| `ManifestMalformed` | A per-provider MANIFEST.json failed schema validation. Run `vega doctor --verify-bundle`. |
+| `ManifestMalformed` | A per-provider MANIFEST.json failed schema validation. Run `vegastack doctor --verify-bundle`. |
 
 ## Tier-1 manifest stages (in order)
 
@@ -162,12 +162,12 @@ If `best − second_best < 0.2` the response is `status: "ambiguous"`. Otherwise
 
 | Var | Purpose |
 |---|---|
-| `VEGA_BUNDLE_DIR` | Override `~/.config/vegastack/bundle/` |
-| `VEGA_BUNDLE` | Set by `vega tf` for child processes — points at the active bundle dir |
-| `VEGA_OFFLINE` | Disables any network call (no bundle refresh checks) |
-| `VEGA_NO_UPDATE_NOTIFIER` | Suppresses "new CLI version" nag (also `NO_UPDATE_NOTIFIER`, `CI`, `DO_NOT_TRACK`) |
-| `VEGA_NO_RANGE` | Disables HTTP Range requests (corporate proxies that strip them) |
+| `VEGASTACK_BUNDLE_DIR` | Override `~/.config/vegastack/bundle/` |
+| `VEGASTACK_BUNDLE` | Set by `vegastack tf` for child processes — points at the active bundle dir |
+| `VEGASTACK_OFFLINE` | Disables any network call (no bundle refresh checks) |
+| `VEGASTACK_NO_UPDATE_NOTIFIER` | Suppresses "new CLI version" nag (also `NO_UPDATE_NOTIFIER`, `CI`, `DO_NOT_TRACK`) |
+| `VEGASTACK_NO_RANGE` | Disables HTTP Range requests (corporate proxies that strip them) |
 
 ## When the harness or a manifest is missing
 
-If a per-provider `MANIFEST.json` is missing or unparseable, `vega tf` skips Tier 1 silently and runs Tier 2 only. The response includes `warnings: ["manifest unavailable for <provider>; using grep fallback"]`. Run `vega doctor --verify-bundle` to diagnose.
+If a per-provider `MANIFEST.json` is missing or unparseable, `vegastack tf` skips Tier 1 silently and runs Tier 2 only. The response includes `warnings: ["manifest unavailable for <provider>; using grep fallback"]`. Run `vegastack doctor --verify-bundle` to diagnose.

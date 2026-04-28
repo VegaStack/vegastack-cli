@@ -14,9 +14,9 @@ Lift is the **fraction of remaining error that the skill closes**. If baseline g
 
 `evals/runner.ts` (E6) runs each prompt in two modes:
 
-1. **Baseline run.** The current Claude model (Sonnet 4.7 or whatever ships in `runner.ts:DEFAULT_MODEL`) is given the user prompt and a generic system prompt. No `vega tf` available, no skills directory, no MCP. Output is scored against the prompt's `expectations[]` by an LLM-as-judge (yes/no per expectation).
+1. **Baseline run.** The current Claude model (Sonnet 4.7 or whatever ships in `runner.ts:DEFAULT_MODEL`) is given the user prompt and a generic system prompt. No `vegastack tf` available, no skills directory, no MCP. Output is scored against the prompt's `expectations[]` by an LLM-as-judge (yes/no per expectation).
 
-2. **With-skill run.** Same model, same prompt, **same scoring** — but with the Anthropic SDK harness configured with the `vega` Bash tool and the skills directory mounted. Same LLM-as-judge scoring.
+2. **With-skill run.** Same model, same prompt, **same scoring** — but with the Anthropic SDK harness configured with the `vegastack` Bash tool and the skills directory mounted. Same LLM-as-judge scoring.
 
 Each prompt is run **3× per mode** and the median expectation-pass-rate is used. We report the 80% confidence interval alongside the headline.
 
@@ -92,5 +92,5 @@ Re-running with the same `bundle_version` + `cli_version` + `runner_seed` should
 ## When to read this file
 
 - Before reporting "lift went down" — check whether the bundle/CLI/model versions match.
-- When debugging a flaky prompt — `vega tf --debug "<prompt>"` shows you what `files[]` the harness returned, which tells you whether the failure is content (knowledge card missing) or harness (scoring miss).
-- Run `vega tf --debug` when an eval fails unexpectedly.
+- When debugging a flaky prompt — `vegastack tf --debug "<prompt>"` shows you what `files[]` the harness returned, which tells you whether the failure is content (knowledge card missing) or harness (scoring miss).
+- Run `vegastack tf --debug` when an eval fails unexpectedly.

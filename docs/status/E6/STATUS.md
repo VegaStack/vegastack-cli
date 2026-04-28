@@ -101,7 +101,7 @@ per-archetype breakdown (A1, A3, A12 each carrying expected lift).
 
 ## Open / follow-ups
 
-- The test fixture's `manifest_check` lookup is best-effort — see `evals/runner.ts:scoreExpectations` and `evals/lib/score.ts:manifestEntryToResourceName`. To make `manifest_check` strict in production, the runner needs a real `vega tf` pipe so the harness returns `manifest_entry` keyed by canonical resource name. Hooking that up is a 30-minute follow-up after E2's loader lands.
+- The test fixture's `manifest_check` lookup is best-effort — see `evals/runner.ts:scoreExpectations` and `evals/lib/score.ts:manifestEntryToResourceName`. To make `manifest_check` strict in production, the runner needs a real `vegastack tf` pipe so the harness returns `manifest_entry` keyed by canonical resource name. Hooking that up is a 30-minute follow-up after E2's loader lands.
 - PR-smoke aggregation node script uses the legacy `::set-output` syntax; on a recent runner (`>=v2.318.0`) GitHub will deprecate this — update to `$GITHUB_OUTPUT` writes when the deprecation lands.
 - `vitest` is on `1.5.0` (Apr 2024); upgrading to `4.1.x` is a separate cross-team PR.
 

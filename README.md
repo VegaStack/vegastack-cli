@@ -1,11 +1,11 @@
-# vega — `@vegastack/cli`
+# vegastack — `@vegastack/cli`
 
 A deterministic, offline knowledge harness for coding agents. One npm install gives **Claude Code, Codex, Cursor, and Gemini** local, citable competence over **31 Terraform providers** — without web search, MCPs, or model-knowledge gaps.
 
 ```bash
 npm i -g @vegastack/cli         # ~5 MB CLI + ~12 MB compressed bundle (97 MB on disk after extract)
-vega doctor                     # verify environment
-vega skills install --agent all # register skills with all installed agents
+vegastack doctor                     # verify environment
+vegastack skills install --agent all # register skills with all installed agents
 ```
 
 [![npm](https://img.shields.io/npm/v/@vegastack/cli.svg)](https://www.npmjs.com/package/@vegastack/cli)
@@ -18,7 +18,7 @@ vega skills install --agent all # register skills with all installed agents
 
 - **31 Terraform providers' upstream docs** mirrored daily from their GitHub repos — `aws`, `azure`, `gcp`, `cloudflare`, `kubernetes`, `helm`, `vault`, `digitalocean`, `github`, `gitlab`, `vercel`, `netlify`, `datadog`, `grafana`, `splunk`, `pagerduty`, `okta`, `auth0`, `crowdstrike`, `1password`, `mongodb-atlas`, `snowflake`, `redis-cloud`, `clickhouse`, `pinecone`, `ansible`, `random`, `tls`, `time`, `local`, `external`.
 - **Per-provider `MANIFEST.json`** — resource schemas, argument lists, enum values, import syntax, deprecation flags, HCL reference graph, recommended companions.
-- **`vega tf <query>`** — a deterministic discovery CLI. Returns one JSON envelope with `files[]`, `knowledge[]` (curated recent-change facts), `recipes[]` (multi-provider scaffolds), `concept_aliases_used[]` (natural-language → resource mapping). Top-K results arrive with full schemas inline.
+- **`vegastack tf <query>`** — a deterministic discovery CLI. Returns one JSON envelope with `files[]`, `knowledge[]` (curated recent-change facts), `recipes[]` (multi-provider scaffolds), `concept_aliases_used[]` (natural-language → resource mapping). Top-K results arrive with full schemas inline.
 - **Spec-compliant skill** for the [Anthropic Agent Skills Standard](https://agentskills.io/specification), packaged as a Claude Code plugin and installable into Codex (`.agents/skills/`), Cursor (`.cursor/rules/`), and Gemini (`gemini-extension.json`).
 
 ## How this differs from `hashicorp/agent-skills`
@@ -68,16 +68,16 @@ npm i @vegastack/cli
 The npm postinstall downloads the docs bundle (~12 MB) from `https://bundles.vegastack.com/cli/...` (Cloudflare R2). It's content-addressed and SHA-verified; on R2 outage it falls back to GitHub Releases of the bundle repo. After install:
 
 ```bash
-vega doctor   # should report bundle found
-vega tf "S3 bucket with versioning enabled"
+vegastack doctor   # should report bundle found
+vegastack tf "S3 bucket with versioning enabled"
 ```
 
-To point at a local bundle tree instead (development against an unpublished build), set `VEGA_BUNDLE_DIR` to the absolute path of the bundle's `terraform-providers/` directory before running any vega command.
+To point at a local bundle tree instead (development against an unpublished build), set `VEGASTACK_BUNDLE_DIR` to the absolute path of the bundle's `terraform-providers/` directory before running any vegastack command.
 
 To skip the postinstall network fetch entirely (silent), prefix install with:
 
 ```bash
-VEGA_SKIP_POSTINSTALL=1 npm i -g @vegastack/cli
+VEGASTACK_SKIP_POSTINSTALL=1 npm i -g @vegastack/cli
 ```
 
 ### Install (public — coming with v1.0)
@@ -91,65 +91,65 @@ tessl install @vegastack/cli           # Tessl
 ```
 
 ```bash
-vega doctor
+vegastack doctor
 # ✓ Node.js: v20.10.0
 # ✓ Docs bundle: v2026.04.28 at /Users/.../.config/vegastack/bundle (31 providers, schema_version=1, generated ...)
 # ✓ jq (optional): jq-1.7.1
 # ✓ ripgrep (optional): ripgrep 14.1.0
 ```
 
-> **Native TypeScript runtime**: `vega tf` is fully native — no Python, no shell-outs to a foreign runtime. Top-K results arrive with the full manifest schema (`required_args`, `optional_args`, `import_syntax`, `deprecated`, …) and the inline `## Example Usage` block, so a typical agent task collapses from ~15 tool calls to 1–2. Add `--debug` to see per-stage timings.
+> **Native TypeScript runtime**: `vegastack tf` is fully native — no Python, no shell-outs to a foreign runtime. Top-K results arrive with the full manifest schema (`required_args`, `optional_args`, `import_syntax`, `deprecated`, …) and the inline `## Example Usage` block, so a typical agent task collapses from ~15 tool calls to 1–2. Add `--debug` to see per-stage timings.
 
 ## Register the skill with your coding agent(s)
 
 ```bash
 # Install for ALL detected agents at once:
-vega skills install --agent all
+vegastack skills install --agent all
 
 # Or pick:
-vega skills install --agent claude-code               # global (~/.claude/plugins/)
-vega skills install --agent codex                     # global (~/.agents/skills/)
-vega skills install --agent cursor --scope project    # writes .cursor/rules/terraform-providers-kit.mdc
-vega skills install --agent gemini --scope project    # writes gemini-extension.json + CONTEXT.md
+vegastack skills install --agent claude-code               # global (~/.claude/plugins/)
+vegastack skills install --agent codex                     # global (~/.agents/skills/)
+vegastack skills install --agent cursor --scope project    # writes .cursor/rules/vegastack-cli.mdc
+vegastack skills install --agent gemini --scope project    # writes gemini-extension.json + CONTEXT.md
 
 # What's currently registered?
-vega skills status --agent all
+vegastack skills status --agent all
 
 # Cleanup:
-vega skills uninstall --agent cursor --scope project
+vegastack skills uninstall --agent cursor --scope project
 ```
 
 `--scope global` writes to your home dir; `--scope project` writes to the current working directory. Cursor and Gemini are project-scoped only (their config files live next to your code). Add `--dry-run` to preview without writing.
 
-| Agent           | Scope            | Files written by `vega skills install`                                                              |
+| Agent           | Scope            | Files written by `vegastack skills install`                                                              |
 | --------------- | ---------------- | --------------------------------------------------------------------------------------------------- |
-| **Claude Code** | global           | `~/.claude/plugins/terraform-providers-kit/` (symlink to package; auto-updates with the CLI)        |
+| **Claude Code** | global           | `~/.claude/plugins/vegastack-cli/` (symlink to package; auto-updates with the CLI)        |
 | **Codex**       | global / project | `~/.agents/skills/terraform-docs/` (or `<cwd>/.agents/skills/...`); optionally `~/.codex/AGENTS.md` |
-| **Cursor**      | project only     | `<cwd>/.cursor/rules/terraform-providers-kit.mdc`                                                   |
+| **Cursor**      | project only     | `<cwd>/.cursor/rules/vegastack-cli.mdc`                                                   |
 | **Gemini**      | project only     | `<cwd>/gemini-extension.json` + `<cwd>/CONTEXT.md`                                                  |
 
 ## Use it
 
-Once installed, your agent auto-detects the skill on Terraform-related prompts. You can also invoke `vega` directly:
+Once installed, your agent auto-detects the skill on Terraform-related prompts. You can also invoke `vegastack` directly:
 
 ```bash
-vega tf "create an S3 bucket with versioning enabled"
+vegastack tf "create an S3 bucket with versioning enabled"
 # → JSON envelope; files[].manifest_entry has the full schema; .example_usage has the canonical HCL block.
 
-vega tf "import an existing Cloudflare DNS record"
+vegastack tf "import an existing Cloudflare DNS record"
 # → cloudflare_dns_record (NOT the deprecated v4 cloudflare_record); import_syntax inline.
 
-vega tf "zero-trust internal app cloudflare access aws alb okta" --max 20
+vegastack tf "zero-trust internal app cloudflare access aws alb okta" --max 20
 # → recipes[] surfaces the multi-provider scaffold; files[] from each provider.
 
-vega refresh    # pull a newer bundle (when upstream docs change)
+vegastack refresh    # pull a newer bundle (when upstream docs change)
 ```
 
 The agent reads the response and writes citable HCL. The docs are always local, always fresh, always deterministic — no network calls at query time.
 
 ## How is this better than asking an LLM directly?
 
-| Failure mode                                                 | LLM alone   | With vega                                               |
+| Failure mode                                                 | LLM alone   | With vegastack                                               |
 | ------------------------------------------------------------ | ----------- | ------------------------------------------------------- |
 | Invented resource name (`aws_lb_v2`)                         | common      | impossible — null lookups raise an explicit error       |
 | Stale rename (`cloudflare_record` → `cloudflare_dns_record`) | silent fail | knowledge card surfaces the rename                      |
@@ -204,14 +204,14 @@ npm install                    # postinstall fails harmlessly if no bundle yet
 npm run build                  # tsc → dist/
 
 # Run against the upstream repo's bundle for local testing:
-VEGA_BUNDLE_DIR=/Users/you/projects/engg-vegastack-agent-tf-providers/terraform-providers \
+VEGASTACK_BUNDLE_DIR=/Users/you/projects/engg-vegastack-agent-tf-providers/terraform-providers \
   node dist/cli.js doctor
 
 # Build a local bundle and use it via file://:
 ( cd /Users/you/projects/engg-vegastack-agent-tf-providers && \
   bash scripts/build_bundle.sh --version $(date +%Y.%m.%d) )
-VEGA_BUNDLE_URL=file:///path/to/dist/vegastack-bundle-vYYYY.MM.DD.tar.gz \
-VEGA_BUNDLE_DIR=/tmp/test-bundle \
+VEGASTACK_BUNDLE_URL=file:///path/to/dist/vegastack-bundle-vYYYY.MM.DD.tar.gz \
+VEGASTACK_BUNDLE_DIR=/tmp/test-bundle \
   node npm/install.js
 ```
 
@@ -234,7 +234,7 @@ This repo ships an `/ship` Claude Code skill at `.claude/skills/ship/SKILL.md` t
 
 **Safety gates baked in:**
 
-- Never bypasses the `prepublishOnly` bundle-pin guard locally (only CI does, via `VEGA_ALLOW_PENDING_BUNDLE_SHA=1`).
+- Never bypasses the `prepublishOnly` bundle-pin guard locally (only CI does, via `VEGASTACK_ALLOW_PENDING_BUNDLE_SHA=1`).
 - Never invokes `gh workflow run publish-internal.yml` — the tag push is the only correct trigger.
 - Never modifies `release.yml` (the dormant public-npm path).
 - Never touches the bundle repo (`engg-vegastack-agent-tf-providers`) — it has its own release cron.
@@ -245,7 +245,7 @@ This repo ships an `/ship` Claude Code skill at `.claude/skills/ship/SKILL.md` t
 
 ## How it's distributed
 
-This repo publishes the **CLI** to npm as `@vegastack/cli`. The **docs bundle** is built daily by the upstream `vegastack/engg-vegastack-agent-tf-providers` pipeline and uploaded to this repo's GitHub Releases as a tarball. The CLI's postinstall downloads the latest release matching the installed CLI version (or via `VEGA_BUNDLE_URL`).
+This repo publishes the **CLI** to npm as `@vegastack/cli`. The **docs bundle** is built daily by the upstream `vegastack/engg-vegastack-agent-tf-providers` pipeline and uploaded to this repo's GitHub Releases as a tarball. The CLI's postinstall downloads the latest release matching the installed CLI version (or via `VEGASTACK_BUNDLE_URL`).
 
 | Repo                                          | Role                          | Cadence                            |
 | --------------------------------------------- | ----------------------------- | ---------------------------------- |
@@ -256,20 +256,20 @@ This repo publishes the **CLI** to npm as `@vegastack/cli`. The **docs bundle** 
 
 | Variable                     | Default                                                 | Purpose                                                                                              |
 | ---------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `VEGA_BUNDLE_DIR`            | `~/.config/vegastack/bundle`                            | Where the docs bundle lives after install. Override to test alternate bundles.                       |
-| `VEGA_BUNDLE_URL`            | `https://github.com/.../vegastack-bundle-vX.Y.Z.tar.gz` | Override the download URL. Use `file:///path/to/bundle.tar.gz` for offline / air-gapped installs.    |
-| `VEGA_SKIP_POSTINSTALL`      | (unset)                                                 | Set to `1` to skip the postinstall download (useful in CI when you provision the bundle separately). |
-| `VEGA_BUNDLE_TIMEOUT_MS`     | `60000`                                                 | Per-attempt fetch timeout.                                                                           |
-| `VEGA_BUNDLE_RETRIES`        | `2`                                                     | Number of retries on transient failures (3 attempts total).                                          |
-| `HTTPS_PROXY` / `HTTP_PROXY` | (unset)                                                 | Standard proxy URLs; `vega install` routes the bundle download through `undici`'s ProxyAgent.        |
+| `VEGASTACK_BUNDLE_DIR`            | `~/.config/vegastack/bundle`                            | Where the docs bundle lives after install. Override to test alternate bundles.                       |
+| `VEGASTACK_BUNDLE_URL`            | `https://github.com/.../vegastack-bundle-vX.Y.Z.tar.gz` | Override the download URL. Use `file:///path/to/bundle.tar.gz` for offline / air-gapped installs.    |
+| `VEGASTACK_SKIP_POSTINSTALL`      | (unset)                                                 | Set to `1` to skip the postinstall download (useful in CI when you provision the bundle separately). |
+| `VEGASTACK_BUNDLE_TIMEOUT_MS`     | `60000`                                                 | Per-attempt fetch timeout.                                                                           |
+| `VEGASTACK_BUNDLE_RETRIES`        | `2`                                                     | Number of retries on transient failures (3 attempts total).                                          |
+| `HTTPS_PROXY` / `HTTP_PROXY` | (unset)                                                 | Standard proxy URLs; `vegastack install` routes the bundle download through `undici`'s ProxyAgent.        |
 | `NO_PROXY`                   | (unset)                                                 | Comma-separated host substrings to bypass the proxy. `*` disables proxying entirely.                 |
 | `NO_COLOR`                   | (unset)                                                 | Set to disable colored output.                                                                       |
 
 ## Troubleshooting
 
-### Postinstall failed but `vega doctor` says "bundle missing"
+### Postinstall failed but `vegastack doctor` says "bundle missing"
 
-Run `vega install` (or `vega refresh` to force a fresh download). If it still fails, the troubleshooting tree:
+Run `vegastack install` (or `vegastack refresh` to force a fresh download). If it still fails, the troubleshooting tree:
 
 ```
 network unreachable          → check `curl -fI <bundle URL>` from the same shell
@@ -279,7 +279,7 @@ SHA256 mismatch on every try  → file a security report — see SECURITY.md
 "tar binary not found"        → on Windows < 1809: install bsdtar or git-bash; on Alpine: `apk add tar`
 ```
 
-`vega doctor --json` produces machine-readable output that's the cleanest thing to attach to a bug report.
+`vegastack doctor --json` produces machine-readable output that's the cleanest thing to attach to a bug report.
 
 ### Proxied / air-gapped installs
 
@@ -291,32 +291,32 @@ curl -L -O https://github.com/vegastack/vegastack-cli/releases/download/v0.1.0/v
 curl -L -O https://github.com/vegastack/vegastack-cli/releases/download/v0.1.0/vegastack-bundle-v0.1.0.tar.gz.sha256
 
 # 2. Point the installer at the local copy:
-VEGA_BUNDLE_URL=file:///abs/path/to/vegastack-bundle-v0.1.0.tar.gz \
+VEGASTACK_BUNDLE_URL=file:///abs/path/to/vegastack-bundle-v0.1.0.tar.gz \
   npm i -g @vegastack/cli
 ```
 
-For corporate distribution, host the tarball + sidecar `.sha256` on an internal server (HTTPS only) and set `VEGA_BUNDLE_URL` org-wide. The SHA256 verification still applies.
+For corporate distribution, host the tarball + sidecar `.sha256` on an internal server (HTTPS only) and set `VEGASTACK_BUNDLE_URL` org-wide. The SHA256 verification still applies.
 
 ### Sudo / global-install path question
 
-`npm i -g @vegastack/cli` (with or without `sudo`) downloads the bundle to **the invoking user's** `~/.config/vegastack/bundle/` — not `/root/`. The CLI binary lives in npm's global prefix (`/usr/local/lib/node_modules/...` typically), but bundle data follows `$HOME` of whoever runs `vega`. If multiple users on the machine each want their own bundle, that's already how it works.
+`npm i -g @vegastack/cli` (with or without `sudo`) downloads the bundle to **the invoking user's** `~/.config/vegastack/bundle/` — not `/root/`. The CLI binary lives in npm's global prefix (`/usr/local/lib/node_modules/...` typically), but bundle data follows `$HOME` of whoever runs `vegastack`. If multiple users on the machine each want their own bundle, that's already how it works.
 
 ### Windows symlinks fail with `EPERM`
 
-`vega skills install --agent claude-code` tries to symlink the package into `~/.claude/plugins/`. Symlinks on Windows require either:
+`vegastack skills install --agent claude-code` tries to symlink the package into `~/.claude/plugins/`. Symlinks on Windows require either:
 
 - **Developer Mode** enabled (Settings → For Developers, Win10 1703+), or
 - Running the shell as Administrator.
 
-If neither applies, the installer **falls back to a recursive copy** automatically — same end state, but you'll need to re-run `vega skills install --force` after each `npm i -g @vegastack/cli@latest` to pick up CLI updates. Enabling Developer Mode is recommended.
+If neither applies, the installer **falls back to a recursive copy** automatically — same end state, but you'll need to re-run `vegastack skills install --force` after each `npm i -g @vegastack/cli@latest` to pick up CLI updates. Enabling Developer Mode is recommended.
 
-### `vega tf` exits 4 (BundleMissing)
+### `vegastack tf` exits 4 (BundleMissing)
 
-The bundle is missing from disk. Either the postinstall didn't complete, or `VEGA_BUNDLE_DIR` is pointed somewhere wrong. Run `vega doctor` for the diagnosis, then `vega install` to fix.
+The bundle is missing from disk. Either the postinstall didn't complete, or `VEGASTACK_BUNDLE_DIR` is pointed somewhere wrong. Run `vegastack doctor` for the diagnosis, then `vegastack install` to fix.
 
 ### `npx @vegastack/cli` doesn't have a bundle
 
-`npx` skips postinstall. For full functionality, `npm i -g @vegastack/cli` first. `npx` will work for the skill-management commands (`vega skills ...`) but not for `vega tf`.
+`npx` skips postinstall. For full functionality, `npm i -g @vegastack/cli` first. `npx` will work for the skill-management commands (`vegastack skills ...`) but not for `vegastack tf`.
 
 ## Related
 

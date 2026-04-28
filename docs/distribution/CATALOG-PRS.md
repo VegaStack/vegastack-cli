@@ -51,7 +51,7 @@ HashiCorp Team for Terraform`:
 
 ### Skills by Vegastack Team for Terraform
 
-- **[vegastack/terraform-docs](https://officialskills.sh/vegastack/skills/terraform-docs)** - Per-resource manifest, import syntax, deprecation flags, and multi-provider recipes for 31 Terraform providers (AWS, Azure, GCP, Cloudflare, Kubernetes, Vault, Datadog, Snowflake, …). Installs via `npm i -g @vegastack/cli` and `vega skills install --agent <claude-code|codex|cursor|gemini|continue|aider>`. MIT.
+- **[vegastack/terraform-docs](https://officialskills.sh/vegastack/skills/terraform-docs)** - Per-resource manifest, import syntax, deprecation flags, and multi-provider recipes for 31 Terraform providers (AWS, Azure, GCP, Cloudflare, Kubernetes, Vault, Datadog, Snowflake, …). Installs via `npm i -g @vegastack/cli` and `vegastack skills install --agent <claude-code|codex|cursor|gemini|continue|aider>`. MIT.
 
 ## Verification
 

@@ -7,7 +7,7 @@
   - **5 personas**: PlatformEngineer 34, SecurityEngineer 16, SRE 11, JuniorDev 9, FinOps 5
   - **17 cross-provider topology** prompts (target was ≥ 15)
   - **22 prompts** target the previously-thin providers (1password, ansible, auth0, clickhouse, crowdstrike, external, helm, local, netlify, pinecone, random, redis-cloud, splunk, time, tls)
-- **Manifest-side eval** of every prompt via TS `vega tf`, results at `eval-results.json`, full per-provider scorecard at `provider-scorecard.md`, raw envelopes at `runs/`. No LLM, no API key — every check is reproducible offline.
+- **Manifest-side eval** of every prompt via TS `vegastack tf`, results at `eval-results.json`, full per-provider scorecard at `provider-scorecard.md`, raw envelopes at `runs/`. No LLM, no API key — every check is reproducible offline.
 - **Ambiguous-query handling**: if the harness returned `status=ambiguous`, the runner re-ran once per candidate provider and unioned the result sets — this is what a real cross-provider topology prompt requires today, and the score reflects that workflow.
 
 ## Headline numbers
@@ -50,7 +50,7 @@
 5. **Provider classifier needs a tiebreaker for "X cluster" / "X service" prompts** — when two providers each score 1, the current behaviour is to abort with `ambiguous`. A sensible fallback: pick the highest-cardinality provider distinctive_token match (this would route "Atlas cluster" to mongodb-atlas, "Snowflake warehouse" to snowflake, etc.).
 
 ## Lessons in the runner (these affected the headline numbers)
-- `vega tf` exits non-zero on `ambiguous` (rc=3) and on `ProviderUndetected` (rc=2) but still emits a usable envelope on stdout. The first iteration of my runner discarded those envelopes. Fixed in commit-1.
+- `vegastack tf` exits non-zero on `ambiguous` (rc=3) and on `ProviderUndetected` (rc=2) but still emits a usable envelope on stdout. The first iteration of my runner discarded those envelopes. Fixed in commit-1.
 - `subprocess.run(capture_output=True)` truncated stdout at 64 KB on the snowflake prompt. Fixed by piping to file.
 - Two file-extension cases were missing in basename normalization: `.html.md` (Vault) and `redis-cloud` keeps the `rediscloud_` prefix in the filename. Fixed; vault score jumped from 0.584 → 0.750 and redis-cloud from 0.111 → 0.611 just from those two corrections — a reminder that bundle-side "weak provider" claims need careful runner audit before being treated as substantive findings.
 

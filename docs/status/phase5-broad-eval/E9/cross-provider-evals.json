@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "skill_name": "terraform-providers-kit",
+  "skill_name": "vegastack-cli",
   "comment": "E9 Phase-5 cross-provider broad eval set. 65 prompts spanning all 31 providers, 12 archetypes (A1-A12), 5 personas (SRE/PE/SecEng/FinOps/JuniorDev). Designed to complement evals/evals.json (50 prompts, AWS/CF heavy) by covering under-represented providers (1password, ansible, auth0, clickhouse, crowdstrike, external, helm, local, netlify, pinecone, random, redis-cloud, splunk, time, tls) with realistic operational language.",
   "evals": [
     {

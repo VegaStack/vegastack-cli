@@ -16,11 +16,11 @@ alwaysApply: false
 
 # vegastack-terraform (Cursor rule)
 
-This rule mirrors the SKILL.md shipped at `<plugin-root>/skills/terraform-docs/SKILL.md`. After installing `@vegastack/cli`, run `vega skills install --agent cursor` to drop this `.mdc` into `<project>/.cursor/rules/`.
+This rule mirrors the SKILL.md shipped at `<plugin-root>/skills/terraform-docs/SKILL.md`. After installing `@vegastack/cli`, run `vegastack skills install --agent cursor` to drop this `.mdc` into `<project>/.cursor/rules/`.
 
 ## How to use
 
-1. Run `vega tf "<user request>"` (one call; the harness auto-detects the provider). Output is one JSON envelope with `files[]`, `knowledge[]`, `recipes[]`, `concept_aliases_used[]`.
+1. Run `vegastack tf "<user request>"` (one call; the harness auto-detects the provider). Output is one JSON envelope with `files[]`, `knowledge[]`, `recipes[]`, `concept_aliases_used[]`.
 2. Read `knowledge[]` first — those cards override stale training memory when `overrides_training: true`.
 3. The top-K `files[]` arrive **enriched** with `manifest_entry` (top-level args, `blocks: {}`, `import_syntax`, `deprecated`, `recommended_companions`) and the inline `example_usage` block. No follow-up `jq` or `grep` needed for ~95% of tasks.
 4. Cite `citations[]` (file paths + knowledge-card IDs + recipe IDs) in your reply.
@@ -30,7 +30,7 @@ This rule mirrors the SKILL.md shipped at `<plugin-root>/skills/terraform-docs/S
 - Never invent resource names or arguments. The manifest is the source of truth.
 - Never fabricate import IDs. Use `manifest_entry.import_syntax.command` verbatim.
 - Respect `deprecated: true` — tell the user before generating code.
-- One provider per `vega tf` call. Multi-provider work uses `recipes[]`.
+- One provider per `vegastack tf` call. Multi-provider work uses `recipes[]`.
 - Never write to `~/.config/vegastack/bundle/` from a tool call — the bundle is read-only.
 
 ## Full reference

@@ -29,9 +29,9 @@ Tmpdir-as-HOME, six fresh roots under `/tmp/a3-tmp/h-{claude,codex,cursor,gemini
 
 ### Findings (file:line)
 
-1. **Punch-list #3 reproduced** — `src/commands/skills.ts:3,8,77,79,81` only references `ALL_AGENT_NAMES` (4 agents). `ALL_RENDERERS` (6 agents) is exported from `src/agents/index.ts:26-33` but never reached by the CLI. Stderr proof: `vega skills install --agent continue --scope global` → `unknown agent(s): continue. Valid: claude-code, codex, cursor, gemini, all`.
+1. **Punch-list #3 reproduced** — `src/commands/skills.ts:3,8,77,79,81` only references `ALL_AGENT_NAMES` (4 agents). `ALL_RENDERERS` (6 agents) is exported from `src/agents/index.ts:26-33` but never reached by the CLI. Stderr proof: `vegastack skills install --agent continue --scope global` → `unknown agent(s): continue. Valid: claude-code, codex, cursor, gemini, all`.
 
-2. **Cursor idempotency regression** — `src/agents/cursor.ts:69-83`. The renderer calls `copyFileWithBackup` which throws `DestinationExistsError` whenever the file exists, regardless of byte equality. Compare to `src/agents/gemini.ts:145-167` (`writeIfChanged`) and `src/agents/continue.ts:97-103` which both compare on-disk content first. Net effect: `vega skills install --agent cursor --scope project` is exit-1 every second run.
+2. **Cursor idempotency regression** — `src/agents/cursor.ts:69-83`. The renderer calls `copyFileWithBackup` which throws `DestinationExistsError` whenever the file exists, regardless of byte equality. Compare to `src/agents/gemini.ts:145-167` (`writeIfChanged`) and `src/agents/continue.ts:97-103` which both compare on-disk content first. Net effect: `vegastack skills install --agent cursor --scope project` is exit-1 every second run.
 
 3. **Gemini global-scope inaccessible from CLI** — `src/agents/index.ts:21` registers the legacy `gemini` installer (project-only, `src/agents/gemini.ts:183`) under name `gemini`, masking the modern `geminiRenderer` (project + global, `src/agents/gemini.ts:57-143`) under the same name. Users on the `--scope global` happy path get a confusing "project-scoped only" warning instead of the modern `~/.gemini-extensions/vegastack/` install.
 
@@ -41,11 +41,11 @@ Tmpdir-as-HOME, six fresh roots under `/tmp/a3-tmp/h-{claude,codex,cursor,gemini
 
 | Agent | Path | Parses | Required fields present | WHEN-NOT clause | Notes |
 |---|---|---|---|---|---|
-| **Claude Code** | `~/.claude/plugins/terraform-providers-kit/.claude-plugin/plugin.json` | valid JSON | `name`, `version`, `description`, `author`, `homepage`, `repository`, `license`, `keywords`, `skills`, `commands`, `hooks`, `mcpServers` (`/Users/mk/projects/vegastack-cli/.claude-plugin/plugin.json:1-32`) | yes (in description body) | `$schema` is `hesreallyhim/claude-code-json-schema` (community-maintained) — when Anthropic publishes an official schema URL bump it. `mcpServers` points at `./mcp/mcp.json` which references `https://mcp.vegastack.com/sse` — picks SSE per E5 default (punch-list #2). |
+| **Claude Code** | `~/.claude/plugins/vegastack-cli/.claude-plugin/plugin.json` | valid JSON | `name`, `version`, `description`, `author`, `homepage`, `repository`, `license`, `keywords`, `skills`, `commands`, `hooks`, `mcpServers` (`/Users/mk/projects/vegastack-cli/.claude-plugin/plugin.json:1-32`) | yes (in description body) | `$schema` is `hesreallyhim/claude-code-json-schema` (community-maintained) — when Anthropic publishes an official schema URL bump it. `mcpServers` points at `./mcp/mcp.json` which references `https://mcp.vegastack.com/sse` — picks SSE per E5 default (punch-list #2). |
 | **Codex** | `~/.agents/skills/terraform-docs/SKILL.md` | YAML frontmatter parses (`name`, `description`, `license`, `compatibility`, `allowed-tools`, `metadata.{homepage, schema_version, bundle_version, providers_count}`) | yes | yes (`Do NOT use for: pure shell / bash / Python questions; non-IaC cloud questions ("what's the cheapest EC2 size?"); CDK / Pulumi / Crossplane (different DSLs); Terraform Cloud workspace administration (separate API).`) | Closes R1. |
-| **Cursor** | `<cwd>/.cursor/rules/terraform-providers-kit.mdc` | YAML frontmatter parses | `description` (with WHEN-NOT), `globs: ["**/*.tf", "**/*.tfvars", "**/*.hcl", "**/main.tf", "**/variables.tf", "**/terraform.tfvars"]` (superset of brief's `["**/*.tf","**/*.hcl"]`), `alwaysApply: false` | yes | superset of expected globs is fine — Cursor matches all of them. |
+| **Cursor** | `<cwd>/.cursor/rules/vegastack-cli.mdc` | YAML frontmatter parses | `description` (with WHEN-NOT), `globs: ["**/*.tf", "**/*.tfvars", "**/*.hcl", "**/main.tf", "**/variables.tf", "**/terraform.tfvars"]` (superset of brief's `["**/*.tf","**/*.hcl"]`), `alwaysApply: false` | yes | superset of expected globs is fine — Cursor matches all of them. |
 | **Gemini (renderer)** | `~/.gemini-extensions/vegastack/{gemini-extension.json, skills/terraform-docs/SKILL.md, commands/tf.toml}` | all 3 parse | `gemini-extension.json` has `name`, `version`, `description`, `contextFileName: "skills/terraform-docs/SKILL.md"`, `mcpServers.vegastack-tf.{type: "sse", url: "https://mcp.vegastack.com/sse"}`, `excludeTools: []` | yes (in SKILL.md body) | `commands/tf.toml` has `description` + `prompt` template using `{{args}}` — registers `/tf <query>` per Gemini docs format. |
-| **Continue** | `~/.continue/mcpServers/vegastack-tf.yaml` | valid YAML | `name`, `version`, `schema: v1`, `mcpServers[0].{name, url, transport: sse, description}` | n/a (MCP config, not skill) | URL `https://mcp.vegastack.com/sse` (default) overridable via `VEGA_MCP_URL` (`src/agents/continue.ts:27`). E5 picked SSE; per punch-list #2 should switch to `/mcp` streamable-http; `apps/mcp/` supports both. |
+| **Continue** | `~/.continue/mcpServers/vegastack-tf.yaml` | valid YAML | `name`, `version`, `schema: v1`, `mcpServers[0].{name, url, transport: sse, description}` | n/a (MCP config, not skill) | URL `https://mcp.vegastack.com/sse` (default) overridable via `VEGASTACK_MCP_URL` (`src/agents/continue.ts:27`). E5 picked SSE; per punch-list #2 should switch to `/mcp` streamable-http; `apps/mcp/` supports both. |
 | **Aider** | `~/.aider/CONVENTIONS.vegastack.md` (~1 KB body) + patched `~/.aider.conf.yml` `read[]` | both append-only / idempotent | conventions body lists every provider; conf gets one new entry per `read[]` | yes | uninstall correctly removes both — leaves `.aider.conf.yml` as 0-byte empty (acceptable; YAML serializer drops empty `read:`). |
 
 ## A3.3 — MCP server: `/mcp` and `/sse` parity (real exec)
@@ -102,7 +102,7 @@ GET  /api/latest.json        → 200 JSON (lift: 0.47, archetypes[12], ...)
 ```
 
 - **Fixture renders** — `+47%` appears 4× in homepage HTML; matches E8 STATUS.md line 91 expectation.
-- **Theme toggle** — inline pre-paint script in `<head>` reads `localStorage.getItem("vega-theme")` and sets `document.documentElement.dataset.theme` BEFORE first paint (no FOUC). Click handler swaps + persists. Verified in `dist/client/_astro/page.skBku6iY.js` and the inline `<script>` in `Base.astro` output.
+- **Theme toggle** — inline pre-paint script in `<head>` reads `localStorage.getItem("vegastack-theme")` and sets `document.documentElement.dataset.theme` BEFORE first paint (no FOUC). Click handler swaps + persists. Verified in `dist/client/_astro/page.skBku6iY.js` and the inline `<script>` in `Base.astro` output.
 - **Responsive** — `dist/client/_astro/Base.DQ4Bd7-r.css` has `@media(min-width:40rem|48rem|64rem)` breakpoints + `prefers-reduced-motion: reduce` + `hover: hover`. Mobile-first per E8 brief.
 - **No console-error indicators** — single `throw` reference in HTML is a hand-written instructional sentence in body copy, not actual JS. No `console.error`, no error blocks, no `data-error` markers.
 - **Accessibility** — `<html lang="en">`, 5+ `aria-label` / `role=` / `alt=` markers in homepage HTML.
@@ -137,11 +137,11 @@ Every per-agent path goes through `node:path.join`:
 
 ### WSL-specific notes (static)
 - WSL is Linux semantics under the hood; all paths in `src/lib/paths.ts` map to `/home/<user>/...` correctly. No issues.
-- WSL users running `vega skills install --agent claude-code` will get a symlink at `/home/<user>/.claude/plugins/terraform-providers-kit` → the `/mnt/c/...` package (if installed there); cross-FS symlinks work in WSL.
+- WSL users running `vegastack skills install --agent claude-code` will get a symlink at `/home/<user>/.claude/plugins/vegastack-cli` → the `/mnt/c/...` package (if installed there); cross-FS symlinks work in WSL.
 
 ### Known cross-OS gaps
 1. **`%LOCALAPPDATA%` not used on Windows** — installs to `~/.config/vegastack/bundle`. Ugly but functional.
-2. **`pkgRoot()` walk-up fallback** (`src/lib/paths.ts:35-50`) — if `process.argv[1]` isn't inside the npm install tree, returns `/tmp` (or `C:\` equivalent) and gemini renderer crashes with `ENOENT: /tmp/gemini-extension.json`. Real-world impact: zero — `vega` bin is always inside the npm install. Test/dev impact: occasional. Could be hardened with `import.meta.url`.
+2. **`pkgRoot()` walk-up fallback** (`src/lib/paths.ts:35-50`) — if `process.argv[1]` isn't inside the npm install tree, returns `/tmp` (or `C:\` equivalent) and gemini renderer crashes with `ENOENT: /tmp/gemini-extension.json`. Real-world impact: zero — `vegastack` bin is always inside the npm install. Test/dev impact: occasional. Could be hardened with `import.meta.url`.
 
 ## Top issues that should block (or not block) v0.1 ship
 

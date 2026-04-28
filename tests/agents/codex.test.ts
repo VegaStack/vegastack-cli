@@ -11,10 +11,10 @@ let fakeHome: string;
 
 beforeEach(() => {
   // Sandbox $HOME so we don't trample the real ~/.agents or ~/.codex.
-  fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), "vega-codex-home-"));
+  fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-codex-home-"));
   homeBackup = process.env.HOME;
   process.env.HOME = fakeHome;
-  cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vega-codex-cwd-"));
+  cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-codex-cwd-"));
 });
 afterEach(() => {
   fs.rmSync(fakeHome, { recursive: true, force: true });

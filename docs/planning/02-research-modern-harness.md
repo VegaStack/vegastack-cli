@@ -11,7 +11,7 @@ Only `name` required. Useful keys: `version` (semver; if omitted CC falls back t
 Source: code.claude.com/docs/en/plugins-reference
 
 ## 3. Claude Code skills/sub-agents/hooks unification (April 2026)
-.claude/commands/ and .claude/skills/ unified — every skill exposes a /slash-command. Sub-agents do NOT inherit parent skills; must list them in frontmatter. New hooks: PostToolUse/PostToolUseFailure with duration_ms; new lifecycle InstructionsLoaded, FileChanged, CwdChanged, PostToolBatch, WorktreeCreate/Remove, PreCompact/PostCompact. Hook types: command, http, mcp_tool, prompt, agent. **We can install SessionStart hook running `vega doctor --json` once per session, and FileChanged hook on `*.tf` files to warm cache.**
+.claude/commands/ and .claude/skills/ unified — every skill exposes a /slash-command. Sub-agents do NOT inherit parent skills; must list them in frontmatter. New hooks: PostToolUse/PostToolUseFailure with duration_ms; new lifecycle InstructionsLoaded, FileChanged, CwdChanged, PostToolBatch, WorktreeCreate/Remove, PreCompact/PostCompact. Hook types: command, http, mcp_tool, prompt, agent. **We can install SessionStart hook running `vegastack doctor --json` once per session, and FileChanged hook on `*.tf` files to warm cache.**
 Sources: code.claude.com/docs/en/skills, ofox.ai/blog/claude-code-hooks-subagents-skills-complete-guide-2026, releasebot.io/updates/anthropic/claude-code (April 2026)
 
 ## 4. Codex CLI skills (~/.codex/skills/) + AGENTS.md
@@ -19,7 +19,7 @@ Codex reads ONLY name, description, file path, optional agents/openai.yaml durin
 Sources: developers.openai.com/codex/skills, agents.md (Linux Foundation 2026)
 
 ## 5. Cursor .cursor/rules/*.mdc
-Frontmatter: description, globs, alwaysApply. Four activation modes: Always-Apply, Apply-Intelligently (description-only), File-Scoped (globs), Manual. **For Cursor scope=project we should drop a globs:["**/*.tf","**/*.hcl"] File-Scoped rule that calls vega tf when .tf in context.**
+Frontmatter: description, globs, alwaysApply. Four activation modes: Always-Apply, Apply-Intelligently (description-only), File-Scoped (globs), Manual. **For Cursor scope=project we should drop a globs:["**/*.tf","**/*.hcl"] File-Scoped rule that calls vegastack tf when .tf in context.**
 Sources: morphllm.com/cursor-rules-best-practices, github.com/sanjeed5/awesome-cursor-rules-mdc
 
 ## 6. Gemini extensions
@@ -39,11 +39,11 @@ Pagefind: lazily-chunked index alongside dist/; 10,000-page site searches under 
 Sources: pagefind.app, starlight.astro.build/guides/site-search, codeant.ai/blogs/why-coding-agents-should-use-ripgrep
 
 ## 10. Continue.dev context providers + MCP shift
-Continue's @Docs deprecated in favor of MCP servers + Context7. Config: context: [{provider, params}] and mcpServers: [{name, command, args}]. **Continue/Aider/Cline won't run vega skills install — but WILL add MCP entry. Optional `vega mcp serve` (stdio MCP wrapper around vega tf) opens those ecosystems with one binary. Additive distribution channel.**
+Continue's @Docs deprecated in favor of MCP servers + Context7. Config: context: [{provider, params}] and mcpServers: [{name, command, args}]. **Continue/Aider/Cline won't run vegastack skills install — but WILL add MCP entry. Optional `vegastack mcp serve` (stdio MCP wrapper around vegastack tf) opens those ecosystems with one binary. Additive distribution channel.**
 Source: docs.continue.dev/customize/deep-dives/custom-providers
 
 ## 11. Sigstore bundles + npm provenance
-@sigstore/bundle packages X.509 cert + Rekor transparency-log entry + RFC-3161 timestamp + signature. npm CLI ships --provenance. **For a doc bundle republished every 24h, provenance is the answer to "who built this and from which commit?" `vega doctor` should display provenance attestation alongside synced_at/upstream_sha.**
+@sigstore/bundle packages X.509 cert + Rekor transparency-log entry + RFC-3161 timestamp + signature. npm CLI ships --provenance. **For a doc bundle republished every 24h, provenance is the answer to "who built this and from which commit?" `vegastack doctor` should display provenance attestation alongside synced_at/upstream_sha.**
 Sources: docs.sigstore.dev/about/bundle, blog.sigstore.dev/npm-public-beta, github.com/sigstore/sigstore-js
 
 ## Honourable mentions
@@ -53,4 +53,4 @@ Sources: docs.sigstore.dev/about/bundle, blog.sigstore.dev/npm-public-beta, gith
 ## Top-3 actionable recommendations
 1. **Ship as Claude Code plugin (.claude-plugin/plugin.json) in addition to npm.** Use monitors/ slot for freshness. ~30 lines JSON. Requires CC v2.1.105+.
 2. **Tighten SKILL.md description with explicit WHEN-NOT clauses; split body into metadata-cheap front + lazy references/*.md.** Pattern: "Use when: <2 sentences>. Do NOT use for: <3 negatives>."
-3. **Add MCP-stdio wrapper (`vega mcp serve`) and per-provider sub-bundles.** ~100 LOC for MCP wrapper unlocks Continue/Aider/Cline. Per-provider tarballs let `vega install --providers aws,cloudflare,kubernetes` fetch 12 MB vs 97 MB.
+3. **Add MCP-stdio wrapper (`vegastack mcp serve`) and per-provider sub-bundles.** ~100 LOC for MCP wrapper unlocks Continue/Aider/Cline. Per-provider tarballs let `vegastack install --providers aws,cloudflare,kubernetes` fetch 12 MB vs 97 MB.

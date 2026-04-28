@@ -53,7 +53,7 @@ Mean: 0.165 → 0.299 → **0.515** (target ≥0.55: missed by 0.035; ≥0.50: M
 
 ## Criterion #3 — Atlas Cluster
 
-Command: `VEGA_BUNDLE_DIR=<bundle> node dist/cli.js tf "tune Atlas cluster cost"`
+Command: `VEGASTACK_BUNDLE_DIR=<bundle> node dist/cli.js tf "tune Atlas cluster cost"`
 Result: `provider=mongodb-atlas, status=ok, top1=cluster.md, score=1.0`
 
 S3 fixed this via three layers: `["atlas", "mongodb-atlas"]` in DEFAULT_SERVICE_ALIASES,

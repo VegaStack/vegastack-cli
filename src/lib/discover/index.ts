@@ -23,7 +23,7 @@
 //
 // The output is the canonical DiscoverResult union — discriminated by `status`.
 
-import { VegaError } from "../errors.js";
+import { VegastackError } from "../errors.js";
 import { aliasesToConceptMatches, loadAliases } from "./aliases.js";
 import {
   DEFAULT_SERVICE_ALIASES,
@@ -414,7 +414,7 @@ async function runProviderPipeline(args: ProviderPipelineArgs): Promise<Provider
   try {
     manifest = loadManifest(dir);
   } catch (e) {
-    if (e instanceof VegaError) {
+    if (e instanceof VegastackError) {
       return {
         kind: "error",
         envelope: {

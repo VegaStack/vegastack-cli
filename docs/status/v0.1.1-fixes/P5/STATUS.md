@@ -25,7 +25,7 @@ The +0.055 mean lift is real and reproducible. The harness is shippable as v0.1.
 
 Total: **371 tests pass / 0 fail / 0 skip / 0 flaky** across 3 workspaces. P1 reported 343/343 on root (matches); P3 reported 329/329 (matches the pre-P1 count given P1 added 32 new + 3 fixture-affected). The current 343 count == P1's reported count, so P3+P4's additions are all already counted in P1's 343.
 
-`npm install` on root emits a benign warning ("vega install: WARN bundle install failed: HTTP 404 Not Found") — the postinstall tries to fetch the v0.1.0 bundle tarball from GitHub releases, which doesn't exist for the workspace install. CLI install itself succeeded ("CLI is still installed"). Not a regression.
+`npm install` on root emits a benign warning ("vegastack install: WARN bundle install failed: HTTP 404 Not Found") — the postinstall tries to fetch the v0.1.0 bundle tarball from GitHub releases, which doesn't exist for the workspace install. CLI install itself succeeded ("CLI is still installed"). Not a regression.
 
 `npm run generate-skill:check` exits 0 — committed `skills/terraform-docs/SKILL.md` matches the template render byte-for-byte. SKILL.md word count: **825** (≤900 cap, P3 reported 825 — matches).
 

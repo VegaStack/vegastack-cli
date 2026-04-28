@@ -15,7 +15,7 @@
 //   --filter <prefix>                   only run prompts whose archetype matches
 //   --evals <path>                      path to evals.json (default: evals/evals.json)
 //   --skill <path>                      path to SKILL.md (default: skills/terraform-docs/SKILL.md)
-//   --vega <path>                       path to `vega` binary (with-skill only)
+//   --vegastack <path>                       path to `vegastack` binary (with-skill only)
 //   --mock                              use mock fixtures instead of calling Anthropic
 //
 // CI surface:
@@ -82,7 +82,7 @@ interface CliArgs {
   filter: string;
   evals: string;
   skill: string;
-  vega: string | null;
+  vegastack: string | null;
   mock: boolean;
   mockFixtures: string | null;
 }
@@ -97,7 +97,7 @@ function parseArgs(argv: string[]): CliArgs {
     filter: "",
     evals: resolve(here(), "evals.json"),
     skill: resolve(here(), "..", "skills", "terraform-docs", "SKILL.md"),
-    vega: null,
+    vegastack: null,
     mock: false,
     mockFixtures: null,
   };
@@ -112,7 +112,7 @@ function parseArgs(argv: string[]): CliArgs {
     else if (a === "--filter" && next) { out.filter = next; i++; }
     else if (a === "--evals" && next) { out.evals = next; i++; }
     else if (a === "--skill" && next) { out.skill = next; i++; }
-    else if (a === "--vega" && next) { out.vega = next; i++; }
+    else if (a === "--vegastack" && next) { out.vegastack = next; i++; }
     else if (a === "--mock") { out.mock = true; }
     else if (a === "--mock-fixtures" && next) { out.mock = true; out.mockFixtures = next; i++; }
     else if (a === "--pr-smoke") { out.mode = "both"; out.limit = 12; out.output = "/tmp/eval-smoke.json"; }
@@ -143,7 +143,7 @@ function printHelp(): void {
       `--filter <archetype>              only run prompts whose archetype starts with this\n` +
       `--evals <path>                    (default: evals/evals.json)\n` +
       `--skill <path>                    (default: skills/terraform-docs/SKILL.md)\n` +
-      `--vega <path>                     path to vega bin for with-skill mode\n` +
+      `--vegastack <path>                     path to vegastack bin for with-skill mode\n` +
       `--mock                            use deterministic mock instead of Anthropic API\n` +
       `--pr-smoke                        12-prompt smoke for PR CI\n` +
       `--nightly                         convenience for nightly cron\n`
@@ -153,7 +153,7 @@ function printHelp(): void {
 // ─── per-prompt scoring ────────────────────────────────────────────────
 
 interface ScoringContext {
-  knowledge: KnowledgeCard[]; // populated by `vega tf` envelope when available; empty for baseline
+  knowledge: KnowledgeCard[]; // populated by `vegastack tf` envelope when available; empty for baseline
   recipes: RecipeMatch[];
   manifestByResource: Map<string, ManifestResourceEntry>;
 }
@@ -297,7 +297,7 @@ async function main(): Promise<number> {
             model: args.model,
             mode: "baseline",
             skillBodyPath: args.skill,
-            ...(args.vega ? { vegaBin: args.vega } : {}),
+            ...(args.vegastack ? { vegaBin: args.vegastack } : {}),
           });
       return scoreExpectations(e, r, ctx);
     });
@@ -312,7 +312,7 @@ async function main(): Promise<number> {
             model: args.model,
             mode: "with-skill",
             skillBodyPath: args.skill,
-            ...(args.vega ? { vegaBin: args.vega } : {}),
+            ...(args.vegastack ? { vegaBin: args.vegastack } : {}),
           });
       return scoreExpectations(e, r, ctx);
     });
@@ -452,7 +452,7 @@ function buildReport(input: {
   return {
     schema_version: 1,
     date: new Date().toISOString().slice(0, 10),
-    bundle_version: process.env.VEGA_BUNDLE_VERSION ?? "unknown",
+    bundle_version: process.env.VEGASTACK_BUNDLE_VERSION ?? "unknown",
     cli_version: process.env.npm_package_version ?? "0.1.0",
     model,
     prompt_count: evals.length,

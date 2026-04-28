@@ -26,7 +26,7 @@ These are **regressions in the eval harness's emergent behavior**, not regressio
 
 ## D1 killer-card sanity (no regression)
 
-`vega tf "S3 backend state locking DynamoDB"` still cites `aws-s3-native-state-locking`. The stem-aware matcher (`stem("locking") == "lock"`) keeps this firing.
+`vegastack tf "S3 backend state locking DynamoDB"` still cites `aws-s3-native-state-locking`. The stem-aware matcher (`stem("locking") == "lock"`) keeps this firing.
 
 ## Generator round-trip (no regression)
 

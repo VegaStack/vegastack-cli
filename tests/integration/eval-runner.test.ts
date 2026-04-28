@@ -21,7 +21,7 @@ import { mockRun } from "../../evals/lib/anthropic-runner.js";
 
 const FIXTURE_EVALS = {
   schema_version: 1,
-  skill_name: "terraform-providers-kit",
+  skill_name: "vegastack-cli",
   evals: [
     {
       id: "T1-s3",
@@ -166,7 +166,7 @@ describe("anthropic-runner mock fallback", () => {
 
 describe("end-to-end runner via --mock", () => {
   it("emits a JSON report with summary + per-archetype lift", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "vega-eval-test-"));
+    const dir = await mkdtemp(join(tmpdir(), "vegastack-eval-test-"));
     const evalsPath = join(dir, "evals.json");
     const outPath = join(dir, "report.json");
     await writeFile(evalsPath, JSON.stringify(FIXTURE_EVALS), "utf8");

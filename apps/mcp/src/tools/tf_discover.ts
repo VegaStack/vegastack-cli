@@ -1,6 +1,6 @@
 // MCP tool: tf_discover — primary discovery surface.
 //
-// Mirrors the CLI's `vega tf <query> [--provider <p>] [--max <n>]`. Returns
+// Mirrors the CLI's `vegastack tf <query> [--provider <p>] [--max <n>]`. Returns
 // the canonical DiscoverResult envelope (status: ok | ambiguous | error) as a
 // JSON-encoded text content block — MCP clients that respect structuredContent
 // also receive the parsed object.

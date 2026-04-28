@@ -2,12 +2,12 @@
 //
 // Two modes:
 //   - baseline   : no skills mounted; the model has only its bash tool with
-//                  whatever's already on the runner's PATH (no `vega tf`).
+//                  whatever's already on the runner's PATH (no `vegastack tf`).
 //   - with-skill : the harness pre-loads the SKILL.md body into the system
-//                  prompt and exposes `vega tf "<query>"` as the prescribed
+//                  prompt and exposes `vegastack tf "<query>"` as the prescribed
 //                  tool path. We do NOT physically mount skills on the host;
 //                  the difference is purely the system prompt + the runner's
-//                  promise that `vega` is on PATH.
+//                  promise that `vegastack` is on PATH.
 //
 // We use the SDK's bash_20250124 tool (verified in WebSearch April 2026).
 // All bash invocations are sandboxed to a per-run tmp dir.
@@ -25,7 +25,7 @@ export interface AnthropicRunnerOpts {
   model: string;
   mode: RunMode;
   skillBodyPath: string; // path to skills/terraform-docs/SKILL.md
-  vegaBin?: string; // path to `vega` binary; default `vega` on PATH
+  vegaBin?: string; // path to `vegastack` binary; default `vegastack` on PATH
   maxTurns?: number; // safety cap on tool-loop turns
   timeoutMs?: number; // overall per-prompt timeout
 }
@@ -47,7 +47,7 @@ const BASELINE_SYSTEM = [
 export async function runPromptOnce(prompt: string, opts: AnthropicRunnerOpts): Promise<RunResult> {
   const maxTurns = opts.maxTurns ?? 8;
   const timeoutMs = opts.timeoutMs ?? 120_000;
-  const sandbox = await mkdtemp(join(tmpdir(), "vega-eval-"));
+  const sandbox = await mkdtemp(join(tmpdir(), "vegastack-eval-"));
 
   const skillBody = opts.mode === "with-skill" ? await safeRead(opts.skillBodyPath) : "";
   const system = opts.mode === "with-skill"
@@ -139,7 +139,7 @@ async function safeRead(p: string): Promise<string> {
 interface ExecResult { stdout: string; stderr: string; code: number }
 
 async function runBash(cmd: string, cwd: string, vegaBin?: string): Promise<ExecResult> {
-  // If vegaBin is supplied, prepend its parent to PATH so `vega` is found.
+  // If vegaBin is supplied, prepend its parent to PATH so `vegastack` is found.
   const env = { ...process.env };
   if (vegaBin) {
     const parent = vegaBin.replace(/\/[^/]+$/, "");

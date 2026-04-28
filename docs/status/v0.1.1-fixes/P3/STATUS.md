@@ -23,7 +23,7 @@ Body word count well under the 750-word contract cap (649). Decision tree opens 
 
 Added to template + generated SKILL.md:
 
-- `compatibility: "Requires Node >=18; @vegastack/cli on PATH (npm i -g @vegastack/cli && vega install). Works in Claude Code, Codex CLI, Cursor, Gemini CLI, Continue, Aider; spec-compatible with Microsoft Agent Framework, OpenCode, Goose, OpenClaw, Hermes, atmos."` — Microsoft Agent Framework recommends this field be populated (R6 §3e).
+- `compatibility: "Requires Node >=18; @vegastack/cli on PATH (npm i -g @vegastack/cli && vegastack install). Works in Claude Code, Codex CLI, Cursor, Gemini CLI, Continue, Aider; spec-compatible with Microsoft Agent Framework, OpenCode, Goose, OpenClaw, Hermes, atmos."` — Microsoft Agent Framework recommends this field be populated (R6 §3e).
 - `tags: [Terraform, IaC, Documentation, Multi-Provider, Deterministic]` — Hermes search surface (R6 §4 Hermes).
 - `codex: [vegastack-cli]` — Hermes codex association (R6 §4 Hermes).
 

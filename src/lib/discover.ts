@@ -1,4 +1,4 @@
-// `vega tf` runtime — native TypeScript implementation (v0.1 envelope).
+// `vegastack tf` runtime — native TypeScript implementation (v0.1 envelope).
 //
 // Thin wrapper that:
 //   • resolves the bundle dir (env override or canonical $XDG location);

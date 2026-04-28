@@ -40,7 +40,7 @@ A note: while this audit was running, dist/lib/discover.js was rebuilt mid-audit
 
 **Hand-curated alias tables embedded in code.** SUBCAT_KEYWORDS (~80), PRIMARY_RESOURCES (~50), SERVICE_ALIASES (~40), TOKEN_EXPANSIONS (~25), PROVIDER_TOKEN_EXPANSIONS (~12) all in src/lib/discover/constants.ts (and twin Python). Each provider needs human curation across all five tables. By 100 providers this is a 1500-line file plus a Python clone. **Externalize into per-provider YAML alongside each MANIFEST.json so docs-bundle owner controls them.**
 
-**No telemetry.** vega tf writes nothing to a log; failed rankings invisible. Add --debug log file with per-stage hit/miss counters and threshold-decision traces.
+**No telemetry.** vegastack tf writes nothing to a log; failed rankings invisible. Add --debug log file with per-stage hit/miss counters and threshold-decision traces.
 
 **subcategory_useful is binary.** Provider's subcategories either fully trusted (AWS) or fully ignored (Cloudflare, Snowflake). For mixed-quality (Vault) no middle ground. synthetic_subcategories fallback re-buckets by first-name component, producing nonsense like pki_external (2 entries) for 200-resource provider. Replace with per-subcategory-key trustworthiness scoring.
 
@@ -62,14 +62,14 @@ A note: while this audit was running, dist/lib/discover.js was rebuilt mid-audit
 | SKILL.md "the response is enriched … manifest_entry inline … example_usage inline" | True for enrich:true (default) but --raw disables it; SKILL.md never mentions --raw. |
 | SKILL.md "files[].manifest_entry.recommended_companions" | Manifest builder never emits recommended_companions; field always absent. |
 | SKILL.md "citations[] returned directly" | DiscoverResult has no citations field. Agent must derive from files[].path. |
-| README "✓ python3 (v0.1 harness): Python 3.11.5" in vega doctor | doctor.ts does not check python3 at all. |
+| README "✓ python3 (v0.1 harness): Python 3.11.5" in vegastack doctor | doctor.ts does not check python3 at all. |
 | README "iter-1 benchmark … 100% (39/39) … 110s avg, 43k tokens" | No reproducible benchmark file in evals/; only 4 prompts in evals.json, not 39. |
 | README knowledge cards example "aws-s3-native-state-locking" | No knowledge card on disk. |
 | AGENTS.md "discover.ts (calls Python harness in v0.1; native in v0.2)" | Shipping dist/lib/discover.js was rebuilt to native during this audit. |
 | Exit-code table "11 — python3 missing" | Native port no longer spawns python3, so exit 11 cannot fire. |
 | AGENTS.md / README / SKILL.md all repeat "31 providers" | Hard-coded in 7+ places. |
 | SKILL.md examples 4 + 5 reference cloudflare_bot_management, zero-trust-cloudflare-aws-okta recipe | Neither exists; recipe TOML is empty. |
-| SKILL.md "natively supports $VEGA_BUNDLE env var set by vega tf" | Only legacy Python path exported VEGA_BUNDLE; native TS port has no equivalent. After rebuild, agents relying on $VEGA_BUNDLE see undefined. |
+| SKILL.md "natively supports $VEGASTACK_BUNDLE env var set by vegastack tf" | Only legacy Python path exported VEGASTACK_BUNDLE; native TS port has no equivalent. After rebuild, agents relying on $VEGASTACK_BUNDLE see undefined. |
 
 ## 4. What's actually solid (keep)
 

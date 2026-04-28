@@ -4,10 +4,10 @@ This file is read by Codex, Cursor, Gemini, and any agent that follows the AGENT
 
 ## What this repo ships
 
-`@vegastack/cli` — an npm-installable knowledge harness for coding agents. After `npm i -g @vegastack/cli` and `vega skills install`, the agent gains:
+`@vegastack/cli` — an npm-installable knowledge harness for coding agents. After `npm i -g @vegastack/cli` and `vegastack skills install`, the agent gains:
 
 - A bundled docs library for **31 Terraform providers** (~9,000 markdown files, ~97 MB on disk after extract).
-- A deterministic discovery CLI: `vega tf "<query>"` returns a JSON envelope with ranked files, knowledge cards (recent-change facts), recipes (multi-provider scaffolds), and concept aliases.
+- A deterministic discovery CLI: `vegastack tf "<query>"` returns a JSON envelope with ranked files, knowledge cards (recent-change facts), recipes (multi-provider scaffolds), and concept aliases.
 - An [Anthropic Agent Skills Standard](https://agentskills.io/specification) skill body at `skills/terraform-docs/SKILL.md` — read this for the full agent-side mental model.
 
 ## Skill router
@@ -18,7 +18,7 @@ This project ships ONE skill (`terraform-docs`) for v0.1.x. v0.2 may split it in
 - `tf-recipes` — cross-provider topology recipes
 - `tf-knowledge` — recent renames / deprecations / native-feature replacements
 
-For v0.1.x, agents call `vega tf "<query>"` directly. The router pattern is documented here so v0.2's split is non-breaking: the dispatcher will live at this same router section and will only add new skill names, never rename or remove `terraform-docs`.
+For v0.1.x, agents call `vegastack tf "<query>"` directly. The router pattern is documented here so v0.2's split is non-breaking: the dispatcher will live at this same router section and will only add new skill names, never rename or remove `terraform-docs`.
 
 ## When to use it
 
@@ -34,7 +34,7 @@ When in doubt, trigger. An invented resource name will fail `terraform plan`.
 ## How to query
 
 ```bash
-vega tf "<the user's natural-language Terraform request>"
+vegastack tf "<the user's natural-language Terraform request>"
 ```
 
 The response is a single JSON envelope on stdout. Read these arrays in order:
@@ -48,12 +48,12 @@ Cite every file path returned in `citations[]` (or in `files[].path`) at the end
 
 ## Hard rules
 
-- **Never invent resource names.** If `vega tf` doesn't return it, it doesn't exist on this provider version.
+- **Never invent resource names.** If `vegastack tf` doesn't return it, it doesn't exist on this provider version.
 - **Never quote arguments from memory.** If it's not in `manifest_entry.required_args`/`optional_args`/`computed_attrs`, it doesn't exist.
 - **Never fabricate import IDs.** `manifest_entry.import_syntax` has the exact composite-ID format.
 - **Respect `deprecated: true`** — surface to the user before emitting code.
-- **Pin provider version.** Read the bundle's root `MANIFEST.json` (`cat $VEGA_BUNDLE/MANIFEST.json`) for `upstream_sha` / `branch` / `synced_at` fields.
-- **One provider per `vega tf` call.** Multi-provider work uses the recipes channel.
+- **Pin provider version.** Read the bundle's root `MANIFEST.json` (`cat $VEGASTACK_BUNDLE/MANIFEST.json`) for `upstream_sha` / `branch` / `synced_at` fields.
+- **One provider per `vegastack tf` call.** Multi-provider work uses the recipes channel.
 
 ## Repo layout (where to look for what)
 
@@ -81,13 +81,13 @@ npm run build             # tsc -p tsconfig.build.json → dist/
 npm test                  # vitest
 
 # Smoke-test against the upstream repo's docs (no bundle download needed):
-VEGA_BUNDLE_DIR=/path/to/engg-vegastack-agent-tf-providers/terraform-providers \
+VEGASTACK_BUNDLE_DIR=/path/to/engg-vegastack-agent-tf-providers/terraform-providers \
   node dist/cli.js doctor
 
 # Build a local bundle from the upstream repo and install it via file://:
 ( cd ../engg-vegastack-agent-tf-providers && bash scripts/build_bundle.sh --version 0.1.0 )
-VEGA_BUNDLE_URL=file:///path/to/dist/vegastack-bundle-v0.1.0.tar.gz \
-VEGA_BUNDLE_DIR=/tmp/test-install \
+VEGASTACK_BUNDLE_URL=file:///path/to/dist/vegastack-bundle-v0.1.0.tar.gz \
+VEGASTACK_BUNDLE_DIR=/tmp/test-install \
   node npm/install.js
 ```
 

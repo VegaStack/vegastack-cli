@@ -7,9 +7,9 @@ import * as fs from "node:fs";
 
 export const HOME = os.homedir();
 
-/** Where the docs bundle lives after `vega install` / postinstall. */
+/** Where the docs bundle lives after `vegastack install` / postinstall. */
 export function bundleDir(): string {
-  if (process.env.VEGA_BUNDLE_DIR) return process.env.VEGA_BUNDLE_DIR;
+  if (process.env.VEGASTACK_BUNDLE_DIR) return process.env.VEGASTACK_BUNDLE_DIR;
   return path.join(HOME, ".config", "vegastack", "bundle");
 }
 
@@ -32,7 +32,7 @@ export function bundleVersionFile(): string {
 export function pkgRoot(): string {
   // dist/lib/paths.js → dist/ → package root
   // node:url import.meta.url unavailable here at compile-time without ESM gymnastics; use process.argv[1].
-  // Resolve symlinks: when installed via `npm i -g`, the `vega` bin is a
+  // Resolve symlinks: when installed via `npm i -g`, the `vegastack` bin is a
   // symlink in the npm prefix's bin/ dir pointing into lib/node_modules/...,
   // and walking up from the symlink path never finds package.json.
   const rawCliPath = process.argv[1] ?? "";
@@ -65,7 +65,7 @@ export type AgentScope = "global" | "project";
 
 /** Claude Code: plugin install dir. Global only — Claude Code doesn't have a project scope for plugins. */
 export function claudePluginDir(): string {
-  return path.join(HOME, ".claude", "plugins", "terraform-providers-kit");
+  return path.join(HOME, ".claude", "plugins", "vegastack-cli");
 }
 
 /** Codex: skill install dir. Global is `~/.agents/skills/`; project is `<cwd>/.agents/skills/`. */
@@ -82,7 +82,7 @@ export function codexAgentsMdPath(scope: AgentScope, cwd: string): string {
 
 /** Cursor: rule file destination. Cursor rules are project-scoped; global isn't meaningful. */
 export function cursorRulePath(cwd: string): string {
-  return path.join(cwd, ".cursor", "rules", "terraform-providers-kit.mdc");
+  return path.join(cwd, ".cursor", "rules", "vegastack-cli.mdc");
 }
 
 /** Gemini: extension config + context. Project-scoped (Gemini Code Assist reads them from cwd). */

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// vega — CLI entry point.
+// vegastack — CLI entry point.
 
 import { Command, InvalidArgumentError } from "commander";
 import { readFileSync } from "node:fs";
@@ -12,7 +12,7 @@ import { runRefresh } from "./commands/refresh.js";
 import { runSkills } from "./commands/skills.js";
 import { runTf } from "./commands/tf.js";
 import { runUpdate } from "./commands/update.js";
-import { VegaError } from "./lib/errors.js";
+import { VegastackError } from "./lib/errors.js";
 import { log, printError, setJsonMode, setQuiet } from "./lib/log.js";
 import { printUpdateNagIfStale } from "./lib/update-check.js";
 
@@ -37,7 +37,7 @@ function applyGlobalFlags(cmd: Command): void {
   if (opts.quiet) setQuiet(true);
   if (opts.json) setJsonMode(true);
   // Cached, network-free nag — silent unless a newer version was discovered
-  // by the last `vega doctor` / `vega update --check` (24h cache).
+  // by the last `vegastack doctor` / `vegastack update --check` (24h cache).
   printUpdateNagIfStale(readVersion(), { quiet: Boolean(opts.quiet ?? opts.json) });
 }
 
@@ -58,31 +58,31 @@ function parsePositiveInt(value: string): number {
 
 const program = new Command();
 program
-  .name("vega")
+  .name("vegastack")
   .description(
     "Deterministic Terraform docs harness for coding agents (Claude Code, Codex, Cursor, Gemini).",
   )
   .version(readVersion(), "-V, --version", "print the CLI version and exit")
   .option("-q, --quiet", "suppress non-error output", false)
-  .showHelpAfterError("(run `vega --help` for usage)")
+  .showHelpAfterError("(run `vegastack --help` for usage)")
   .addHelpText(
     "after",
     `
 Examples:
-  vega doctor                                 verify environment + bundle + agent registration
-  vega install                                download / extract the docs bundle
-  vega refresh                                pull a newer bundle, ignoring the recorded version
-  vega tf "create an S3 bucket with versioning"
+  vegastack doctor                                 verify environment + bundle + agent registration
+  vegastack install                                download / extract the docs bundle
+  vegastack refresh                                pull a newer bundle, ignoring the recorded version
+  vegastack tf "create an S3 bucket with versioning"
                                               ranked discovery against 31 Terraform providers
-  vega skills install --agent all             register the skill with every detected agent
-  vega skills install --agent cursor --scope project
+  vegastack skills install --agent all             register the skill with every detected agent
+  vegastack skills install --agent cursor --scope project
                                               drop a Cursor rule into the current project
-  vega skills uninstall --agent all           clean up everywhere
+  vegastack skills uninstall --agent all           clean up everywhere
 
 Environment variables:
-  VEGA_BUNDLE_DIR    Override the bundle directory (default: ~/.config/vegastack/bundle).
-  VEGA_BUNDLE_URL    Override the download URL (e.g. file:///path/to/bundle.tar.gz).
-  VEGA_SKIP_POSTINSTALL=1   Skip the npm postinstall download.
+  VEGASTACK_BUNDLE_DIR    Override the bundle directory (default: ~/.config/vegastack/bundle).
+  VEGASTACK_BUNDLE_URL    Override the download URL (e.g. file:///path/to/bundle.tar.gz).
+  VEGASTACK_SKIP_POSTINSTALL=1   Skip the npm postinstall download.
   HTTPS_PROXY        Routes the bundle download through a proxy.
   NO_COLOR           Disable colored output.
 
@@ -105,7 +105,7 @@ Report bugs at https://github.com/vegastack/vegastack-cli/issues.
 `,
   );
 
-// vega doctor
+// vegastack doctor
 program
   .command("doctor")
   .description("verify environment, bundle, and agent registration")
@@ -120,7 +120,7 @@ program
     process.exit(await runDoctor({ json: opts.json, verifyBundle: opts.verifyBundle }));
   });
 
-// vega install
+// vegastack install
 program
   .command("install")
   .description("download and install the docs bundle (also runs as npm postinstall)")
@@ -131,7 +131,7 @@ program
     process.exit(await runInstall({ force: opts.force }));
   });
 
-// vega refresh
+// vegastack refresh
 program
   .command("refresh")
   .description("force re-download of the latest bundle, ignoring the recorded version")
@@ -141,7 +141,7 @@ program
     process.exit(await runRefresh());
   });
 
-// vega update
+// vegastack update
 program
   .command("update")
   .description("upgrade @vegastack/cli to the latest published version (wraps `npm i -g`)")
@@ -152,7 +152,7 @@ program
     process.exit(await runUpdate({ check: opts.check, current: readVersion() }));
   });
 
-// vega tf <query>
+// vegastack tf <query>
 program
   .command("tf <query...>")
   .description("ranked discovery for a natural-language Terraform query")
@@ -178,12 +178,12 @@ program
     "after",
     `
 Examples:
-  vega tf "create an S3 bucket with versioning enabled"
-  vega tf "import an existing Cloudflare DNS record" --max 5
-  vega tf "zero-trust internal app" --max 20
-  vega tf "EC2 instance" --debug          # show per-stage timings
-  vega tf "S3 bucket" --brief             # ~80% smaller envelope for surveys (E1)
-  vega tf "EC2 instance" --full-examples  # restore full example_usage (E2)
+  vegastack tf "create an S3 bucket with versioning enabled"
+  vegastack tf "import an existing Cloudflare DNS record" --max 5
+  vegastack tf "zero-trust internal app" --max 20
+  vegastack tf "EC2 instance" --debug          # show per-stage timings
+  vegastack tf "S3 bucket" --brief             # ~80% smaller envelope for surveys (E1)
+  vegastack tf "EC2 instance" --full-examples  # restore full example_usage (E2)
 `,
   )
   .action(
@@ -223,7 +223,7 @@ Examples:
     },
   );
 
-// vega skills install|uninstall|status
+// vegastack skills install|uninstall|status
 const skillsCmd = program
   .command("skills")
   .description("manage per-agent skill registration")
@@ -234,11 +234,11 @@ Agents (--agent): ${VALID_AGENTS}
 Scopes (--scope): global (~/.claude, ~/.agents, ~/.codex), project (cwd)
 
 Examples:
-  vega skills install --agent all
-  vega skills install --agent claude-code,codex
-  vega skills install --agent cursor --scope project
-  vega skills status --agent all --json
-  vega skills uninstall --agent gemini --scope project
+  vegastack skills install --agent all
+  vegastack skills install --agent claude-code,codex
+  vegastack skills install --agent cursor --scope project
+  vegastack skills status --agent all --json
+  vegastack skills uninstall --agent gemini --scope project
 `,
   );
 
@@ -321,7 +321,7 @@ function collect(value: string, prev: string[]): string[] {
   return [...prev, value];
 }
 
-// Top-level error handler: any uncaught throw in a command becomes a VegaError → printError.
+// Top-level error handler: any uncaught throw in a command becomes a VegastackError → printError.
 try {
   await program.parseAsync(process.argv);
 } catch (e) {
@@ -337,7 +337,7 @@ try {
     }
     process.exit(err.exitCode);
   }
-  process.exit(printError(e instanceof VegaError ? e : asUnknown(e)));
+  process.exit(printError(e instanceof VegastackError ? e : asUnknown(e)));
 }
 
 function asUnknown(e: unknown): unknown {

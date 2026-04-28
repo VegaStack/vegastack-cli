@@ -55,7 +55,7 @@ E3 owns the bodies and the `authoritative_source` URLs for each card. The harnes
 
 ## How knowledge cards land in the response
 
-The `knowledge[]` array in `vega tf`'s response contains every card whose triggers fired, in order of trigger specificity (more-specific triggers — longer token lists, exact phrases — sort first). The `KnowledgeCard` shape mirrors the frontmatter plus a `body: string` field with the post-frontmatter markdown.
+The `knowledge[]` array in `vegastack tf`'s response contains every card whose triggers fired, in order of trigger specificity (more-specific triggers — longer token lists, exact phrases — sort first). The `KnowledgeCard` shape mirrors the frontmatter plus a `body: string` field with the post-frontmatter markdown.
 
 ## Authoring guidelines
 

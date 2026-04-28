@@ -6,10 +6,10 @@ Each success criterion from the v0.1.1 plan (SYNTHESIS.md §7) was independently
 |---|---|---|---|---|
 | 1 | `package.json#keywords` populated; install one-liners (`npx skills add`, `tessl i`) in README; SKILL.md surfaces in registries | discovery channels live | 20 keywords (10 original + 10 new); README has "Install via skill registry" block with both `npx skills add @vegastack/cli` and `tessl i @vegastack/cli`; SKILL.md frontmatter has `tags`, `codex`, `compatibility` per R6 | ✅ MET (cannot verify "registers within 24h" without external network call, but all the local prerequisites are in place) |
 | 2 | `E9-A7-tls-acm-cloudflare` returns merged envelope in one call (no `status=ambiguous`) | `status: ok`, `merged_from_providers` populated | `status: ok`, `provider: aws,cloudflare,tls`, `merged_from_providers: ["aws", "cloudflare", "tls"]` | ✅ MET |
-| 3 | `vega tf "S3 backend state locking DynamoDB"` cites `aws-s3-native-state-locking` knowledge card | card in `knowledge[].id` | `knowledge_ids: ["aws-s3-native-state-locking"]` | ✅ MET |
+| 3 | `vegastack tf "S3 backend state locking DynamoDB"` cites `aws-s3-native-state-locking` knowledge card | card in `knowledge[].id` | `knowledge_ids: ["aws-s3-native-state-locking"]` | ✅ MET |
 | 4 | Bottom-5 provider mean ≥ 0.55 (was 0.165) | ≥0.55 | **0.299** (local 0.000 unchanged · tls 0.125 unchanged · mongodb-atlas 0.222 unchanged · crowdstrike 0.167 → 0.834 · cloudflare 0.312 unchanged) | ❌ MISSED — only crowdstrike actually moved; the other 4 bottom providers are flat. Reasons traced below. |
 | 5 | `E9-A6-cloudflare-workers-d1-r2` AND `E9-A6-snowflake-warehouse-rbac` both ≥ 0.75 | both ≥0.75 | snowflake-warehouse-rbac = **1.000** ✅ · cloudflare-workers-d1-r2 = **0.333** ❌ | ❌ PARTIAL (1 of 2) |
-| 6 | `vega tf "tune Atlas cluster cost"` returns `mongodbatlas_advanced_cluster` rank 1 | top-1 = mongodbatlas_advanced_cluster | `status: error`, `code: ProviderUndetected` ("Could not detect provider from query. Pass --provider explicitly.") | ❌ MISSED |
+| 6 | `vegastack tf "tune Atlas cluster cost"` returns `mongodbatlas_advanced_cluster` rank 1 | top-1 = mongodbatlas_advanced_cluster | `status: error`, `code: ProviderUndetected` ("Could not detect provider from query. Pass --provider explicitly.") | ❌ MISSED |
 
 ## Why the misses
 

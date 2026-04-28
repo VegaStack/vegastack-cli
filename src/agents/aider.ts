@@ -28,7 +28,7 @@ Splunk, PagerDuty, Okta, Auth0, CrowdStrike, 1Password, MongoDB Atlas,
 Snowflake, Redis Cloud, ClickHouse, Pinecone, Ansible, and the standard
 utility providers), invoke the local CLI before writing HCL:
 
-    vega tf "<the user's request, in natural language>"
+    vegastack tf "<the user's request, in natural language>"
 
 The response is one JSON envelope with four channels:
 
@@ -44,10 +44,10 @@ Hard rules:
   files[].manifest_entry (top-level or .blocks.*), it doesn't exist.
 - Never fabricate import IDs. Use manifest_entry.import_syntax.command.
 - Respect deprecated:true — tell the user before writing code.
-- One provider per vega tf call; multi-provider work uses recipes[].
+- One provider per vegastack tf call; multi-provider work uses recipes[].
 - Cite citations[] (file paths + knowledge-card / recipe IDs) in your reply.
 
-If \`vega\` isn't on PATH, run \`npm i -g @vegastack/cli\` and \`vega install\`.
+If \`vegastack\` isn't on PATH, run \`npm i -g @vegastack/cli\` and \`vegastack install\`.
 `;
 
 interface ParsedConf {
@@ -148,7 +148,7 @@ class AiderRenderer implements AgentRenderer {
       notes: convPresent
         ? referenced
           ? ["Conventions file present and referenced from .aider.conf.yml."]
-          : [`Conventions file present but not referenced — re-run \`vega skills install --agent aider --force\`.`]
+          : [`Conventions file present but not referenced — re-run \`vegastack skills install --agent aider --force\`.`]
         : ["Not installed."],
       warnings: [],
     };

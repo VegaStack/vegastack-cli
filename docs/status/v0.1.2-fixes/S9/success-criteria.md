@@ -114,7 +114,7 @@ documenting the real-bundle range as the v0.1.0 reality.
 ## 9. Build/typecheck/lint clean across CLI + apps/mcp + apps/dashboard + bundle — ✅ MET
 
 All 4 workspaces exit 0 on every gate. See `/tmp/exec-status/S9/test-output.log`
-for raw output. The benign `vega install: WARN bundle install failed: HTTP 404`
+for raw output. The benign `vegastack install: WARN bundle install failed: HTTP 404`
 on root install is the same as P5/S7 — the postinstall hook tries to fetch a
 release tarball that doesn't exist on GitHub yet (because v0.1.0 hasn't been
 tagged); `CLI is still installed`, no exit-code failure.

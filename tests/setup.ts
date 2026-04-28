@@ -6,7 +6,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 /** Create an isolated tmp dir for a test, auto-cleaned at process exit. */
-export function makeTmpDir(prefix = "vega-test-"): string {
+export function makeTmpDir(prefix = "vegastack-test-"): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
   process.on("exit", () => {
     try {
@@ -20,7 +20,7 @@ export function makeTmpDir(prefix = "vega-test-"): string {
 
 /** Run a function with a tmp dir, guaranteeing cleanup even on throw. */
 export async function withTmpDir<T>(fn: (dir: string) => Promise<T> | T): Promise<T> {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vega-test-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-test-"));
   try {
     return await fn(dir);
   } finally {

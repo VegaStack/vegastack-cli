@@ -19,7 +19,7 @@ After all 8 Phase-3 execute teams completed, these items were left for the Phase
 
 **Recommendation:** switch E5's defaults to `/mcp` per Cloudflare's current Remote MCP guide. Keep `/sse` as fallback documented in the README for older clients (Claude Desktop pre-Apr 2026 ships SSE only).
 
-### 3. `vega skills install --agent all` consumes legacy registry
+### 3. `vegastack skills install --agent all` consumes legacy registry
 - E5 shipped the new `ALL_RENDERERS` registry covering all 6 agents (Claude Code, Codex, Cursor, Gemini, Continue, Aider)
 - The CLI command path (`src/commands/skills.ts`) still consumes the legacy `ALL_AGENTS` (only 4 agents)
 

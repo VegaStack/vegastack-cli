@@ -1,9 +1,9 @@
 // Path-safety validators. Use these on any path that came from user input
 // (CLI args, env vars, config files) before passing it to fs.* or
 // child_process.spawn. Returns a canonicalized absolute path on success;
-// throws VegaError(ValidationError) on rejection.
+// throws VegastackError(ValidationError) on rejection.
 //
-// The threat model: an LLM-driven agent invokes `vega …`; an adversarial query
+// The threat model: an LLM-driven agent invokes `vegastack …`; an adversarial query
 // could try to escape the intended write/read scope via `../` or null bytes,
 // or hide path text in terminals via bidi-override / zero-width characters
 // (the "Trojan Source" attack family).
@@ -11,7 +11,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { VegaError } from "./errors.js";
+import { VegastackError } from "./errors.js";
 
 /**
  * Codepoint ranges that have no legitimate use in a CLI path argument:
@@ -33,10 +33,10 @@ const DANGEROUS_CHARS = new RegExp(
 );
 /* eslint-enable no-control-regex */
 
-/** Throw VegaError if the input contains dangerous chars. */
+/** Throw VegastackError if the input contains dangerous chars. */
 export function rejectDangerousChars(input: string, fieldName = "path"): void {
   if (DANGEROUS_CHARS.test(input)) {
-    throw new VegaError(
+    throw new VegastackError(
       "ValidationError",
       `${fieldName} contains control or bidi-override characters; refusing to use it.`,
       { context: { field: fieldName } },
@@ -87,7 +87,7 @@ export function validateSafeOutputDir(
   );
 
   if (!allowed.some((root) => isWithin(realInput, root))) {
-    throw new VegaError(
+    throw new VegastackError(
       "ValidationError",
       `output dir is outside the allowed roots: ${realInput}`,
       { context: { input, normalized, real: realInput, allowed } },
@@ -124,7 +124,7 @@ export function validateSafeFilePath(
 
   if (options?.mustExist === true) {
     if (!fs.existsSync(normalized)) {
-      throw new VegaError("ValidationError", `file does not exist: ${normalized}`, {
+      throw new VegastackError("ValidationError", `file does not exist: ${normalized}`, {
         context: { input },
       });
     }
@@ -133,7 +133,7 @@ export function validateSafeFilePath(
     // TOCTOU window remains.
     const real = fs.realpathSync(normalized);
     if (!allowedReal.some((root) => isWithin(real, root))) {
-      throw new VegaError(
+      throw new VegastackError(
         "ValidationError",
         `file resolves through a symlink to a path outside the allowed roots: ${real}`,
         { context: { input, real, allowed: allowedReal } },
@@ -146,7 +146,7 @@ export function validateSafeFilePath(
   // is on the input itself, against realpath'd roots.
   const realInput = realpathIfExists(normalized);
   if (!allowedReal.some((root) => isWithin(realInput, root))) {
-    throw new VegaError("ValidationError", `file path is outside the allowed roots: ${realInput}`, {
+    throw new VegastackError("ValidationError", `file path is outside the allowed roots: ${realInput}`, {
       context: { input, normalized, real: realInput, allowed: allowedReal },
     });
   }

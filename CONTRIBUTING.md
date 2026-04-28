@@ -20,7 +20,7 @@ npm run format     # prettier --write
 ## Local end-to-end test
 
 The bundle is built by the upstream repo `engg-vegastack-agent-tf-providers`. To
-test end-to-end without GitHub Releases, point `vega` at an in-tree bundle:
+test end-to-end without GitHub Releases, point `vegastack` at an in-tree bundle:
 
 ```bash
 # Build a bundle locally (one-time, takes a few seconds):
@@ -28,13 +28,13 @@ test end-to-end without GitHub Releases, point `vega` at an in-tree bundle:
   bash scripts/build_bundle.sh --version 0.1.0 )
 
 # Install it via file://:
-VEGA_BUNDLE_URL=file:///abs/path/to/dist/vegastack-bundle-v0.1.0.tar.gz \
-VEGA_BUNDLE_DIR=/tmp/vega-test \
+VEGASTACK_BUNDLE_URL=file:///abs/path/to/dist/vegastack-bundle-v0.1.0.tar.gz \
+VEGASTACK_BUNDLE_DIR=/tmp/vegastack-test \
   node npm/install.js
 
 # Run the CLI against it:
-VEGA_BUNDLE_DIR=/tmp/vega-test node dist/cli.js doctor
-VEGA_BUNDLE_DIR=/tmp/vega-test node dist/cli.js tf "create an S3 bucket with versioning"
+VEGASTACK_BUNDLE_DIR=/tmp/vegastack-test node dist/cli.js doctor
+VEGASTACK_BUNDLE_DIR=/tmp/vegastack-test node dist/cli.js tf "create an S3 bucket with versioning"
 ```
 
 ## Pull-request workflow
@@ -52,7 +52,7 @@ VEGA_BUNDLE_DIR=/tmp/vega-test node dist/cli.js tf "create an S3 bucket with ver
    features — patch is fine, and it keeps users upgrading aggressively
    instead of pinning. **Minor versions are reserved for envelope-shape
    changes** (the `manifest_schema_version` bump, breaking shape changes
-   to `vega tf --json` output, etc.). **Major** is reserved for the v1.0
+   to `vegastack tf --json` output, etc.). **Major** is reserved for the v1.0
    API-stability commitment. Until v1.0, almost every changeset should
    be `patch`.
 3. **Run the local checks** before you push:
@@ -71,7 +71,7 @@ VEGA_BUNDLE_DIR=/tmp/vega-test node dist/cli.js tf "create an S3 bucket with ver
 - **`"strict": true`, `noUncheckedIndexedAccess: true`.** Both are non-negotiable.
 - **No `any` unless the boundary truly is dynamic** (e.g. `JSON.parse` output).
   Use `unknown` and narrow with type guards.
-- **Errors as types.** Throw a `VegaError` (`src/lib/errors.ts`); each variant
+- **Errors as types.** Throw a `VegastackError` (`src/lib/errors.ts`); each variant
   has an exit code and a hint. Don't throw plain `Error` in command handlers.
 - **stdout is for data, stderr for status.** All human-readable output goes to
   `log.{ok,warn,err,info,step}`. Machine-readable output (JSON envelopes) goes

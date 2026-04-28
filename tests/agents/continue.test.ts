@@ -12,7 +12,7 @@ import { continueMcpServerPath } from "../../src/lib/paths.js";
 let cwd: string;
 
 beforeEach(() => {
-  cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vega-continue-"));
+  cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-continue-"));
 });
 afterEach(() => {
   fs.rmSync(cwd, { recursive: true, force: true });
@@ -54,8 +54,8 @@ describe("continue renderer", () => {
 
   it("defaults to the modern /mcp StreamableHTTP transport", async () => {
     // Ensure no override leaks in from the test runner's env.
-    const prev = process.env.VEGA_MCP_URL;
-    delete process.env.VEGA_MCP_URL;
+    const prev = process.env.VEGASTACK_MCP_URL;
+    delete process.env.VEGASTACK_MCP_URL;
     try {
       // Re-import to pick up the unset env. The module reads the env at
       // import time, so we use vi's dynamic import after resetting modules.
@@ -69,7 +69,7 @@ describe("continue renderer", () => {
       // Transport tracks the URL: /mcp ⇒ streamable-http.
       expect(text).toContain("transport: streamable-http");
     } finally {
-      if (prev !== undefined) process.env.VEGA_MCP_URL = prev;
+      if (prev !== undefined) process.env.VEGASTACK_MCP_URL = prev;
     }
   });
 

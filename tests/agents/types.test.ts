@@ -38,12 +38,12 @@ describe("CanonicalSkill parser", () => {
       "---",
       "name: test",
       "description: A test.",
-      "allowed-tools: Bash(vega:*) Bash(jq:*) Read Grep Glob",
+      "allowed-tools: Bash(vegastack:*) Bash(jq:*) Read Grep Glob",
       "---",
       "",
     ].join("\n");
     const skill = parseSkill(md);
-    expect(skill.allowedTools).toContain("Bash(vega:*)");
+    expect(skill.allowedTools).toContain("Bash(vegastack:*)");
     expect(skill.allowedTools).toContain("Read");
     expect(skill.allowedTools).toContain("Glob");
   });

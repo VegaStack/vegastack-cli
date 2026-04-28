@@ -51,7 +51,7 @@ import {
 
 // ─── McpAgent (Durable Object) ────────────────────────────────────────────
 
-export class VegaMcp extends McpAgent<Env> {
+export class VegastackMcp extends McpAgent<Env> {
   server = new McpServer({
     name: "vegastack-mcp",
     version: "0.1.0",
@@ -185,12 +185,12 @@ export default {
     // McpAgent.serveSSE(path) are static helpers that build a Worker handler
     // wired to this class's Durable Object namespace.
     if (url.pathname === "/mcp" || url.pathname.startsWith("/mcp/")) {
-      const handler = VegaMcp.serve("/mcp") as unknown as McpHandler;
+      const handler = VegastackMcp.serve("/mcp") as unknown as McpHandler;
       const resp = await handler.fetch(request, env, ctx);
       return withCors(resp);
     }
     if (url.pathname === "/sse" || url.pathname.startsWith("/sse/")) {
-      const handler = VegaMcp.serveSSE("/sse") as unknown as McpHandler;
+      const handler = VegastackMcp.serveSSE("/sse") as unknown as McpHandler;
       const resp = await handler.fetch(request, env, ctx);
       return withCors(resp);
     }
@@ -282,7 +282,7 @@ const LANDING_HTML = `<!doctype html>
 </head>
 <body>
 <h1>vegastack-mcp</h1>
-<p class="muted">Remote Model Context Protocol server for the <code>vega tf</code> Terraform discovery harness.</p>
+<p class="muted">Remote Model Context Protocol server for the <code>vegastack tf</code> Terraform discovery harness.</p>
 <h2>Endpoints</h2>
 <ul>
   <li><code>POST /mcp</code> — StreamableHTTP transport (modern clients)</li>

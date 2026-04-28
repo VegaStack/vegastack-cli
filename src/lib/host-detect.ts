@@ -74,8 +74,8 @@ export function detectHost(agent: string): HostStatus {
   switch (agent) {
     // Detection rule: prefer the binary-on-PATH signal (definitive).
     // Fall back to checking for a config FILE that the AGENT itself creates
-    // on first run — never a dir vega might create as a side effect of
-    // `vega skills install`. Otherwise our installer would create the
+    // on first run — never a dir vegastack might create as a side effect of
+    // `vegastack skills install`. Otherwise our installer would create the
     // detection signal (tautological "host installed" forever after install).
 
     case "claude-code": {

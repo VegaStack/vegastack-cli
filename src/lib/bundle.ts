@@ -5,7 +5,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { bundleDir, bundleManifestPath, bundleVersionFile } from "./paths.js";
-import { VegaError } from "./errors.js";
+import { VegastackError } from "./errors.js";
 
 export interface BundleStatus {
   installed: boolean;
@@ -45,8 +45,8 @@ export interface ProviderEntry {
 export const SUPPORTED_SCHEMA_VERSIONS = Object.freeze([4]);
 
 /**
- * Read bundle status without throwing. Used by `vega doctor`. For strict access
- * (e.g. `vega tf`), use `requireBundle()` which throws a VegaError.
+ * Read bundle status without throwing. Used by `vegastack doctor`. For strict access
+ * (e.g. `vegastack tf`), use `requireBundle()` which throws a VegastackError.
  */
 export function readBundleStatus(): BundleStatus {
   const dir = bundleDir();
@@ -100,8 +100,8 @@ export function readBundleStatus(): BundleStatus {
 }
 
 /**
- * Strict accessor: returns the parsed RootManifest or throws VegaError. Use
- * from `vega tf` and any other command that genuinely cannot proceed without
+ * Strict accessor: returns the parsed RootManifest or throws VegastackError. Use
+ * from `vegastack tf` and any other command that genuinely cannot proceed without
  * a valid bundle.
  */
 export function requireBundle(): { dir: string; manifest: RootManifest } {
@@ -109,10 +109,10 @@ export function requireBundle(): { dir: string; manifest: RootManifest } {
   const manifestPath = bundleManifestPath();
 
   if (!fs.existsSync(dir)) {
-    throw new VegaError("BundleMissing", `bundle not found at ${dir}`, { context: { dir } });
+    throw new VegastackError("BundleMissing", `bundle not found at ${dir}`, { context: { dir } });
   }
   if (!fs.existsSync(manifestPath)) {
-    throw new VegaError("BundleCorrupt", `bundle MANIFEST.json missing at ${manifestPath}`, {
+    throw new VegastackError("BundleCorrupt", `bundle MANIFEST.json missing at ${manifestPath}`, {
       context: { manifestPath },
     });
   }
@@ -121,7 +121,7 @@ export function requireBundle(): { dir: string; manifest: RootManifest } {
   try {
     raw = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   } catch (e) {
-    throw new VegaError(
+    throw new VegastackError(
       "BundleCorrupt",
       `MANIFEST.json is not valid JSON: ${(e as Error).message}`,
       {
@@ -138,21 +138,21 @@ export function requireBundle(): { dir: string; manifest: RootManifest } {
 
 function parseRootManifest(raw: unknown, manifestPath: string): RootManifest {
   if (!isObject(raw)) {
-    throw new VegaError("BundleCorrupt", "MANIFEST.json is not a JSON object", {
+    throw new VegastackError("BundleCorrupt", "MANIFEST.json is not a JSON object", {
       context: { manifestPath },
     });
   }
 
   const formatVersion = raw.format_version;
   if (typeof formatVersion !== "number") {
-    throw new VegaError(
+    throw new VegastackError(
       "BundleCorrupt",
       "MANIFEST.json missing required field 'format_version' (number)",
       { context: { manifestPath } },
     );
   }
   if (formatVersion !== 1) {
-    throw new VegaError(
+    throw new VegastackError(
       "BundleVersionMismatch",
       `MANIFEST.json format_version=${formatVersion} not supported (expected 1)`,
       { context: { actual: formatVersion, expected: 1, manifestPath } },
@@ -161,7 +161,7 @@ function parseRootManifest(raw: unknown, manifestPath: string): RootManifest {
 
   const providers = raw.providers;
   if (!isObject(providers)) {
-    throw new VegaError(
+    throw new VegastackError(
       "BundleCorrupt",
       "MANIFEST.json missing required field 'providers' (object)",
       {
@@ -170,7 +170,7 @@ function parseRootManifest(raw: unknown, manifestPath: string): RootManifest {
     );
   }
   if (Object.keys(providers).length === 0) {
-    throw new VegaError("BundleCorrupt", "MANIFEST.json declares zero providers", {
+    throw new VegastackError("BundleCorrupt", "MANIFEST.json declares zero providers", {
       context: { manifestPath },
     });
   }
@@ -178,7 +178,7 @@ function parseRootManifest(raw: unknown, manifestPath: string): RootManifest {
   const parsedProviders: Record<string, ProviderEntry> = {};
   for (const [name, entry] of Object.entries(providers)) {
     if (!isObject(entry)) {
-      throw new VegaError("BundleCorrupt", `provider '${name}' entry is not an object`, {
+      throw new VegastackError("BundleCorrupt", `provider '${name}' entry is not an object`, {
         context: { manifestPath, provider: name },
       });
     }
@@ -220,7 +220,7 @@ function stringField(
 ): string {
   const v = obj[field];
   if (typeof v !== "string") {
-    throw new VegaError(
+    throw new VegastackError(
       "BundleCorrupt",
       `MANIFEST.json missing or non-string '${scope ? `${scope}.` : ""}${field}'`,
       { context: { manifestPath, field, scope } },
@@ -238,7 +238,7 @@ function optionalStringField(
   const v = obj[field];
   if (v === undefined) return undefined;
   if (typeof v !== "string") {
-    throw new VegaError(
+    throw new VegastackError(
       "BundleCorrupt",
       `MANIFEST.json field '${scope ? `${scope}.` : ""}${field}' must be a string when present`,
       { context: { manifestPath, field, scope } },
@@ -255,7 +255,7 @@ function numberField(
 ): number {
   const v = obj[field];
   if (typeof v !== "number") {
-    throw new VegaError(
+    throw new VegastackError(
       "BundleCorrupt",
       `MANIFEST.json missing or non-number '${scope ? `${scope}.` : ""}${field}'`,
       { context: { manifestPath, field, scope } },

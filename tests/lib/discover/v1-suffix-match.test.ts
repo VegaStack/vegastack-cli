@@ -21,7 +21,7 @@ import { tokenize } from "../../../src/lib/discover/tokenize.js";
 describe("v1-suffix matcher — symmetric digit guard", () => {
   let tmp: string;
   beforeEach(() => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vega-v1suffix-"));
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-v1suffix-"));
     fs.mkdirSync(path.join(tmp, "knowledge"));
   });
   afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));

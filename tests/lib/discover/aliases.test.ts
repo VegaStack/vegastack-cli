@@ -35,7 +35,7 @@ describe("loadAliases — happy path", () => {
 describe("loadAliases — malformed input handling", () => {
   let tmp: string;
   beforeEach(() => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vega-alias-"));
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-alias-"));
     fs.mkdirSync(path.join(tmp, "aws"));
   });
   afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));

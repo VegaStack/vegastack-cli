@@ -12,7 +12,7 @@ import {
   geminiExtensionPath,
 } from "../../src/lib/paths.js";
 
-const ENV_KEY = "VEGA_BUNDLE_DIR";
+const ENV_KEY = "VEGASTACK_BUNDLE_DIR";
 let originalEnv: string | undefined;
 
 beforeEach(() => {
@@ -30,7 +30,7 @@ describe("bundleDir", () => {
     expect(dir).toMatch(/[\\/]\.config[\\/]vegastack[\\/]bundle$/);
   });
 
-  it("respects VEGA_BUNDLE_DIR override", () => {
+  it("respects VEGASTACK_BUNDLE_DIR override", () => {
     process.env[ENV_KEY] = "/tmp/custom-bundle";
     expect(bundleDir()).toBe("/tmp/custom-bundle");
   });
@@ -47,7 +47,7 @@ describe("bundle paths", () => {
 
 describe("agent install paths", () => {
   it("claude plugin dir is global only", () => {
-    expect(claudePluginDir()).toMatch(/\.claude[\\/]plugins[\\/]terraform-providers-kit$/);
+    expect(claudePluginDir()).toMatch(/\.claude[\\/]plugins[\\/]vegastack-cli$/);
   });
 
   it("codex skill dir uses ~/.agents in global, cwd in project", () => {
@@ -68,7 +68,7 @@ describe("agent install paths", () => {
   it("cursor rule path is project-relative", () => {
     const cwd = "/tmp/proj";
     expect(cursorRulePath(cwd)).toBe(
-      path.join(cwd, ".cursor", "rules", "terraform-providers-kit.mdc"),
+      path.join(cwd, ".cursor", "rules", "vegastack-cli.mdc"),
     );
   });
 

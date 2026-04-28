@@ -41,14 +41,14 @@ jobs:
           cache: npm
       - run: npm ci
         env:
-          VEGA_SKIP_POSTINSTALL: "1"
+          VEGASTACK_SKIP_POSTINSTALL: "1"
       - run: npm run build
 
       # Provision the bundle from R2 so the runner has real data to query.
       # We sync from `cli/bundle/` (extracted files the build-and-publish
       # workflow uploads as individual R2 objects — see option α in the
-      # cross-repo dependency notes). VEGA_BUNDLE_DIR exported into env so
-      # every subsequent step (and the runner-spawned `vega tf` calls) finds
+      # cross-repo dependency notes). VEGASTACK_BUNDLE_DIR exported into env so
+      # every subsequent step (and the runner-spawned `vegastack tf` calls) finds
       # the bundle without touching the network postinstall path.
       - name: Provision latest bundle from R2
         env:
@@ -60,7 +60,7 @@ jobs:
         run: |
           set -euo pipefail
           ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
-          BUNDLE_DIR="${RUNNER_TEMP}/vega-bundle"
+          BUNDLE_DIR="${RUNNER_TEMP}/vegastack-bundle"
           mkdir -p "$BUNDLE_DIR"
           aws s3 sync \
             --endpoint-url "$ENDPOINT" \
@@ -77,20 +77,20 @@ jobs:
           BUNDLE_VER=$(python3 -c "import json; print(json.load(open('$BUNDLE_DIR/MANIFEST.json')).get('bundle_version','unknown'))" 2>/dev/null || echo "unknown")
           PROVIDER_COUNT=$(python3 -c "import json; m=json.load(open('$BUNDLE_DIR/MANIFEST.json')); print(len(m.get('providers',{})))" 2>/dev/null || echo "?")
           echo "Provisioned bundle ${BUNDLE_VER} with ${PROVIDER_COUNT} providers at ${BUNDLE_DIR}"
-          echo "VEGA_BUNDLE_DIR=${BUNDLE_DIR}" >> "$GITHUB_ENV"
+          echo "VEGASTACK_BUNDLE_DIR=${BUNDLE_DIR}" >> "$GITHUB_ENV"
 
       - name: Run full eval suite
         id: run
         env:
-          # VEGA_BUNDLE_DIR is also in $GITHUB_ENV from the previous step;
-          # re-asserted here for clarity. The runner spawns `vega tf` per
+          # VEGASTACK_BUNDLE_DIR is also in $GITHUB_ENV from the previous step;
+          # re-asserted here for clarity. The runner spawns `vegastack tf` per
           # prompt and each child inherits the env.
-          VEGA_BUNDLE_DIR: ${{ env.VEGA_BUNDLE_DIR }}
+          VEGASTACK_BUNDLE_DIR: ${{ env.VEGASTACK_BUNDLE_DIR }}
         run: |
           set -euo pipefail
           DATE=$(date -u +%Y-%m-%d)
           OUT="evals/reports/${DATE}.json"
-          npx tsx evals/runner.ts --mode both --concurrency 4 --output "$OUT" --vega "$(pwd)/dist/cli.js"
+          npx tsx evals/runner.ts --mode both --concurrency 4 --output "$OUT" --vegastack "$(pwd)/dist/cli.js"
           echo "report=$OUT" >> "$GITHUB_OUTPUT"
           echo "date=$DATE"   >> "$GITHUB_OUTPUT"
       - name: Upload report artifact
@@ -106,7 +106,7 @@ jobs:
           DATE: ${{ steps.run.outputs.date }}
         run: |
           set -euo pipefail
-          git config user.name  "vega-eval-bot"
+          git config user.name  "vegastack-eval-bot"
           git config user.email "eval-bot@vegastack.com"
           # Maintain an eval-history orphan branch holding only the JSON reports.
           # This is the secondary archive — primary is R2 (next step) which the
@@ -220,7 +220,7 @@ jobs:
           cache: npm
       - run: npm ci
         env:
-          VEGA_SKIP_POSTINSTALL: "1"
+          VEGASTACK_SKIP_POSTINSTALL: "1"
       - run: npm run build
 
       # Same R2 bundle provision as the nightly job — PR smoke needs real
@@ -237,7 +237,7 @@ jobs:
         run: |
           set -euo pipefail
           ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
-          BUNDLE_DIR="${RUNNER_TEMP}/vega-bundle"
+          BUNDLE_DIR="${RUNNER_TEMP}/vegastack-bundle"
           mkdir -p "$BUNDLE_DIR"
           aws s3 sync \
             --endpoint-url "$ENDPOINT" \
@@ -248,11 +248,11 @@ jobs:
             echo "::error::R2 sync completed but $BUNDLE_DIR/MANIFEST.json is missing"
             exit 1
           fi
-          echo "VEGA_BUNDLE_DIR=${BUNDLE_DIR}" >> "$GITHUB_ENV"
+          echo "VEGASTACK_BUNDLE_DIR=${BUNDLE_DIR}" >> "$GITHUB_ENV"
 
       - name: Run smoke shard
         env:
-          VEGA_BUNDLE_DIR: ${{ env.VEGA_BUNDLE_DIR }}
+          VEGASTACK_BUNDLE_DIR: ${{ env.VEGASTACK_BUNDLE_DIR }}
         run: |
           set -euo pipefail
           mkdir -p /tmp/smoke

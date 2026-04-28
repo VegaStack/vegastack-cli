@@ -1,7 +1,7 @@
 {
   "name": "@vegastack/cli",
-  "version": "0.1.4",
-  "description": "vega — a deterministic, offline knowledge harness for coding agents (Claude Code, Codex, Cursor, Gemini). Ships 31 Terraform providers' upstream docs + manifests + recipes + knowledge cards as one installable CLI.",
+  "version": "0.1.5",
+  "description": "vegastack — a deterministic, offline knowledge harness for coding agents (Claude Code, Codex, Cursor, Gemini). Ships 31 Terraform providers' upstream docs + manifests + recipes + knowledge cards as one installable CLI.",
   "license": "MIT",
   "author": {
     "name": "Vegastack Inc.",
@@ -40,18 +40,21 @@
   ],
   "type": "module",
   "bin": {
-    "vega": "npm/run.js"
+    "vegastack": "npm/run.js"
   },
   "files": [
     "npm/",
     "dist/",
     "skills/",
+    "commands/",
+    "hooks/",
     "AGENTS.md",
     "CLAUDE.md",
     "CONTEXT.md",
     "cursor-rule.mdc",
     "gemini-extension.json",
     ".claude-plugin/",
+    ".mcp.json",
     "README.md",
     "LICENSE"
   ],

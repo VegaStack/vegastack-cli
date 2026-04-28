@@ -46,9 +46,9 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Skip the bundle postinstall during CI — the bundle isn't published
           # yet to a release for v0.1, and the CLI is what we're shipping here.
-          # Internal testers run `vega install` (or set VEGA_BUNDLE_DIR) after
+          # Internal testers run `vegastack install` (or set VEGASTACK_BUNDLE_DIR) after
           # `npm install @vegastack/cli`.
-          VEGA_SKIP_POSTINSTALL: "1"
+          VEGASTACK_SKIP_POSTINSTALL: "1"
 
       - name: Build
         run: npm run build
@@ -78,4 +78,4 @@ jobs:
           # publish when expectedBundleSha is the placeholder. For internal
           # v0.1 testing we explicitly bypass — the placeholder is expected
           # because the bundle release pipeline runs separately.
-          VEGA_ALLOW_PENDING_BUNDLE_SHA: "1"
+          VEGASTACK_ALLOW_PENDING_BUNDLE_SHA: "1"

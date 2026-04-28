@@ -7,7 +7,7 @@ Date: 2026-04-28
 ## Summary
 
 Built a complete `apps/mcp/` Cloudflare Workers project that exposes the
-`vega tf` discovery harness (and four supporting operations) as a Remote MCP
+`vegastack tf` discovery harness (and four supporting operations) as a Remote MCP
 server reachable over both StreamableHTTP (`/mcp`, modern clients) and SSE
 (`/sse`, legacy clients via `mcp-remote` / Claude Desktop). The server uses
 the official Cloudflare Agents SDK (`agents` npm pkg, `McpAgent` base class)

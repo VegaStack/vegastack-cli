@@ -35,7 +35,7 @@ interface SyntheticBundleSpec {
 /** Build a temp bundle with N providers, each shipping a manifest that
  *  has a single resource and a single canonical name match. */
 function makeBundle(spec: SyntheticBundleSpec): string {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vega-merge-"));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-merge-"));
   fs.writeFileSync(
     path.join(tmp, "MANIFEST.json"),
     JSON.stringify({ bundle_version: "test", providers: spec.providers }),

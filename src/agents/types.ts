@@ -82,7 +82,7 @@ export interface AgentRenderer {
 
 /**
  * Legacy synchronous installer interface kept for the existing
- * `vega skills install` command path. New renderers prefer `AgentRenderer`.
+ * `vegastack skills install` command path. New renderers prefer `AgentRenderer`.
  * Adapter helpers in `lib/agents/adapter.ts` bridge the two.
  */
 export interface AgentInstaller {

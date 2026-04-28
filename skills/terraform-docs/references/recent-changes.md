@@ -7,7 +7,7 @@ For card schema, frontmatter spec, and authoring guidelines see [knowledge-cards
 ## The single workflow
 
 ```bash
-vega tf "<the user's exact phrasing>"
+vegastack tf "<the user's exact phrasing>"
 ```
 
 The envelope's `knowledge[]` returns every card whose triggers fire (token AND-within, OR-across; or substring `phrase` match). The card body is included inline; cite `authoritative_source` in your reply.

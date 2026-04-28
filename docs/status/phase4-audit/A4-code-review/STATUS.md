@@ -133,7 +133,7 @@ Confirmed by `apps/dashboard/src/fixtures/sample-report.json:1-12` shape: `{sche
 `parseReport(realReport)` will return `null` because the runner emits `generated_at` (not `date`), `summary.lift_pct` (not `lift`), `baseline[]` + `with_skill[]` (not `prompts[]` + `archetypes[]`). The dashboard will fall through to `fallbackReport()` — every visitor sees the bundled fixture. Headline lift becomes meaningless.
 
 **Fix path:** assign owner E6 (single source of truth lives in dashboard's `EvalReport`). `runner.ts:writeReport()` should:
-- emit `date` (today YYYY-MM-DD), `lift` (= `summary.lift_pct`), `baseline_pass_rate`, `with_skill_pass_rate`, `prompt_count`, `bundle_version` (from $VEGA_BUNDLE/MANIFEST.json), `cli_version` (from package.json).
+- emit `date` (today YYYY-MM-DD), `lift` (= `summary.lift_pct`), `baseline_pass_rate`, `with_skill_pass_rate`, `prompt_count`, `bundle_version` (from $VEGASTACK_BUNDLE/MANIFEST.json), `cli_version` (from package.json).
 - transform per-prompt rows into `prompts[]` matching `PromptResult`.
 - aggregate into `archetypes[]: ArchetypeRollup[]`.
 - compute `knowledge_cards[]` + `recipes[]` hit-rate rollups from the per-prompt scoring side-data already in `score.ts`.
@@ -235,7 +235,7 @@ In priority order:
 
 3. **(High) E1↔E2 manifest gap (punch-list #4).** Extend `manifest_builder.py` to emit top-level `primary_resources` and `subcat_keywords` per provider. Patch outlined in §2 above. Without this, 27 of 31 providers run discovery in degraded mode. ETA 30 min.
 
-4. **(High) `vega skills install --agent all` covers only 4 agents (punch-list #3).** Swap `ALL_AGENT_NAMES` → `ALL_RENDERER_NAMES` and `getAgent` → `getRenderer` in `src/commands/skills.ts`. New 6-agent path is ready. ETA 15 min + adjusted test.
+4. **(High) `vegastack skills install --agent all` covers only 4 agents (punch-list #3).** Swap `ALL_AGENT_NAMES` → `ALL_RENDERER_NAMES` and `getAgent` → `getRenderer` in `src/commands/skills.ts`. New 6-agent path is ready. ETA 15 min + adjusted test.
 
 5. **(Medium) R2 bucket-name divergence (punch-list #1).** Pick `vegastack-bundles` and search-and-replace across `apps/mcp/wrangler.toml:46-47`, `apps/dashboard/wrangler.toml:20-21`, `bundle/.github/workflows/build-and-publish.yml` workflow defaults / `RELEASE.md`. ETA 5 min.
 

@@ -26,14 +26,14 @@ jobs:
           cache: npm
       - run: npm ci
         env:
-          VEGA_SKIP_POSTINSTALL: "1"
+          VEGASTACK_SKIP_POSTINSTALL: "1"
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check
       - run: npm run build
       - name: CLI smoke (no bundle)
         env:
-          VEGA_SKIP_POSTINSTALL: "1"
+          VEGASTACK_SKIP_POSTINSTALL: "1"
         run: |
           node dist/cli.js --version
           node dist/cli.js --help
@@ -55,7 +55,7 @@ jobs:
           cache: npm
       - run: npm ci
         env:
-          VEGA_SKIP_POSTINSTALL: "1"
+          VEGASTACK_SKIP_POSTINSTALL: "1"
       - run: npm run build
       - run: npm test
 
@@ -74,7 +74,7 @@ jobs:
           cache: npm
       - run: npm ci
         env:
-          VEGA_SKIP_POSTINSTALL: "1"
+          VEGASTACK_SKIP_POSTINSTALL: "1"
       - run: npm run build
       - run: npx vitest run --coverage
       - uses: actions/upload-artifact@v4
@@ -95,7 +95,7 @@ jobs:
           cache: npm
       - run: npm ci
         env:
-          VEGA_SKIP_POSTINSTALL: "1"
+          VEGASTACK_SKIP_POSTINSTALL: "1"
       # `--audit-level=moderate` fails CI on moderate or worse advisories.
       # Production deps only; dev deps are noisy and rarely affect users.
       - run: npm audit --audit-level=moderate --omit=dev

@@ -45,7 +45,7 @@ today it's the placeholder `sha256-PENDING-FIRST-RELEASE`):
 - If the SHA mismatches, `install.js` **does not extract** (L362–368)
   and exits 0 (postinstall never fails npm install).
 
-**Worst case:** denial of bundle install → `vega doctor` says
+**Worst case:** denial of bundle install → `vegastack doctor` says
 "bundle not installed". User is told to retry. **No code execution.**
 
 ### Path 2: tarball content
@@ -88,7 +88,7 @@ window — recoverable.
 ### Path 5: log redaction
 `redactUserPaths()` (L119–128) replaces `$HOME` and strips ANSI
 sequences, so error output won't leak `/Users/<username>/`. It does
-NOT mask the proxy hostname (only password) or `VEGA_BUNDLE_URL`
+NOT mask the proxy hostname (only password) or `VEGASTACK_BUNDLE_URL`
 (printed verbatim at L289). For a scope-of-v0.1 PII threat, that's
 acceptable — those values come from the user's own env.
 
@@ -118,7 +118,7 @@ malicious knowledge cards/recipes that mislead an LLM agent
 (prompt-injection style attack), and they CAN ship a bundle that
 crashes the CLI parsers.
 
-That bundle would be active until the user runs `vega refresh` against
+That bundle would be active until the user runs `vegastack refresh` against
 the next legitimate release, at which point the SHA would be
 re-checked against whatever the v0.1 chain provides.
 
@@ -136,10 +136,10 @@ This is the central audit finding. The bundle pipeline emits
 1. **`npm/install.js` never reads `.sigstore` files** — confirmed by
    `grep -rn "sigstore\|cosign\|fulcio\|rekor" src/ npm/` returning only
    doc comments.
-2. **`vega doctor --verify-bundle` validates JSON-Schema only**
+2. **`vegastack doctor --verify-bundle` validates JSON-Schema only**
    (`doctor.ts` L160–211) — it parses each `MANIFEST.json` and checks
    structural keys; it does NOT call `cosign verify-blob` or walk Rekor.
-3. **`vega doctor --verify-attestations` is documented in `INSTALL.md`
+3. **`vegastack doctor --verify-attestations` is documented in `INSTALL.md`
    L51–65 but does not exist in `cli.ts`.** The only flag wired up is
    `--verify-bundle`.
 
@@ -208,8 +208,8 @@ but **v0.1 ships with no in-CLI Sigstore verification**.
 4. **`stageAsideExisting` does NOT preserve `bundle.previous`.** L569–
    580 renames to `bundle.stale-<random>` and `rmSync`s after success
    (L385). The `INSTALL.md` "Rollback" troubleshooting at L168
-   ("`vega update --rollback` or reinstall") and the planning doc R5 §2
-   ("vega update --rollback") promise rollback-via-`bundle.previous`,
+   ("`vegastack update --rollback` or reinstall") and the planning doc R5 §2
+   ("vegastack update --rollback") promise rollback-via-`bundle.previous`,
    but no code keeps that artifact. Mid-install crash leaves the dir
    stage-aside until `cleanupTmp` runs; clean install removes it.
    Either implement true `bundle.previous` retention (1 generation, ~12

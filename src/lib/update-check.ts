@@ -2,8 +2,8 @@
 //
 // Strategy: cache the answer on disk for 24h, refresh it from `npm view`
 // (which respects the user's ~/.npmrc auth + scoped registry routing).
-// We never block a vega command on a network call — refreshes happen
-// only inside `vega doctor` or `vega update`, and the nag printed on
+// We never block a vegastack command on a network call — refreshes happen
+// only inside `vegastack doctor` or `vegastack update`, and the nag printed on
 // every command reads from the cached value only.
 
 import { spawnSync } from "node:child_process";
@@ -86,7 +86,7 @@ export function refreshUpdateCache(): string | null {
  * One-line stderr nag if the cache says a newer version is available.
  * Reads cache only — never makes network calls. Safe to call on every command.
  * Suppressed when:
- *   - VEGA_NO_UPDATE_NAG is set (CI / scripts)
+ *   - VEGASTACK_NO_UPDATE_NAG is set (CI / scripts)
  *   - JSON mode is active (caller's responsibility — pass `quiet: true`)
  *   - cache is missing or stale (unknown state → silent)
  */
@@ -95,11 +95,11 @@ export function printUpdateNagIfStale(
   opts: { quiet?: boolean } = {},
 ): void {
   if (opts.quiet) return;
-  if (process.env.VEGA_NO_UPDATE_NAG) return;
+  if (process.env.VEGASTACK_NO_UPDATE_NAG) return;
   const cache = readUpdateCache();
   if (cache === null) return;
   if (!isNewer(cache.latest, currentVersion)) return;
   process.stderr.write(
-    `note: a newer @vegastack/cli is available (${currentVersion} → ${cache.latest}). run \`vega update\` to upgrade.\n`,
+    `note: a newer @vegastack/cli is available (${currentVersion} → ${cache.latest}). run \`vegastack update\` to upgrade.\n`,
   );
 }
