@@ -11,7 +11,19 @@ import { join } from "node:path";
 import { ALL_RENDERER_NAMES, getRenderer } from "../agents/index.js";
 import { readBundleStatus } from "../lib/bundle.js";
 import { log } from "../lib/log.js";
-import { bundleDir } from "../lib/paths.js";
+import { bundleDir, pkgRoot } from "../lib/paths.js";
+import { isNewer, refreshUpdateCache } from "../lib/update-check.js";
+
+function readCliVersion(): string {
+  try {
+    const pj = JSON.parse(readFileSync(join(pkgRoot(), "package.json"), "utf8")) as {
+      version?: string;
+    };
+    return pj.version ?? "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+}
 
 export interface DoctorOptions {
   json: boolean;
@@ -73,6 +85,22 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
       : "not found (optional; speeds up Tier-2 search 5-10×; brew install ripgrep)",
   });
 
+  // CLI version freshness — refresh the cache (network call, ~5s timeout)
+  // so the next-command nag has accurate data. A failed lookup is fine; we
+  // just don't update anything.
+  const currentCli = readCliVersion();
+  const latestCli = refreshUpdateCache();
+  if (latestCli !== null) {
+    const stale = isNewer(latestCli, currentCli);
+    checks.push({
+      name: "CLI version",
+      ok: !stale,
+      detail: stale
+        ? `${currentCli} (newer available: ${latestCli} — run \`vega update\`)`
+        : `${currentCli} (latest)`,
+    });
+  }
+
   // Optional bundle verification — runs the schema validator on every
   // per-provider MANIFEST.json. Closes F12.
   let verifyResults: { provider: string; ok: boolean; errors: string[] }[] | undefined;
@@ -115,7 +143,7 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
 
   if (opts.json) {
     log.json({
-      cli_version: process.env.npm_package_version ?? "unknown",
+      cli_version: currentCli,
       checks: checks.map((c) => ({ name: c.name, ok: c.ok, detail: c.detail })),
       bundle,
       verify: verifyResults,
@@ -185,7 +213,9 @@ function verifyBundle(_schemaPath: string): { provider: string; ok: boolean; err
       providers = Object.keys(rootManifest.providers);
     }
   } catch {
-    return [{ provider: "<root>", ok: false, errors: ["bundle root MANIFEST.json missing/invalid"] }];
+    return [
+      { provider: "<root>", ok: false, errors: ["bundle root MANIFEST.json missing/invalid"] },
+    ];
   }
 
   for (const p of providers) {
@@ -205,7 +235,9 @@ function verifyBundle(_schemaPath: string): { provider: string; ok: boolean; err
       continue;
     }
     if (data.manifest_schema_version !== 1) {
-      errors.push(`manifest_schema_version must be 1; got ${JSON.stringify(data.manifest_schema_version)}`);
+      errors.push(
+        `manifest_schema_version must be 1; got ${JSON.stringify(data.manifest_schema_version)}`,
+      );
     }
     for (const k of ["provider", "bundle_version", "synced_at", "resources", "data_sources"]) {
       if (!(k in data)) errors.push(`missing required key: ${k}`);

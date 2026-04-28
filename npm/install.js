@@ -14,11 +14,17 @@
 //     `vega install` or `VEGA_BUNDLE_URL=file://…`.
 //
 // Env:
-//   VEGA_SKIP_POSTINSTALL=1     skip download entirely (CI / dev installs)
-//   VEGA_BUNDLE_URL=<url>       override download URL (testing / offline)
-//   VEGA_BUNDLE_DIR=<path>      override extract destination
-//   VEGA_BUNDLE_TIMEOUT_MS=N    per-attempt fetch timeout (default 60_000)
-//   VEGA_BUNDLE_RETRIES=N       retries on transient failure (default 2)
+//   VEGA_SKIP_POSTINSTALL=1       skip download entirely (CI / dev installs)
+//   VEGA_BUNDLE_MANIFEST_URL=<u>  override the root manifest (default
+//                                 https://bundles.vegastack.com/cli/manifest.json)
+//   VEGA_BUNDLE_URL=<url>         override download URL (testing / offline);
+//                                 when set, bypasses the manifest entirely
+//                                 and reads SHA from `<url>.sha256` sidecar
+//   VEGA_BUNDLE_SHA256=<hex>      override SHA256 when VEGA_BUNDLE_URL is set
+//                                 (lets you point at a URL without a sidecar)
+//   VEGA_BUNDLE_DIR=<path>        override extract destination
+//   VEGA_BUNDLE_TIMEOUT_MS=N      per-attempt fetch timeout (default 60_000)
+//   VEGA_BUNDLE_RETRIES=N         retries on transient failure (default 2)
 //
 // Standard proxy env (any of, in this order):
 //   HTTPS_PROXY, https_proxy, HTTP_PROXY, http_proxy
@@ -75,40 +81,33 @@ const VERSION_FILE = path.join(BUNDLE_DIR, ".version");
 const LOCK_PATH = `${BUNDLE_DIR}.lock`;
 
 // ── URLs ──────────────────────────────────────────────────────
-function bundleUrl() {
-  if (process.env.VEGA_BUNDLE_URL) return process.env.VEGA_BUNDLE_URL;
-  return `https://github.com/vegastack/vegastack-cli/releases/download/v${VERSION}/vegastack-bundle-v${VERSION}.tar.gz`;
-}
-function bundleSha256Url() {
-  return `${bundleUrl()}.sha256`;
+//
+// Two resolution paths:
+//
+//  1. Manifest-driven (default). The bundle is published independently from
+//     the CLI on a daily CalVer cadence by the `engg-vegastack-agent-tf-providers`
+//     repo, with a root index at https://bundles.vegastack.com/cli/manifest.json.
+//     We GET that manifest, read `channels.latest.bundle_url` +
+//     `channels.latest.bundle_sha256`, and use them. This keeps the CLI
+//     decoupled from the bundle's release cadence.
+//
+//  2. URL override. When VEGA_BUNDLE_URL is set we skip the manifest and use
+//     the URL directly, with SHA from VEGA_BUNDLE_SHA256 (preferred) or the
+//     `<url>.sha256` sidecar. Useful for tests, airgap installs, and
+//     development against a local bundle (`file://`).
+const DEFAULT_MANIFEST_URL = "https://bundles.vegastack.com/cli/manifest.json";
+const MAX_MANIFEST_BYTES = 1 * 1024 * 1024; // 1 MB; manifest is ~tens of KB
+
+function manifestUrl() {
+  return process.env.VEGA_BUNDLE_MANIFEST_URL || DEFAULT_MANIFEST_URL;
 }
 
-/**
- * The SHA256 we EXPECT for this CLI version's bundle, written into
- * `package.json#expectedBundleSha` by `scripts/tag-release.js` at publish
- * time. Provenance-rooted (npm's @vegastack/cli was published with OIDC,
- * which means npm signs the package metadata — so an attacker who gets
- * shell on a user machine cannot forge this without breaking the npm
- * trust chain).
- *
- * When present we prefer it over the network-fetched .sha256 sidecar:
- *   • it ships in the same npm tarball as install.js itself (signed);
- *   • the network sidecar can in principle be tampered with by anyone
- *     who can MITM github.com (rare but possible on hostile networks).
- *
- * When absent (e.g. dev builds, pre-1.0 releases that pre-date the
- * tagging script change), we fall back to the network sidecar with
- * a clear log.
- */
-function expectedBundleSha() {
-  const raw = PKG.expectedBundleSha;
-  if (typeof raw !== "string") return null;
-  // Accept both "sha256-<hex>" (multibase-style, what tag-release.js writes
-  // when the bundle manifest carries it that way) and bare 64-char hex.
-  const stripped = raw.startsWith("sha256-") ? raw.slice("sha256-".length) : raw;
-  if (HEX64.test(stripped)) return stripped.toLowerCase();
-  return null;
-}
+// (expectedBundleSha pinning was removed in v0.1.2: bundle and CLI now ship
+// independently on different cadences — semver vs daily CalVer — so a CLI
+// version can no longer pin a single bundle SHA. The trust anchor is now
+// the manifest at https://bundles.vegastack.com/cli/manifest.json fetched
+// over HTTPS and served from the same Cloudflare-backed domain that hosts
+// the bundle itself.)
 
 // ── Logging ───────────────────────────────────────────────────
 const log = (msg) => process.stderr.write(`vega install: ${redactUserPaths(msg)}\n`);
@@ -133,25 +132,9 @@ if (process.env.VEGA_SKIP_POSTINSTALL === "1") {
   process.exit(0);
 }
 
-// Fast path: bundle is already at the requested version.
-try {
-  if (existsSync(VERSION_FILE)) {
-    const raw = readFileSync(VERSION_FILE, "utf8");
-    // Reject obvious tampering: a real version file is ~10 bytes.
-    if (raw.length > 64) {
-      warn(`existing .version file is unexpectedly large (${raw.length} bytes); ignoring it`);
-    } else {
-      const installed = raw.trim();
-      if (installed === VERSION) {
-        log(`bundle v${VERSION} already installed at ${BUNDLE_DIR}`);
-        process.exit(0);
-      }
-      log(`upgrading bundle from v${installed} to v${VERSION}`);
-    }
-  }
-} catch {
-  /* fall through to install */
-}
+// Fast-path skip is decided in main() now — once we know the resolved
+// bundle version (CalVer when manifest-driven; CLI VERSION when
+// VEGA_BUNDLE_URL overrides). We can't decide here without the resolution.
 
 // Node version check.
 const nodeMajor = Number(process.versions.node.split(".")[0]);
@@ -279,18 +262,100 @@ function redactProxyUrl(u) {
   }
 }
 
-// ── Main install flow ─────────────────────────────────────────
-async function main() {
-  const url = bundleUrl();
-  const shaUrl = bundleSha256Url();
+// ── Bundle spec resolution ────────────────────────────────────
+//
+// Returns { url, expectedSha, bundleVersion, source } where:
+//   url            the URL to fetch the .tar.gz from
+//   expectedSha    64-char hex SHA256
+//   bundleVersion  CalVer (manifest-driven) or CLI VERSION (override)
+//   source         "manifest" | "override-env" | "override-sidecar"
+// GH Releases fallback host for the bundle repo. Used when R2 fetch fails —
+// the daily build-and-publish workflow mirrors every bundle CalVer to a
+// `bundle-v<CALVER>` release on this repo as the corporate-firewall fallback.
+const BUNDLE_REPO = "VegaStack/engg-vegastack-agent-tf-providers";
 
-  // Refuse non-https URLs unless they are file:// (local testing / air-gapped).
-  if (!url.startsWith("https://") && !url.startsWith("file://")) {
-    err(`refusing non-HTTPS bundle URL: ${url}`);
-    err("set VEGA_BUNDLE_URL to an https:// or file:// URL.");
-    process.exit(0);
+async function tryGitHubReleasesFallback() {
+  // We only know the CalVer if the manifest fetch succeeded enough to give
+  // us a parsed body. For a full R2 outage where even the manifest 404s,
+  // we ask GitHub's API for the latest release tag (`bundle-v<CALVER>`),
+  // then construct the asset URLs from that.
+  const apiUrl = `https://api.github.com/repos/${BUNDLE_REPO}/releases/latest`;
+  log(`R2 manifest unavailable; falling back to ${apiUrl}`);
+  const body = await fetchTextWithRetry(apiUrl, MAX_MANIFEST_BYTES);
+  let release;
+  try {
+    release = JSON.parse(body);
+  } catch (e) {
+    throw new Error(`GH releases API returned non-JSON: ${e?.message ?? e}`);
+  }
+  const tag = release?.tag_name;
+  const m = typeof tag === "string" ? tag.match(/^bundle-v([0-9.]+)$/) : null;
+  if (!m) throw new Error(`unexpected release tag '${tag}'; expected bundle-vYYYY.MM.DD`);
+  const calver = m[1];
+  const tarballName = `vegastack-bundle-${calver}.tar.gz`;
+  const url = `https://github.com/${BUNDLE_REPO}/releases/download/${tag}/${tarballName}`;
+  // The release ships a .sha256 sidecar alongside the tarball.
+  const shaText = await fetchTextWithRetry(`${url}.sha256`, MAX_SHA_FILE_BYTES);
+  const sha = (shaText.trim().split(/\s+/)[0] ?? "").toLowerCase();
+  if (!HEX64.test(sha)) throw new Error(`fallback .sha256 sidecar is not 64 hex chars: '${sha}'`);
+  return { url, expectedSha: sha, bundleVersion: calver, source: "fallback-gh-releases" };
+}
+
+async function resolveBundleSpec() {
+  // Override path: VEGA_BUNDLE_URL forces a specific URL. SHA comes from
+  // VEGA_BUNDLE_SHA256 (preferred) or the `<url>.sha256` sidecar.
+  if (process.env.VEGA_BUNDLE_URL) {
+    const url = process.env.VEGA_BUNDLE_URL;
+    if (!url.startsWith("https://") && !url.startsWith("file://")) {
+      throw new Error(
+        `refusing non-HTTPS bundle URL: ${url}. Set VEGA_BUNDLE_URL to an https:// or file:// URL.`,
+      );
+    }
+    if (process.env.VEGA_BUNDLE_SHA256) {
+      const sha = process.env.VEGA_BUNDLE_SHA256.toLowerCase();
+      if (!HEX64.test(sha)) throw new Error(`VEGA_BUNDLE_SHA256 must be 64 hex chars`);
+      return { url, expectedSha: sha, bundleVersion: VERSION, source: "override-env" };
+    }
+    log(`fetching checksum ${url}.sha256`);
+    const shaText = await fetchTextWithRetry(`${url}.sha256`, MAX_SHA_FILE_BYTES);
+    const sha = (shaText.trim().split(/\s+/)[0] ?? "").toLowerCase();
+    if (!HEX64.test(sha)) {
+      throw new Error(`checksum file did not contain a single SHA256 hex digest: '${sha}'`);
+    }
+    return { url, expectedSha: sha, bundleVersion: VERSION, source: "override-sidecar" };
   }
 
+  // Manifest-driven path (default).
+  const mfUrl = manifestUrl();
+  log(`fetching bundle manifest ${mfUrl}`);
+  try {
+    const mfText = await fetchTextWithRetry(mfUrl, MAX_MANIFEST_BYTES);
+    const manifest = JSON.parse(mfText);
+    const channel = manifest?.channels?.latest;
+    if (!channel || typeof channel !== "object") {
+      throw new Error("bundle manifest missing channels.latest");
+    }
+    const url = channel.bundle_url;
+    const sha = String(channel.bundle_sha256 ?? "").toLowerCase();
+    const calver = channel.bundle_version;
+    if (typeof url !== "string" || !url.startsWith("https://")) {
+      throw new Error(`channels.latest.bundle_url is not an https URL: ${url}`);
+    }
+    if (!HEX64.test(sha)) {
+      throw new Error(`channels.latest.bundle_sha256 is not 64 hex chars: '${sha}'`);
+    }
+    if (typeof calver !== "string" || calver.length === 0) {
+      throw new Error(`channels.latest.bundle_version is missing`);
+    }
+    return { url, expectedSha: sha, bundleVersion: calver, source: "manifest" };
+  } catch (e) {
+    warn(`manifest fetch failed: ${redactUserPaths(e?.message ?? e)}`);
+    return await tryGitHubReleasesFallback();
+  }
+}
+
+// ── Main install flow ─────────────────────────────────────────
+async function main() {
   // Acquire the bundle dir lock so parallel `npm i` calls don't corrupt each other.
   if (!(await tryAcquireLock())) {
     warn(
@@ -300,46 +365,36 @@ async function main() {
     process.exit(0);
   }
 
-  await configureProxyIfNeeded(url);
-
   const tmpRoot = mkdtempSync(path.join(tmpdir(), "vega-install-"));
   PENDING_TMP.add(tmpRoot);
 
   try {
-    // Step 1 — establish the EXPECTED SHA256.
-    // Preferred source: the `expectedBundleSha` field embedded in our own
-    // package.json at publish time (signed by npm provenance, which is in
-    // turn rooted in the GitHub Actions OIDC + sigstore Fulcio chain). When
-    // present we trust it absolutely and only use the network sidecar as
-    // a corroboration check.
-    // Fallback: fetch the .sha256 sidecar from GitHub Releases. Still
-    // cryptographically protected by HTTPS + (where present) the cosign
-    // sign-blob signature, but not as airtight as a pinned hash.
-    const pinnedSha = expectedBundleSha();
-    let expectedSha;
-    if (pinnedSha) {
-      expectedSha = pinnedSha;
-      log(`expected bundle SHA pinned in package.json (${expectedSha.slice(0, 12)}…)`);
-      // Best-effort corroboration with the network sidecar; if they disagree
-      // we trust the pinned value but warn loudly.
+    // Step 0 — figure out where the bundle lives and what we expect it to be.
+    // configureProxyIfNeeded uses the resolved URL's hostname, so we need the
+    // resolution to happen before any network I/O involving the bundle itself.
+    // The manifest fetch goes through the same proxy logic via the call below.
+    await configureProxyIfNeeded(manifestUrl());
+    const spec = await resolveBundleSpec();
+    const { url, expectedSha, bundleVersion, source } = spec;
+    if (source === "manifest") {
+      log(`resolved bundle ${bundleVersion} (${expectedSha.slice(0, 12)}…) via manifest`);
+    }
+    await configureProxyIfNeeded(url);
+
+    // Fast path: bundle on disk already matches the resolved version.
+    if (existsSync(VERSION_FILE)) {
       try {
-        const sidecar = (await fetchTextWithRetry(shaUrl, MAX_SHA_FILE_BYTES))
-          .trim()
-          .split(/\s+/)[0]
-          ?.toLowerCase();
-        if (HEX64.test(sidecar) && sidecar !== expectedSha) {
-          warn(`network .sha256 sidecar (${sidecar.slice(0, 12)}…) disagrees with pinned hash; trusting pinned`);
+        const raw = readFileSync(VERSION_FILE, "utf8");
+        if (raw.length <= 64) {
+          const installed = raw.trim();
+          if (installed === bundleVersion) {
+            log(`bundle ${bundleVersion} already installed at ${BUNDLE_DIR}`);
+            process.exit(0);
+          }
+          log(`upgrading bundle from ${installed} to ${bundleVersion}`);
         }
-      } catch (e) {
-        // Network corroboration is optional when we have a pinned SHA.
-        warn(`could not fetch corroborating sidecar (${redactUserPaths(e?.message ?? e)}); proceeding with pinned hash`);
-      }
-    } else {
-      log(`fetching checksum ${shaUrl}`);
-      const shaText = await fetchTextWithRetry(shaUrl, MAX_SHA_FILE_BYTES);
-      expectedSha = (shaText.trim().split(/\s+/)[0] ?? "").toLowerCase();
-      if (!HEX64.test(expectedSha)) {
-        throw new Error(`checksum file did not contain a single SHA256 hex digest: '${expectedSha}'`);
+      } catch {
+        /* fall through to install */
       }
     }
 
@@ -379,12 +434,12 @@ async function main() {
     const entryCount = safeExtractTarGz(tarball, BUNDLE_DIR);
 
     // Step 7 — atomic .version write.
-    writeFileAtomic(VERSION_FILE, VERSION);
+    writeFileAtomic(VERSION_FILE, bundleVersion);
 
     // Step 8 — clean up the staged-aside old bundle.
     if (stagedAside) rmSync(stagedAside, { recursive: true, force: true });
 
-    log(`bundle v${VERSION} ready (${entryCount} entries, ${size.toLocaleString()} bytes)`);
+    log(`bundle ${bundleVersion} ready (${entryCount} entries, ${size.toLocaleString()} bytes)`);
   } catch (e) {
     warn(`bundle install failed: ${redactUserPaths(e?.message ?? e)}`);
     warn("CLI is still installed. Recover with one of:");

@@ -65,13 +65,14 @@ npm i -g @vegastack/cli
 npm i @vegastack/cli
 ```
 
-The npm postinstall would normally download the docs bundle (~12 MB) from GitHub Releases. **For v0.1 internal testing the bundle isn't published yet** — point the CLI at a local copy of the bundle dev tree instead:
+The npm postinstall downloads the docs bundle (~12 MB) from `https://bundles.vegastack.com/cli/...` (Cloudflare R2). It's content-addressed and SHA-verified; on R2 outage it falls back to GitHub Releases of the bundle repo. After install:
 
 ```bash
-export VEGA_BUNDLE_DIR=/absolute/path/to/engg-vegastack-agent-tf-providers/terraform-providers
 vega doctor   # should report bundle found
 vega tf "S3 bucket with versioning enabled"
 ```
+
+To point at a local bundle tree instead (development against an unpublished build), set `VEGA_BUNDLE_DIR` to the absolute path of the bundle's `terraform-providers/` directory before running any vega command.
 
 To skip the postinstall network fetch entirely (silent), prefix install with:
 

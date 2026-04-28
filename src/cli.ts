@@ -11,8 +11,10 @@ import { runInstall } from "./commands/install.js";
 import { runRefresh } from "./commands/refresh.js";
 import { runSkills } from "./commands/skills.js";
 import { runTf } from "./commands/tf.js";
+import { runUpdate } from "./commands/update.js";
 import { VegaError } from "./lib/errors.js";
 import { log, printError, setJsonMode, setQuiet } from "./lib/log.js";
+import { printUpdateNagIfStale } from "./lib/update-check.js";
 
 function readVersion(): string {
   try {
@@ -34,6 +36,9 @@ function applyGlobalFlags(cmd: Command): void {
   const opts = cmd.optsWithGlobals<{ quiet?: boolean; json?: boolean }>();
   if (opts.quiet) setQuiet(true);
   if (opts.json) setJsonMode(true);
+  // Cached, network-free nag — silent unless a newer version was discovered
+  // by the last `vega doctor` / `vega update --check` (24h cache).
+  printUpdateNagIfStale(readVersion(), { quiet: Boolean(opts.quiet ?? opts.json) });
 }
 
 function parseScope(value: string): "global" | "project" {
@@ -105,7 +110,11 @@ program
   .command("doctor")
   .description("verify environment, bundle, and agent registration")
   .option("--json", "emit machine-readable JSON", false)
-  .option("--verify-bundle", "validate every per-provider MANIFEST.json against the JSON Schema", false)
+  .option(
+    "--verify-bundle",
+    "validate every per-provider MANIFEST.json against the JSON Schema",
+    false,
+  )
   .hook("preAction", applyGlobalFlags)
   .action(async (opts: { json: boolean; verifyBundle: boolean }) => {
     process.exit(await runDoctor({ json: opts.json, verifyBundle: opts.verifyBundle }));
@@ -132,6 +141,17 @@ program
     process.exit(await runRefresh());
   });
 
+// vega update
+program
+  .command("update")
+  .description("upgrade @vegastack/cli to the latest published version (wraps `npm i -g`)")
+  .option("--check", "only check for a newer version; do not install", false)
+  .option("--json", "emit machine-readable JSON", false)
+  .hook("preAction", applyGlobalFlags)
+  .action(async (opts: { check: boolean }) => {
+    process.exit(await runUpdate({ check: opts.check, current: readVersion() }));
+  });
+
 // vega tf <query>
 program
   .command("tf <query...>")
@@ -141,7 +161,7 @@ program
   .option("--raw", "skip enrichment (manifest_entry + example_usage); smaller envelope", false)
   .option(
     "--brief",
-    "strip manifest_entry + example_usage; add name field; ~80% smaller envelope (E1). Sets mode: \"brief\" in the response. Best for survey / multi-call dispatch where you only need to know which resources exist. Backward-compatible: default behavior is unchanged.",
+    'strip manifest_entry + example_usage; add name field; ~80% smaller envelope (E1). Sets mode: "brief" in the response. Best for survey / multi-call dispatch where you only need to know which resources exist. Backward-compatible: default behavior is unchanged.',
     false,
   )
   .option(

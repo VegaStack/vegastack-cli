@@ -4,6 +4,28 @@ All notable changes to `@vegastack/cli` are documented here. The format is based
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-04-28
+
+Fixes the `vega install` 404 by switching to the manifest-driven bundle resolution that matches the actual R2 + CalVer architecture. Also adds `vega update` and a daily stale-version nag.
+
+### Fixed
+
+- **`vega install` no longer 404s.** The previous URL `github.com/vegastack/vegastack-cli/releases/download/v<CLI>/vegastack-bundle-v<CLI>.tar.gz` was wrong on three dimensions: (1) the bundle ships from a different repo (`engg-vegastack-agent-tf-providers`), (2) the bundle uses CalVer that drifts independently from the CLI's semver, (3) R2 (`bundles.vegastack.com/cli/...`) is the primary CDN, not GitHub Releases. `npm/install.js` now GETs `https://bundles.vegastack.com/cli/manifest.json` and uses `channels.latest.bundle_url` + `channels.latest.bundle_sha256` directly. Falls back to the bundle repo's GitHub Releases (`bundle-v<CALVER>` tags) on R2 outage. `.version` on disk now stores the bundle's CalVer instead of the CLI's semver, so a CLI version bump no longer triggers a spurious bundle re-download.
+- `vega doctor --json` now reports the real CLI version (read from the package's `package.json` via `pkgRoot()`) instead of `process.env.npm_package_version`, which is only set when invoked through an `npm run` script.
+- README no longer recommends `export VEGA_BUNDLE_DIR=/absolute/path/to/...` as a copy-pasteable line — that placeholder caused a real user to set the bundle dir to a literal `/absolute/path/...` and hit `mkdir ENOENT`.
+
+### Added
+
+- `vega update` — upgrade in place by wrapping `npm i -g @vegastack/cli@latest`. Auth + scoped registry routing come from the user's `~/.npmrc`. Use `--check` to only refresh the cache and report status without installing.
+- `vega doctor` now refreshes the version cache (network call, ~5s timeout) and adds a "CLI version" check that flags when a newer release is on the registry.
+- One-line stderr nag printed at the start of any `vega` command when the cached `latest` is newer than the running version. Reads cache only — never blocks on network. Suppressed by `--quiet`, `--json`, or `VEGA_NO_UPDATE_NAG=1`.
+- `~/.config/vegastack/update-check.json` — 24h-TTL cache of the last-seen latest version. Populated by `vega doctor` and `vega update [--check]`.
+- New env vars for `npm/install.js`: `VEGA_BUNDLE_MANIFEST_URL` (override the manifest source), `VEGA_BUNDLE_SHA256` (pin a SHA when using `VEGA_BUNDLE_URL` without a `.sha256` sidecar).
+
+### Removed
+
+- `package.json#expectedBundleSha` and `expectedBundleVersion` fields, plus the `prepublishOnly` guard that enforced them. Pinning a single bundle SHA per CLI version was incoherent now that the bundle ships independently on a daily cadence; the trust anchor moved to the network manifest served from `bundles.vegastack.com` (HTTPS + Cloudflare). `scripts/check-bundle-pin.js` and `scripts/tag-release.js` are now dead code; they will be deleted in a follow-up.
+
 ## [0.1.1] - 2026-04-28
 
 Fixes a packaging bug where `vega install` and other commands resolved the package root from the bin symlink, not the real install location, breaking every command that needed an in-package script (`vega install`, `vega refresh`, etc.) when installed via `npm i -g`.

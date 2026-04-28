@@ -1,9 +1,7 @@
 {
   "name": "@vegastack/cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "vega — a deterministic, offline knowledge harness for coding agents (Claude Code, Codex, Cursor, Gemini). Ships 31 Terraform providers' upstream docs + manifests + recipes + knowledge cards as one installable CLI.",
-  "expectedBundleVersion": "0.0.0",
-  "expectedBundleSha": "sha256-PENDING-FIRST-RELEASE",
   "license": "MIT",
   "author": {
     "name": "Vegastack Inc.",
@@ -74,7 +72,6 @@
     "version-sync": "changeset version",
     "tag-release": "node scripts/tag-release.js",
     "prepack": "npm run build",
-    "prepublishOnly": "node scripts/check-bundle-pin.js",
     "postinstall": "node npm/install.js || true",
     "generate-skills": "tsx scripts/generate-skills.ts",
     "generate-skills:check": "npm run generate-skills && git diff --quiet -- skills/recipes skills/personas recipes/INDEX.json personas/INDEX.json",
