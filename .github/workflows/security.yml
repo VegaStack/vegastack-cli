@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
       # Pin to commit SHA — never trust a floating tag for a security tool.
       - name: Run OSV-Scanner
-        uses: google/osv-scanner-action/osv-scanner-action@5b7b9b7e7b96e80a0fdf7a7f8d2c8b6f1d4f0e3c # v1.9.0
+        uses: google/osv-scanner-action/osv-scanner-action@764c91816374ff2d8fc2095dab36eecd42d61638 # v1.9.2
         with:
           scan-args: |-
             --recursive
