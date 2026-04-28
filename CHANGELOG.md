@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+### Minor Changes
+
+- [`bc10ab2`](https://github.com/VegaStack/vegastack-cli/commit/bc10ab2739dd36db5a6b448793375c5d70e7496c) Thanks [@kmanojkumar](https://github.com/kmanojkumar)! - Initial release: `vegastack` CLI with `doctor`, `install`, `refresh`, `tf`, and `skills install|uninstall|status` commands. Active per-agent installers for Claude Code, Codex, Cursor, and Gemini. gws-pattern postinstall downloads the docs bundle from GitHub Releases (≈12 MB compressed → 97 MB on disk, covering 31 Terraform providers). v0.1 shells out to a bundled Python harness; v0.2 will replace it with a native TypeScript port that adds enrichment optimizations (full manifest entries + example_usage inline in `vegastack tf` output).
+
 All notable changes to `@vegastack/cli` are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
