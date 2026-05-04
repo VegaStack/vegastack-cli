@@ -453,7 +453,7 @@ function buildReport(input: {
     schema_version: 1,
     date: new Date().toISOString().slice(0, 10),
     registry_version: process.env.VEGASTACK_REGISTRY_VERSION ?? "unknown",
-    cli_version: process.env.npm_package_version ?? "0.1.11",
+    cli_version: process.env.npm_package_version ?? "0.1.12-next.0",
     model,
     prompt_count: evals.length,
     lift: summary.lift_pct,

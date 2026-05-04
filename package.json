@@ -1,6 +1,6 @@
 {
   "name": "@vegastack/cli",
-  "version": "0.1.11",
+  "version": "0.1.12-next.0",
   "description": "vegastack — a deterministic, offline knowledge harness for coding agents (Claude Code, Codex, Cursor, Gemini) with project-selected local registry entries for infrastructure, cloudops, CI/CD, and Terraform.",
   "license": "MIT",
   "author": {

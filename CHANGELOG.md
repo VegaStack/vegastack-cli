@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.12-next.0] - 2026-05-05
+
+Opens the next develop prerelease channel after stable `0.1.11`.
+
+### Changed
+
+- Bumped develop prerelease metadata to `0.1.12-next.0` so npm `next` can diverge from stable `latest`.
+
 ## [0.1.11] - 2026-05-05
 
 Stable release of the Registry-backed VegaStack CLI. This promotes the verified `0.1.11-next.1` build to the production `latest` channel.
