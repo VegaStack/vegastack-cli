@@ -54,7 +54,7 @@ import {
 export class VegaStackMcp extends McpAgent<Env> {
   server = new McpServer({
     name: "vegastack-mcp",
-    version: "0.1.11-next.0",
+    version: "0.1.11-next.1",
   });
 
   override async init(): Promise<void> {
@@ -171,7 +171,7 @@ export default {
       }
       return json({
         name: "vegastack-mcp",
-        version: "0.1.11-next.0",
+        version: "0.1.11-next.1",
         registry_version: registryVersion,
         schema_version: 1,
       });

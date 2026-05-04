@@ -4,6 +4,7 @@
 
 import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -11,6 +12,15 @@ import { describe, expect, it } from "vitest";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = path.resolve(here, "..", "..");
 const CLI = path.join(PKG_ROOT, "dist", "cli.js");
+
+function isolatedEnv(): Record<string, string | undefined> {
+  return {
+    ...process.env,
+    HOME: fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-home-")),
+    VEGASTACK_REGISTRY_URL: "http://127.0.0.1:1",
+    NO_COLOR: "1",
+  };
+}
 
 describe("vegastack CLI help / version", () => {
   it("dist/cli.js exists (run `npm run build` first)", () => {
@@ -92,5 +102,37 @@ describe("vegastack CLI help / version", () => {
     const r = spawnSync("node", [CLI, "terraform", ""], { encoding: "utf8" });
     expect(r.status).not.toBe(0);
     expect(`${r.stdout}${r.stderr}`).toMatch(/unknown command/i);
+  });
+
+  it("`vegastack init --dry-run --json` emits parseable JSON without prompts", () => {
+    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-init-"));
+    fs.writeFileSync(path.join(cwd, "Dockerfile"), "FROM alpine\n");
+    const r = spawnSync("node", [CLI, "init", "--dry-run", "--json"], {
+      cwd,
+      encoding: "utf8",
+      env: isolatedEnv(),
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).not.toContain("\u001b[");
+    const body = JSON.parse(r.stdout) as {
+      dry_run?: boolean;
+      plan?: { selected?: { name: string }[] };
+    };
+    expect(body.dry_run).toBe(true);
+    expect(body.plan?.selected?.map((p) => p.name)).toContain("docker");
+  });
+
+  it("`vegastack init --json` requires --yes instead of prompting on stdout", () => {
+    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-init-"));
+    const r = spawnSync("node", [CLI, "init", "--json"], {
+      cwd,
+      encoding: "utf8",
+      env: isolatedEnv(),
+    });
+    expect(r.status).toBe(10);
+    expect(r.stdout).not.toContain("\u001b[");
+    const body = JSON.parse(r.stdout) as { kind?: string; message?: string };
+    expect(body.kind).toBe("ValidationError");
+    expect(body.message).toMatch(/requires --yes or --dry-run/);
   });
 });

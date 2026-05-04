@@ -26,6 +26,7 @@ import {
   syncRegistryEntry,
 } from "../lib/registry.js";
 import { installRipgrep, type RipgrepInstall } from "../lib/ripgrep.js";
+import { VegaStackError } from "../lib/errors.js";
 
 export interface InitOptions {
   yes: boolean;
@@ -50,7 +51,15 @@ export async function runInit(opts: InitOptions): Promise<number> {
     );
     const detectedAgents = detectInstalledAgents();
 
-    if (!plan.scan.git && !opts.yes) {
+    if (opts.json && !opts.yes && !opts.dryRun) {
+      throw new VegaStackError(
+        "ValidationError",
+        "`vegastack init --json` requires --yes or --dry-run",
+        { context: { command: "init", json: true } },
+      );
+    }
+
+    if (!plan.scan.git && !opts.yes && !opts.dryRun) {
       const r = await prompts({
         type: "confirm",
         name: "continue",
@@ -75,7 +84,7 @@ export async function runInit(opts: InitOptions): Promise<number> {
         detectedAgents,
       );
 
-    if (!opts.yes) {
+    if (!opts.yes && !opts.dryRun) {
       const r = await prompts({
         type: "confirm",
         name: "apply",

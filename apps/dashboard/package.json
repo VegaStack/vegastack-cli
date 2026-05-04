@@ -1,6 +1,6 @@
 {
   "name": "@vegastack/dashboard",
-  "version": "0.1.11-next.0",
+  "version": "0.1.11-next.1",
   "private": true,
   "type": "module",
   "description": "Public eval dashboard for vegastack-cli — Astro on Cloudflare Workers.",

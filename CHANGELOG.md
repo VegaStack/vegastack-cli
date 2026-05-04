@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.11-next.1] - 2026-05-05
+
+### Fixed
+
+- Fixed `vegastack init --dry-run --json` so it emits parseable JSON without interactive prompt control sequences on stdout.
+- Fixed `vegastack init --json` without `--yes` to return a structured validation error instead of prompting on stdout.
+
 ## [0.1.11-next.0] - 2026-05-05
 
 Prerelease of the Registry-backed VegaStack CLI for `develop`.
