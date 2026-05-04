@@ -142,7 +142,9 @@ export function tokenizeWithAliases(
     if (t.length < 2) continue;
     if (stripSet.has(t)) continue;
     out.push(t);
-    const expansions = TOKEN_EXPANSIONS[t];
+    const expansions = Object.prototype.hasOwnProperty.call(TOKEN_EXPANSIONS, t)
+      ? TOKEN_EXPANSIONS[t]
+      : undefined;
     if (expansions) out.push(...expansions);
     // Append stem when it differs and survives min-length / strip filters.
     const s = stem(t);

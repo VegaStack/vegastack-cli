@@ -1,13 +1,13 @@
 # Provider-version migrations (v0.1)
 
-When the user upgrades a provider, **resources get renamed, defaults change, arguments deprecate**. The harness ships date-stamped knowledge cards (under `bundle/knowledge/`) capturing every breaking change the maintainers verified post-training-cutoff. Read the card *before* writing migration HCL; cite its `authoritative_source` in your reply.
+When the user upgrades a provider, **resources get renamed, defaults change, arguments deprecate**. The Registry ships date-stamped knowledge cards in pack indexes capturing breaking changes the maintainers or sync pipeline verified. Read the card *before* writing migration HCL; cite its `authoritative_source` in your reply.
 
 ## The single workflow
 
 ```bash
-vegastack tf "migrate <provider> from v<old> to v<new>"
+vegastack ask --entry terraform --tf-provider <provider> "migrate <provider> from v<old> to v<new>"
 # or simply:
-vegastack tf "<old_resource_name>"   # e.g. "cloudflare_record"
+vegastack ask --entry terraform --tf-provider <provider> "<old_resource_name>"   # e.g. "cloudflare_record"
 ```
 
 The envelope's `knowledge[]` returns matching migration cards. Cards with `overrides_training: true` are explicitly authoritative over your model memory.
@@ -26,7 +26,7 @@ The envelope's `knowledge[]` returns matching migration cards. Cards with `overr
 | `gcp-cloud-run-v2-default` | gcp | Use `google_cloud_run_v2_service` / `_job` for new work; v1 in maintenance only; v2 has different argument shape (`template.containers[]`). |
 | `datadog-monitor-v2-syntax` | datadog | Tag scoping shifted; `host:` is a no-op on serverless (Lambda/Fargate); use `service:` instead. |
 
-Each card lives at `bundle/knowledge/<id>.md`. For full body, frontmatter spec, and authoring guidelines see [knowledge-cards.md](knowledge-cards.md).
+Cards are surfaced from the installed pack's `index/knowledge.json`. For schema and authoring guidelines see [knowledge-cards.md](knowledge-cards.md).
 
 ## Generic migration recipe (when no card exists)
 
@@ -40,8 +40,8 @@ Each card lives at `bundle/knowledge/<id>.md`. For full body, frontmatter spec, 
 - **Don't `terraform destroy` before migrating.** State move preserves the upstream object; destroy + recreate loses data on stateful resources.
 - **Argument-rename cascades.** When an argument is renamed (`aws_db_instance.name` → `db_name`), `manifest_entry.optional_args[]` shows only the new name; older configs get a deprecation warning, then break in the next major.
 - **Defaults change between versions.** A field that defaulted to `false` in v3 may default to `true` in v4. The manifest shows current defaults only; explicitly set anything you depend on.
-- **Multi-provider migrations.** No single "cross-provider migration" recipe — providers version independently. Run `vegastack tf` per provider; read each `knowledge[]`.
+- **Multi-provider migrations.** No single "cross-provider migration" recipe — providers version independently. Run `vegastack ask` per provider; read each `knowledge[]`.
 
 ## Citation
 
-Cite both the knowledge card (`knowledge/<id>.md`) and the upstream upgrade guide page when present (typically at `<provider>/guides/version-<N>-upgrade.html.markdown`).
+Cite both the knowledge card ID and the upstream upgrade guide page when present (typically at `<provider>/guides/version-<N>-upgrade.html.markdown`).

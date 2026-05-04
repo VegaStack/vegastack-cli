@@ -1,7 +1,7 @@
 dist/
 node_modules/
-references/terraform-providers/
-npm/bundle/
+references/registry/
+npm/registry/
 npm/.version
 package-lock.json
 *.tar.gz

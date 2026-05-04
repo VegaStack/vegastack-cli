@@ -42,14 +42,14 @@ describe("gemini renderer", () => {
     const root = geminiExtensionRoot("project", cwd);
     expect(fs.existsSync(path.join(root, "gemini-extension.json"))).toBe(true);
     expect(fs.existsSync(path.join(root, "skills", "vegastack", "SKILL.md"))).toBe(true);
-    expect(fs.existsSync(path.join(root, "commands", "tf.toml"))).toBe(true);
+    expect(fs.existsSync(path.join(root, "commands", "vegastack.toml"))).toBe(true);
 
-    const tomlText = fs.readFileSync(path.join(root, "commands", "tf.toml"), "utf8");
+    const tomlText = fs.readFileSync(path.join(root, "commands", "vegastack.toml"), "utf8");
     expect(tomlText).toContain("description");
-    expect(tomlText).toContain("vegastack tf");
+    expect(tomlText).toContain("vegastack ask");
 
     const extText = fs.readFileSync(path.join(root, "gemini-extension.json"), "utf8");
-    expect(extText).toContain("vegastack-terraform");
+    expect(extText).toContain("vegastack");
     expect(extText).toContain("mcpServers");
   });
 

@@ -4,7 +4,7 @@
 // hard-coded copy/symlink behavior per agent. The renderer abstraction adds:
 //
 //   - one canonical skill source (CanonicalSkill, drawn from
-//     `bundle/skill-source/` after generate-skill-from-bundle.ts has run),
+//     `registry/skill-source/` after generate-skill-from-registry.ts has run),
 //   - a uniform install/uninstall/status surface every agent renderer
 //     implements (claude-code, codex, cursor, gemini, continue, aider).
 //
@@ -33,14 +33,14 @@ export interface InstallResult {
 
 /**
  * The canonical skill source the renderer consumes. Today it's read from
- * `bundle/skill-source/` (or, when the bundle isn't on disk, from the
+ * `registry/skill-source/` (or, when the registry template isn't on disk, from the
  * `skills/vegastack/` dir inside the package as a fallback).
  *
  * Renderers transform this into per-agent shapes:
  *   - Claude Code: SKILL.md + plugin.json + skills dir layout
  *   - Codex CLI: SKILL.md alone (metadata-only scan until matched)
  *   - Cursor: .mdc with description / globs / alwaysApply frontmatter
- *   - Gemini: gemini-extension.json + skills/SKILL.md + commands/tf.toml
+ *   - Gemini: gemini-extension.json + skills/SKILL.md + commands/vegastack.toml
  *   - Continue: .continue/config.yaml mcpServers patch
  *   - Aider: .aider.conf.yml read[] + CONVENTIONS.md block
  */

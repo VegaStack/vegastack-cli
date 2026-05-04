@@ -2,9 +2,9 @@
 //
 // Two modes:
 //   - baseline   : no skills mounted; the model has only its bash tool with
-//                  whatever's already on the runner's PATH (no `vegastack tf`).
+//                  whatever's already on the runner's PATH (no `vegastack ask --entry terraform --tf-provider <provider>`).
 //   - with-skill : the harness pre-loads the SKILL.md body into the system
-//                  prompt and exposes `vegastack tf "<query>"` as the prescribed
+//                  prompt and exposes `vegastack ask --entry terraform --tf-provider <provider> "<query>"` as the prescribed
 //                  tool path. We do NOT physically mount skills on the host;
 //                  the difference is purely the system prompt + the runner's
 //                  promise that `vegastack` is on PATH.

@@ -5,7 +5,7 @@
  *
  * Closes audit punch-list #2: previously this file owned a private copy of
  * the types that didn't match the runner's emitted shape, so `parseReport()`
- * silently returned null and the dashboard fell back to the bundled fixture.
+ * silently returned null and the dashboard fell back to the Registry-provided fixture.
  */
 
 export type {

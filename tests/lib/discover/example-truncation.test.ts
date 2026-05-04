@@ -16,7 +16,7 @@ import { loadManifest } from "../../../src/lib/discover/manifest.js";
 import type { RankedFile } from "../../../src/lib/discover/merge.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "bundle-mini");
+const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "registry-mini");
 const AWS_DIR = path.join(FIXTURE_ROOT, "aws");
 
 const LONG_EXAMPLE_FIXTURE = path.resolve(
@@ -52,7 +52,7 @@ describe("example_usage truncation (E2)", () => {
     // use enrichFiles with a custom markdown path.
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-test-"));
     tmpManifestDir = tmpDir;
-    // Copy MANIFEST.json from bundle-mini/aws — we'll override the file path
+    // Copy MANIFEST.json from registry-mini/aws — we'll override the file path
     // by using the full abs path in ranked.
     const manifest = loadManifest(AWS_DIR);
     // Write a minimal MANIFEST.json that has our test resource pointing to
@@ -184,7 +184,7 @@ describe("example_usage truncation (E2)", () => {
     expect(example).toContain("Advanced example line 78");
   });
 
-  it("default mode: the bundle-mini s3_bucket fixture (short) returns content without truncation marker", () => {
+  it("default mode: the registry-mini s3_bucket fixture (short) returns content without truncation marker", () => {
     // The s3_bucket fixture has a short Example Usage block (one small HCL
     // fence). With E2, the truncated output includes the fence + the marker.
     // Since the fence IS present and is short, the marker appears. This test

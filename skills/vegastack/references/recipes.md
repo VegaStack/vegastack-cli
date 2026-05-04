@@ -1,6 +1,6 @@
 # Recipes (v0.1)
 
-Recipes are hand-curated **multi-provider topologies** — patterns where the right answer spans two or more providers and the hard part is composing them correctly. They live at `bundle/recipes/<id>.toml` (TOML chosen over YAML because the `[scaffold]` and `[[pitfalls]]` sectioning is TOML's strength; `@iarna/toml` is already in devDeps).
+Recipes are **multi-provider topologies** — patterns where the right answer spans two or more providers and the hard part is composing them correctly. In the Registry architecture, recipe-like routing evidence belongs in pack indexes and Terraform-specific generated metadata.
 
 ## File schema
 
@@ -40,7 +40,7 @@ severity = "warn"
 
 ## Recipe inventory (10 recipes in v0.1)
 
-E3 ships these. The IDs are stable; eval prompts (`evals/evals.json`) reference them by ID.
+The Terraform Registry pack includes these recipes. The IDs are stable; eval prompts (`evals/evals.json`) reference them by ID.
 
 | id | providers | one-line summary |
 |---|---|---|
@@ -55,7 +55,7 @@ E3 ships these. The IDs are stable; eval prompts (`evals/evals.json`) reference 
 | `mongo-atlas-aws-privatelink` | `aws`, `mongodb-atlas` | Atlas cluster reached via PrivateLink from a VPC. |
 | `observability-grafana-cloud-dashboards-as-code` | `grafana`, `pagerduty` | Dashboards committed to Grafana Cloud; alerts route to PagerDuty. |
 
-E3 owns the `[scaffold].hcl` and `[[pitfalls]]` for each recipe. The harness's `loadRecipes()` (`src/lib/discover/recipes.ts`) reads every `.toml` under `bundle/recipes/` and matches triggers against the query tokens (and providers against the detected/forced provider set).
+The Registry owns recipe metadata and matching evidence. The CLI returns matching recipes or recipe-like results in `recipes[]` when a pack provides them.
 
 ## How recipes land in the response
 
@@ -69,7 +69,7 @@ Each `RecipeMatch` mirrors the TOML plus a `scaffold_hcl: string` field with the
 ## Composing HCL from a recipe
 
 1. Read `scaffold_hcl` end to end. The full fragment is a starting point — substitute the user's actual values (zone IDs, account IDs, hostnames, region) for the `var.*` placeholders.
-2. Resolve any per-resource gaps with one `vegastack tf --provider <p> "<resource_name>"` per gap. The recipe doesn't restate the full `manifest_entry` for each resource; it assumes you'll pull those separately when needed.
+2. Resolve any per-resource gaps with one `vegastack ask --entry terraform --tf-provider <p> "<resource_name>"` per gap. The recipe doesn't restate the full `manifest_entry` for each resource; it assumes you'll pull those separately when needed.
 3. Honor each pitfall. `severity: "error"` means the HCL won't apply; `severity: "warn"` means it'll apply but the user will hit confusion later.
 4. Cite the recipe ID in your reply alongside the per-resource citations.
 

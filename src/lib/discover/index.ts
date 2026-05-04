@@ -1,7 +1,7 @@
 // Public entry point for the discoverer (v0.1 envelope).
 //
 // Pipeline:
-//   1. resolveCanonicalProviders + loadBundleRootManifest
+//   1. resolveCanonicalProviders + loadTerraformRootManifest
 //   2. detectProvider (confidence-scored)
 //      • If ambiguous AND ≤4 candidate providers: fan out the rest of the
 //        pipeline once per candidate via Promise.all and union the results
@@ -23,7 +23,7 @@
 //
 // The output is the canonical DiscoverResult union — discriminated by `status`.
 
-import { VegastackError } from "../errors.js";
+import { VegaStackError } from "../errors.js";
 import { aliasesToConceptMatches, loadAliases } from "./aliases.js";
 import {
   DEFAULT_SERVICE_ALIASES,
@@ -37,7 +37,7 @@ import { buildIntents } from "./intents.js";
 import { loadKnowledge } from "./knowledge.js";
 import {
   distinctiveTokensFor,
-  loadBundleRootManifest,
+  loadTerraformRootManifest,
   loadManifest,
   providerDir as resolveProviderDir,
   resolveCanonicalProviders,
@@ -88,11 +88,13 @@ export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
   const brief = args.brief ?? false;
   const fullExamples = args.fullExamples ?? false;
 
-  const bundleRoot = loadBundleRootManifest(root);
-  const bundleVersion =
-    typeof bundleRoot.bundle_version === "string" && bundleRoot.bundle_version.length > 0
-      ? bundleRoot.bundle_version
-      : "unknown";
+  const terraformRoot = loadTerraformRootManifest(root);
+  const registryVersion =
+    typeof terraformRoot.registry_version === "string" && terraformRoot.registry_version.length > 0
+      ? terraformRoot.registry_version
+      : typeof terraformRoot.pack_version === "string" && terraformRoot.pack_version.length > 0
+        ? terraformRoot.pack_version
+        : "unknown";
   const knownProviders = resolveCanonicalProviders(root);
 
   // ── Provider detection ──
@@ -100,7 +102,7 @@ export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
   let provider: string | undefined;
   let confidence = 0;
   if (args.provider !== undefined) {
-    // F20: validate the user-supplied provider against the bundle's list.
+    // F20: validate the user-supplied provider against the Registry pack's list.
     if (knownProviders.length > 0 && !knownProviders.includes(args.provider)) {
       return finalize({
         result: {
@@ -234,7 +236,7 @@ export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
           // No pipeline produced a usable result — fall through to the
           // legacy ambiguous envelope.
           const recipes = await safeLoadRecipes({
-            bundleRoot: root,
+            terraformRoot: root,
             tokens: [],
             query,
           });
@@ -257,7 +259,7 @@ export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
           oks.map((r) => r.envelope),
           {
             query,
-            bundleVersion,
+            registryVersion: registryVersion,
             max,
           },
         );
@@ -276,7 +278,7 @@ export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
       // ── Legacy: candidate count > AUTO_MERGE_MAX_CANDIDATES ──
       // Recipes that span the candidate set still surface here.
       const recipes = await safeLoadRecipes({
-        bundleRoot: root,
+        terraformRoot: root,
         tokens: [],
         query,
       });
@@ -335,12 +337,15 @@ export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
       debug,
     });
   }
+  if (!result.envelope.registry_version) {
+    result.envelope.registry_version = registryVersion;
+  }
 
-  // Surface the bundle-version warning at the top level (single-provider
+  // Surface the Registry pack-version warning at the top level (single-provider
   // mode only — the merged path adds its own warnings).
-  if (bundleVersion === "unknown") {
+  if (registryVersion === "unknown") {
     const ws = result.envelope.warnings ?? [];
-    ws.push("bundle_version unknown (bundle root MANIFEST.json missing or malformed)");
+    ws.push("registry_version unknown (Terraform root MANIFEST.json missing or malformed)");
     result.envelope.warnings = ws;
   }
 
@@ -404,7 +409,7 @@ async function runProviderPipeline(args: ProviderPipelineArgs): Promise<Provider
 
   // ── Alias load ──
   const tAlias0 = nowMs();
-  const allAliases = loadAliases({ bundleRoot: root, provider });
+  const allAliases = loadAliases({ terraformRoot: root, provider });
   const aliasMs = nowMs() - tAlias0;
 
   // ── Tokenize (alias-aware) ──
@@ -418,7 +423,7 @@ async function runProviderPipeline(args: ProviderPipelineArgs): Promise<Provider
   try {
     manifest = loadManifest(dir);
   } catch (e) {
-    if (e instanceof VegastackError) {
+    if (e instanceof VegaStackError) {
       return {
         kind: "error",
         envelope: {
@@ -514,8 +519,8 @@ async function runProviderPipeline(args: ProviderPipelineArgs): Promise<Provider
   const tKnow0 = nowMs();
   const tRec0 = nowMs();
   const [knowledge, recipes] = await Promise.all([
-    Promise.resolve(loadKnowledge({ bundleRoot: root, tokens, query, provider })),
-    safeLoadRecipes({ bundleRoot: root, tokens, query, provider }),
+    Promise.resolve(loadKnowledge({ terraformRoot: root, tokens, query, provider })),
+    safeLoadRecipes({ terraformRoot: root, tokens, query, provider }),
   ]);
   const knowledgeMs = nowMs() - tKnow0;
   const recipesMs = nowMs() - tRec0;
@@ -545,7 +550,7 @@ async function runProviderPipeline(args: ProviderPipelineArgs): Promise<Provider
     tokens,
     tiers_used: tiersUsed,
     schema_version: 1,
-    bundle_version: "", // filled by caller
+    registry_version: "", // filled by caller
     files,
     knowledge,
     recipes,
@@ -557,11 +562,11 @@ async function runProviderPipeline(args: ProviderPipelineArgs): Promise<Provider
   };
   if (intents.length > 0) envelope.intents = intents;
 
-  // The caller fills in bundle_version (single-provider mode) or the merge
+  // The caller fills in registry_version (single-provider mode) or the merge
   // helper fills it in (multi-provider mode). Default here for safety:
-  // populate from the manifest's bundle_version field if present.
-  if (typeof manifest.bundle_version === "string" && manifest.bundle_version.length > 0) {
-    envelope.bundle_version = manifest.bundle_version;
+  // populate from the manifest's registry_version field if present.
+  if (typeof manifest.registry_version === "string" && manifest.registry_version.length > 0) {
+    envelope.registry_version = manifest.registry_version;
   }
 
   return {
@@ -585,7 +590,7 @@ async function runProviderPipeline(args: ProviderPipelineArgs): Promise<Provider
 /** @internal Exported so the unit test for mergeOkEnvelopes can call it directly. */
 export interface MergeOpts {
   query: string;
-  bundleVersion: string;
+  registryVersion: string;
   max: number;
 }
 
@@ -605,7 +610,7 @@ export function mergeOkEnvelopes(
   envelopes: DiscoverOkEnvelope[],
   opts: MergeOpts,
 ): DiscoverOkEnvelope {
-  const { query, bundleVersion, max } = opts;
+  const { query, registryVersion, max } = opts;
 
   const sortedProviders = [...envelopes.map((e) => e.provider)].sort((a, b) => a.localeCompare(b));
   const meanConfidence =
@@ -713,8 +718,8 @@ export function mergeOkEnvelopes(
       warnings.push(w);
     }
   }
-  if (bundleVersion === "unknown") {
-    const w = "bundle_version unknown (bundle root MANIFEST.json missing or malformed)";
+  if (registryVersion === "unknown") {
+    const w = "registry_version unknown (Terraform root MANIFEST.json missing or malformed)";
     if (!warningSet.has(w)) warnings.push(w);
   }
 
@@ -738,7 +743,7 @@ export function mergeOkEnvelopes(
     tokens,
     tiers_used,
     schema_version: 1,
-    bundle_version: bundleVersion,
+    registry_version: registryVersion,
     files: cappedFiles,
     knowledge,
     recipes,
@@ -786,7 +791,7 @@ async function safeLoadRecipes(args: Parameters<typeof loadRecipes>[0]) {
  *      "kubernetes cluster on bare metal" / "S3 bucket with versioning"
  *      stay single-provider.
  *    • Cloudflare-internal product names (D1, R2, KV, Workers) are NOT
- *      separate providers in the bundle, so "Cloudflare Workers + D1 + R2"
+ *      separate providers in the Registry pack, so "Cloudflare Workers + D1 + R2"
  *      stays single-provider.
  *    • A pattern only contributes when the matched provider differs from
  *      every other matched provider — same-provider mentions don't count.
@@ -817,7 +822,7 @@ const MULTI_PROVIDER_CONNECTORS: readonly RegExp[] = [
 export function detectMultiProviderPhrasing(
   query: string,
   knownProviders: readonly string[],
-  bundleRoot?: string,
+  terraformRoot?: string,
 ): MultiProviderDetection | undefined {
   const q = query.toLowerCase();
 
@@ -830,12 +835,12 @@ export function detectMultiProviderPhrasing(
     ["digital ocean", "digitalocean"],
   ] as const;
 
-  // Per-bundle alias files (e.g. "falcon" → crowdstrike). Loaded once.
+  // Per-Registry pack alias files (e.g. "falcon" → crowdstrike). Loaded once.
   const aliasFilePhrases: { phrase: string; provider: string }[] = [];
-  if (bundleRoot !== undefined) {
+  if (terraformRoot !== undefined) {
     for (const p of knownProviders) {
       try {
-        for (const a of loadAliases({ bundleRoot, provider: p })) {
+        for (const a of loadAliases({ terraformRoot, provider: p })) {
           aliasFilePhrases.push({ phrase: a.phrase.toLowerCase(), provider: p });
         }
       } catch {
@@ -988,14 +993,14 @@ function escapeRegExpLocal(s: string): string {
  *  specific (longest) phrase match. */
 function detectProviderFromAliasFiles(
   query: string,
-  bundleRoot: string,
+  terraformRoot: string,
   providers: readonly string[],
 ): { provider: string; score: number } | undefined {
   const q = query.toLowerCase();
   let best: { provider: string; score: number; phraseLen: number } | undefined;
 
   for (const p of providers) {
-    const aliases = loadAliases({ bundleRoot, provider: p });
+    const aliases = loadAliases({ terraformRoot, provider: p });
     for (const alias of aliases) {
       const phrase = alias.phrase.toLowerCase();
       if (q.includes(phrase)) {
@@ -1017,7 +1022,7 @@ function detectProviderFromAliasFiles(
  *  TS harness: manifest service_aliases now reach detectProvider so that
  *  aliases like "atlas" → mongodb-atlas register before the tiebreaker. */
 function buildProviderDetectionData(
-  bundleRoot: string,
+  terraformRoot: string,
   providers: readonly string[],
 ): {
   distinctiveTokensByProvider: Map<string, Set<string>>;
@@ -1030,7 +1035,7 @@ function buildProviderDetectionData(
 
   for (const p of providers) {
     try {
-      const m = loadManifest(resolveProviderDir(bundleRoot, p));
+      const m = loadManifest(resolveProviderDir(terraformRoot, p));
       distinctiveTokensByProvider.set(p, distinctiveTokensFor(m, p));
       // Merge manifest service_aliases into the detection table.
       // Keys may be compound (e.g. "atlas_cluster_cost") or simple (e.g.
@@ -1041,7 +1046,7 @@ function buildProviderDetectionData(
         if (!serviceAliasSet.has(alias)) serviceAliasSet.set(alias, p);
       }
     } catch {
-      // Bundle missing or malformed for this provider — skip silently.
+      // Registry pack missing or malformed for this provider — skip silently.
     }
   }
 

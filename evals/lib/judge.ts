@@ -4,7 +4,7 @@
 //
 // Best-practice notes (April 2026):
 //   - Single yes/no question per call; temperature 0; explicit JSON output.
-//   - Run 3× and take the median to suppress jitter (gate per /tmp/synthesis/v1-plan.md §8 risk #10).
+//   - Run 3× and take the median to suppress jitter.
 //   - Hard cap concurrency to respect Anthropic rate limits.
 //   - The judge prompt is locked by a snapshot test — see tests/integration/eval-runner.test.ts.
 

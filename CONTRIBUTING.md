@@ -6,10 +6,10 @@ contributions tightly scoped and well-tested.
 ## Quick start
 
 ```bash
-git clone https://github.com/vegastack/vegastack-cli.git
+git clone https://github.com/VegaStack/vegastack-cli.git
 cd vegastack-cli
 nvm use            # picks up .nvmrc → Node 20
-npm ci             # postinstall will warn about missing bundle — that's fine
+npm ci
 npm run build      # tsc → dist/
 npm test           # vitest
 npm run typecheck  # tsc --noEmit
@@ -19,22 +19,18 @@ npm run format     # prettier --write
 
 ## Local end-to-end test
 
-The bundle is built by the upstream repo `engg-vegastack-agent-tf-providers`. To
-test end-to-end without GitHub Releases, point `vegastack` at an in-tree bundle:
+The Registry is built by the `vegastack-cli-registry` repo. To test end-to-end
+without the public R2 domain, point `vegastack` at a local Registry pack root:
 
 ```bash
-# Build a bundle locally (one-time, takes a few seconds):
-( cd ../engg-vegastack-agent-tf-providers
-  bash scripts/build_bundle.sh --version 0.1.0 )
+# In ../vegastack-cli-registry:
+python3 scripts/sync_registry.py --entry terraform --force
 
-# Install it via file://:
-VEGASTACK_BUNDLE_URL=file:///abs/path/to/dist/vegastack-bundle-v0.1.0.tar.gz \
-VEGASTACK_BUNDLE_DIR=/tmp/vegastack-test \
-  node npm/install.js
-
-# Run the CLI against it:
-VEGASTACK_BUNDLE_DIR=/tmp/vegastack-test node dist/cli.js doctor
-VEGASTACK_BUNDLE_DIR=/tmp/vegastack-test node dist/cli.js tf "create an S3 bucket with versioning"
+# In this repo:
+VEGASTACK_REGISTRY_DIR=/Users/mk/projects/vegastack-cli-registry/cli/packs \
+  node dist/cli.js doctor
+VEGASTACK_REGISTRY_DIR=/Users/mk/projects/vegastack-cli-registry/cli/packs \
+  node dist/cli.js ask --entry terraform --tf-provider aws "create an S3 bucket with versioning"
 ```
 
 ## Pull-request workflow
@@ -52,7 +48,7 @@ VEGASTACK_BUNDLE_DIR=/tmp/vegastack-test node dist/cli.js tf "create an S3 bucke
    features — patch is fine, and it keeps users upgrading aggressively
    instead of pinning. **Minor versions are reserved for envelope-shape
    changes** (the `manifest_schema_version` bump, breaking shape changes
-   to `vegastack tf --json` output, etc.). **Major** is reserved for the v1.0
+   to `vegastack ask --entry terraform --tf-provider <provider> --json` output, etc.). **Major** is reserved for the v1.0
    API-stability commitment. Until v1.0, almost every changeset should
    be `patch`.
 3. **Run the local checks** before you push:
@@ -71,7 +67,7 @@ VEGASTACK_BUNDLE_DIR=/tmp/vegastack-test node dist/cli.js tf "create an S3 bucke
 - **`"strict": true`, `noUncheckedIndexedAccess: true`.** Both are non-negotiable.
 - **No `any` unless the boundary truly is dynamic** (e.g. `JSON.parse` output).
   Use `unknown` and narrow with type guards.
-- **Errors as types.** Throw a `VegastackError` (`src/lib/errors.ts`); each variant
+- **Errors as types.** Throw a `VegaStackError` (`src/lib/errors.ts`); each variant
   has an exit code and a hint. Don't throw plain `Error` in command handlers.
 - **stdout is for data, stderr for status.** All human-readable output goes to
   `log.{ok,warn,err,info,step}`. Machine-readable output (JSON envelopes) goes
@@ -104,7 +100,7 @@ new code; the global floor is 70%.
 
 ## Reporting bugs / requesting features
 
-Use the GitHub issue templates at [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/).
+Open an issue at https://github.com/VegaStack/vegastack-cli/issues.
 For security issues, follow the process in [SECURITY.md](SECURITY.md).
 
 ## Licensing

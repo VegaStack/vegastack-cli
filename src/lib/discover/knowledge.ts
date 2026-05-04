@@ -1,6 +1,6 @@
 // Knowledge-card loader.
 //
-// Reads `bundle/knowledge/*.md` files, parses YAML frontmatter via
+// Reads `Registry pack/knowledge/*.md` files, parses YAML frontmatter via
 // gray-matter (4.x — battle-tested by Astro/Gatsby/Vitepress), and returns
 // the cards whose `triggers[]` matched the current query.
 //
@@ -9,7 +9,7 @@
 //   • { phrase: "..." }        — case-insensitive substring of original query
 // A card matches if ANY trigger matches.
 //
-// Empty `bundle/knowledge/` is NOT an error — returns []. Closes F3, F4.
+// Empty `Registry pack/knowledge/` is NOT an error — returns []. Closes F3, F4.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -28,8 +28,8 @@ interface RawCardFrontmatter {
 }
 
 export interface LoadKnowledgeArgs {
-  /** Path to the bundle root (the dir that contains `knowledge/`). */
-  bundleRoot: string;
+  /** Path to the Terraform root (the dir that contains `knowledge/`). */
+  terraformRoot: string;
   /** Tokenized query — used by `tokens` triggers. */
   tokens: string[];
   /** Original (untokenized) query — used by `phrase` triggers. */
@@ -40,7 +40,7 @@ export interface LoadKnowledgeArgs {
 }
 
 export function loadKnowledge(args: LoadKnowledgeArgs): KnowledgeCard[] {
-  const dir = path.join(args.bundleRoot, "knowledge");
+  const dir = path.join(args.terraformRoot, "knowledge");
   const files = listMarkdownFiles(dir);
   if (files.length === 0) return [];
 

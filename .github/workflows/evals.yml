@@ -2,14 +2,13 @@ name: Evals
 
 on:
   schedule:
-    # 07:00 UTC nightly — after E4's 06:00 bundle build cron.
+    # 07:00 UTC nightly — after the Registry sync cron.
     - cron: "0 7 * * *"
   pull_request:
     paths:
       - "src/lib/discover/**"
-      - "bundle/knowledge/**"
-      - "bundle/recipes/**"
-      - "bundle/*/aliases.yaml"
+      - "src/lib/generic-pack-discover.ts"
+      - "src/lib/registry.ts"
       - "evals/**"
       - ".github/workflows/evals.yml"
   workflow_dispatch:
@@ -25,7 +24,7 @@ concurrency:
 
 jobs:
   # Full 50-prompt nightly run, both modes. Uploads JSON artifact and pushes
-  # a copy to eval-history branch so the dashboard (E8) can read it.
+  # a copy to eval-history branch as a secondary archive for the dashboard data.
   nightly:
     name: Nightly evals (50 prompts × baseline+with-skill)
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -44,48 +43,20 @@ jobs:
           VEGASTACK_SKIP_POSTINSTALL: "1"
       - run: npm run build
 
-      # Provision the bundle from R2 so the runner has real data to query.
-      # We sync from `cli/bundle/` (extracted files the build-and-publish
-      # workflow uploads as individual R2 objects — see option α in the
-      # cross-repo dependency notes). VEGASTACK_BUNDLE_DIR exported into env so
-      # every subsequent step (and the runner-spawned `vegastack tf` calls) finds
-      # the bundle without touching the network postinstall path.
-      - name: Provision latest bundle from R2
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: auto
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      - name: Provision latest Terraform Registry pack
         run: |
           set -euo pipefail
-          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
-          BUNDLE_DIR="${RUNNER_TEMP}/vegastack-bundle"
-          mkdir -p "$BUNDLE_DIR"
-          aws s3 sync \
-            --endpoint-url "$ENDPOINT" \
-            --no-progress \
-            --exact-timestamps \
-            "s3://${R2_BUCKET_NAME}/cli/bundle/" "$BUNDLE_DIR/"
-          # Sanity: root MANIFEST.json must exist or the runner will fail
-          # with no useful diagnostic.
-          if [ ! -f "$BUNDLE_DIR/MANIFEST.json" ]; then
-            echo "::error::R2 sync completed but $BUNDLE_DIR/MANIFEST.json is missing — has build-and-publish.yml run successfully today?"
-            ls -la "$BUNDLE_DIR" || true
+          export VEGASTACK_REGISTRY_DIR="${RUNNER_TEMP}/vegastack-registry"
+          node dist/cli.js registry update terraform --force
+          if [ ! -f "$VEGASTACK_REGISTRY_DIR/terraform/MANIFEST.json" ]; then
+            echo "::error::Terraform Registry pack install completed but MANIFEST.json is missing"
+            ls -la "$VEGASTACK_REGISTRY_DIR/terraform" || true
             exit 1
           fi
-          BUNDLE_VER=$(python3 -c "import json; print(json.load(open('$BUNDLE_DIR/MANIFEST.json')).get('bundle_version','unknown'))" 2>/dev/null || echo "unknown")
-          PROVIDER_COUNT=$(python3 -c "import json; m=json.load(open('$BUNDLE_DIR/MANIFEST.json')); print(len(m.get('providers',{})))" 2>/dev/null || echo "?")
-          echo "Provisioned bundle ${BUNDLE_VER} with ${PROVIDER_COUNT} providers at ${BUNDLE_DIR}"
-          echo "VEGASTACK_BUNDLE_DIR=${BUNDLE_DIR}" >> "$GITHUB_ENV"
+          echo "VEGASTACK_REGISTRY_DIR=${VEGASTACK_REGISTRY_DIR}" >> "$GITHUB_ENV"
 
       - name: Run full eval suite
         id: run
-        env:
-          # VEGASTACK_BUNDLE_DIR is also in $GITHUB_ENV from the previous step;
-          # re-asserted here for clarity. The runner spawns `vegastack tf` per
-          # prompt and each child inherits the env.
-          VEGASTACK_BUNDLE_DIR: ${{ env.VEGASTACK_BUNDLE_DIR }}
         run: |
           set -euo pipefail
           DATE=$(date -u +%Y-%m-%d)
@@ -223,36 +194,18 @@ jobs:
           VEGASTACK_SKIP_POSTINSTALL: "1"
       - run: npm run build
 
-      # Same R2 bundle provision as the nightly job — PR smoke needs real
-      # data too. The aws s3 sync is incremental + cached across shards
-      # by the GitHub Actions runner image, so the cost is paid once per
-      # shard but the bytes are tiny (only changed objects move).
-      - name: Provision latest bundle from R2
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: auto
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+      - name: Provision latest Terraform Registry pack
         run: |
           set -euo pipefail
-          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
-          BUNDLE_DIR="${RUNNER_TEMP}/vegastack-bundle"
-          mkdir -p "$BUNDLE_DIR"
-          aws s3 sync \
-            --endpoint-url "$ENDPOINT" \
-            --no-progress \
-            --exact-timestamps \
-            "s3://${R2_BUCKET_NAME}/cli/bundle/" "$BUNDLE_DIR/"
-          if [ ! -f "$BUNDLE_DIR/MANIFEST.json" ]; then
-            echo "::error::R2 sync completed but $BUNDLE_DIR/MANIFEST.json is missing"
+          export VEGASTACK_REGISTRY_DIR="${RUNNER_TEMP}/vegastack-registry"
+          node dist/cli.js registry update terraform --force
+          if [ ! -f "$VEGASTACK_REGISTRY_DIR/terraform/MANIFEST.json" ]; then
+            echo "::error::Terraform Registry pack install completed but MANIFEST.json is missing"
             exit 1
           fi
-          echo "VEGASTACK_BUNDLE_DIR=${BUNDLE_DIR}" >> "$GITHUB_ENV"
+          echo "VEGASTACK_REGISTRY_DIR=${VEGASTACK_REGISTRY_DIR}" >> "$GITHUB_ENV"
 
       - name: Run smoke shard
-        env:
-          VEGASTACK_BUNDLE_DIR: ${{ env.VEGASTACK_BUNDLE_DIR }}
         run: |
           set -euo pipefail
           mkdir -p /tmp/smoke

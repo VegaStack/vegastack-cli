@@ -1,27 +1,21 @@
 name: Release
 
-# Triggered by tag pushes (vX.Y.Z) cut by the changesets workflow.
-# Publishes @vegastack/cli to npm using OIDC trusted publishing
-# (no NPM_TOKEN; --provenance is automatic when OIDC is in use as of npm 11+).
-# Also generates SLSA build provenance attestations for the npm tarball.
-#
-# v0.1 scope: per task brief, we do NOT cosign-sign the CLI tarball
-# (only the bundle is cosign-signed). npm provenance + SLSA attestations
-# are sufficient for the npm package itself.
+# Publishes @vegastack/cli to npm using OIDC trusted publishing and generates
+# SLSA build provenance attestations for the npm package tarball.
 
 on:
-  # v0.1 INTERNAL ship goes through publish-internal.yml (GitHub Packages).
-  # This workflow stays dormant for v0.1 — only fires via manual dispatch.
-  # Re-enable the tag-push trigger when we're ready to ship publicly to npm:
-  #   push:
-  #     tags:
-  #       - "v[0-9]+.[0-9]+.[0-9]+*"
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to publish to public npm (e.g. v0.1.0). Manual only — auto tag-trigger disabled for v0.1 internal phase."
+        description: "Git tag to publish to public npm (e.g. v0.1.11-next.0 or v0.1.11)."
         required: true
         type: string
+      npm_tag:
+        description: "npm dist-tag. Use next for develop prereleases, latest for main production releases."
+        required: true
+        default: "next"
+        type: choice
+        options: ["next", "latest"]
 
 permissions:
   contents: write   # GitHub release notes
@@ -29,69 +23,26 @@ permissions:
   attestations: write  # actions/attest-build-provenance writes attestations
 
 jobs:
-  verify-bundle:
-    name: Verify bundle artifact exists for tag
-    runs-on: ubuntu-latest
-    outputs:
-      bundle-url: ${{ steps.bundle.outputs.url }}
-      tag: ${{ steps.bundle.outputs.tag }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Resolve bundle URL for this tag
-        id: bundle
-        env:
-          INPUT_TAG: ${{ inputs.tag }}
-        run: |
-          TAG="${INPUT_TAG:-$GITHUB_REF_NAME}"
-          VER="${TAG#v}"
-          URL="https://github.com/vegastack/vegastack-cli/releases/download/${TAG}/vegastack-bundle-v${VER}.tar.gz"
-          SHA_URL="${URL}.sha256"
-          {
-            echo "tag=$TAG"
-            echo "url=$URL"
-            echo "sha_url=$SHA_URL"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: HEAD-check the tarball
-        env:
-          BUNDLE_URL: ${{ steps.bundle.outputs.url }}
-        run: |
-          STATUS=$(curl -sIL --connect-timeout 30 --max-time 120 -o /dev/null -w "%{http_code}" "$BUNDLE_URL")
-          echo "HEAD $BUNDLE_URL => $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "::error::Bundle artifact missing at $BUNDLE_URL"
-            echo "::error::Build the bundle in vegastack/engg-vegastack-agent-tf-providers and upload it to this tag's release BEFORE publishing the npm package, or the postinstall will 404 for every user."
-            exit 1
-          fi
-
-      - name: HEAD-check the .sha256 sidecar
-        env:
-          SHA_URL: ${{ steps.bundle.outputs.sha_url }}
-        run: |
-          STATUS=$(curl -sIL --connect-timeout 30 --max-time 120 -o /dev/null -w "%{http_code}" "$SHA_URL")
-          echo "HEAD $SHA_URL => $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "::error::Bundle SHA256 sidecar missing at $SHA_URL"
-            exit 1
-          fi
-
   publish-npm:
     name: Publish to npm (OIDC trusted publishing)
-    needs: verify-bundle
     runs-on: ubuntu-latest
+    environment: npm-vegastack
     permissions:
       contents: read
       id-token: write       # required for npm trusted publishing + Sigstore
       attestations: write   # for actions/attest-build-provenance
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       # setup-node@v6 is the current major as of April 2026 (supports
       # automatic dependency caching from packageManager field).
       - uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc
+          # npm trusted publishing requires Node 22.14.0+; use current LTS
+          # for releases while keeping package engines broad for users.
+          node-version: "24"
           cache: npm
           registry-url: https://registry.npmjs.org
 
@@ -110,12 +61,21 @@ jobs:
 
       - name: Verify version matches tag
         env:
-          TAG: ${{ needs.verify-bundle.outputs.tag }}
+          TAG: ${{ inputs.tag }}
+          NPM_TAG: ${{ inputs.npm_tag }}
         run: |
           PKG_VER=$(node -p "require('./package.json').version")
           TAG_VER="${TAG#v}"
           if [ "$PKG_VER" != "$TAG_VER" ]; then
             echo "::error::version mismatch: package.json=$PKG_VER, tag=$TAG_VER"
+            exit 1
+          fi
+          if [ "$NPM_TAG" = "latest" ] && echo "$PKG_VER" | grep -Eq '-'; then
+            echo "::error::refusing to publish prerelease version $PKG_VER under npm tag latest"
+            exit 1
+          fi
+          if [ "$NPM_TAG" = "next" ] && ! echo "$PKG_VER" | grep -Eq '-'; then
+            echo "::error::refusing to publish stable version $PKG_VER under npm tag next"
             exit 1
           fi
 
@@ -141,7 +101,7 @@ jobs:
       # and publishes provenance automatically. Package must be configured
       # with a trusted publisher entry on npmjs.com first (one-time setup).
       - name: Publish to npm via OIDC trusted publishing
-        run: npm publish "${{ steps.pack.outputs.tarball }}" --access public
+        run: npm publish "${{ steps.pack.outputs.tarball }}" --access public --tag "${{ inputs.npm_tag }}"
 
   github-release:
     name: GitHub release notes

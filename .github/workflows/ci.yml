@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -31,7 +31,7 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run build
-      - name: CLI smoke (no bundle)
+      - name: CLI smoke (no Registry pack)
         env:
           VEGASTACK_SKIP_POSTINSTALL: "1"
         run: |

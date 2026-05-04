@@ -8,7 +8,7 @@ export const prerender = false;
  *
  * Tiny status feed used by:
  *  - the README's lift badge
- *  - E7's MCP server for a "skill is healthy" probe
+ *  - MCP health views for a "skill is healthy" probe
  *  - the homepage when running outside Workers (e.g. local preview)
  *
  * Returns just the headline figures — never the full prompt list.
@@ -30,7 +30,7 @@ export const GET: APIRoute = async () => {
   const body = {
     schema_version: 1,
     date: report.date,
-    bundle_version: report.bundle_version,
+    registry_version: report.registry_version,
     cli_version: report.cli_version,
     model: report.model,
     prompt_count: report.prompt_count,

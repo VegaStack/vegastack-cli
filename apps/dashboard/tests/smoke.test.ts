@@ -10,7 +10,7 @@ import {
 import sample from "../src/fixtures/sample-report.json";
 
 describe("parse-report", () => {
-  it("parses the bundled fixture", () => {
+  it("parses the Registry-provided fixture", () => {
     const report = parseReport(sample);
     expect(report).not.toBeNull();
     expect(report?.schema_version).toBe(1);

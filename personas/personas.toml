@@ -1,6 +1,6 @@
 # vegastack-cli — persona registry
 #
-# A persona is a curated bundle of providers + recipes + tips for a job role.
+# A persona is a curated set of Registry entries, recipes, and tips for a job role.
 # Each [[personas]] entry becomes:
 #   - skills/personas/<id>/SKILL.md
 #   - one row in personas/INDEX.json
@@ -30,4 +30,4 @@
 #   "Prefer data sources for shared infra (VPC, DNS zones) over hard-coded IDs."
 # ]
 # last_verified = "2026-04-27"
-# owner         = "engg@vegastack.com"
+# owner         = "team@vegastack.com"

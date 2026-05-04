@@ -21,7 +21,7 @@
 - [ ] `npm run format:check`
 - [ ] `npm test`
 - [ ] `npm run build`
-- [ ] Smoke-tested against a real bundle (`VEGASTACK_BUNDLE_DIR=…` or `VEGASTACK_BUNDLE_URL=file://…`)
+- [ ] Smoke-tested against a real Registry cache (`VEGASTACK_REGISTRY_DIR=…`)
 
 ## Changeset
 

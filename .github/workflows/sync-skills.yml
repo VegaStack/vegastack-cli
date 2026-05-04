@@ -1,22 +1,16 @@
-name: Sync skills (placeholder)
+name: Sync generated skills
 
-# This workflow becomes meaningful once Phase H content (recipes/, knowledge/,
-# concept-aliases/) is populated and `npm run generate-skills` produces real
-# index files. For now it runs the generator (which is a no-op against empty
-# registries) and verifies that the working tree is clean — i.e., contributors
-# committed any regenerated files.
-#
-# When real content lands, swap workflow_dispatch out for a cron schedule
-# (something like '0 * * * *' to mirror gws-cli) and have it open a PR.
+# Runs the generated skill/persona renderer and verifies contributors committed
+# the deterministic outputs. Registry knowledge content is generated in
+# vegastack-cli-registry, not in this repo.
 
 on:
   workflow_dispatch:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - "recipes/**"
-      - "knowledge/**"
-      - "concept-aliases/**"
+      - "personas/**"
       - "scripts/generate-skills.ts"
       - "skills/**"
 
@@ -43,10 +37,10 @@ jobs:
 
       - name: Fail if the regeneration produced any diff
         run: |
-          if ! git diff --quiet -- skills/ recipes/INDEX.json knowledge/INDEX.json 2>/dev/null; then
+          if ! git diff --quiet -- skills/ recipes/INDEX.json personas/INDEX.json 2>/dev/null; then
             echo "::error::Skill regeneration produced unexpected diffs."
             echo "::error::Run 'npm run generate-skills' locally and commit the changes."
-            git diff --stat -- skills/ recipes/INDEX.json knowledge/INDEX.json || true
+            git diff --stat -- skills/ recipes/INDEX.json personas/INDEX.json || true
             exit 1
           fi
           echo "Skills are deterministic — no diffs."

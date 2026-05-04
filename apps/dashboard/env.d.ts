@@ -11,7 +11,7 @@ declare namespace App {
 
 interface Env {
   ASSETS: Fetcher;
-  BUNDLES: R2Bucket;
+  REGISTRY: R2Bucket;
   REPORTS_CACHE: KVNamespace;
   PUBLIC_SITE_URL: string;
   PUBLIC_GITHUB_REPO: string;

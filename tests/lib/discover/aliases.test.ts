@@ -1,4 +1,4 @@
-// Concept-alias loader unit tests against the bundle-mini fixture.
+// Concept-alias loader unit tests against the registry-mini fixture.
 
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -8,11 +8,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { aliasesToConceptMatches, loadAliases } from "../../../src/lib/discover/aliases.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "bundle-mini");
+const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "registry-mini");
 
 describe("loadAliases — happy path", () => {
   it("parses YAML with phrase, alias, resources[]", () => {
-    const aliases = loadAliases({ bundleRoot: FIXTURE_ROOT, provider: "aws" });
+    const aliases = loadAliases({ terraformRoot: FIXTURE_ROOT, provider: "aws" });
     expect(aliases.length).toBeGreaterThan(0);
     const a = aliases.find((x) => x.alias === "s3_static_site");
     expect(a).toBeDefined();
@@ -22,12 +22,12 @@ describe("loadAliases — happy path", () => {
   });
 
   it("loads cloudflare aliases", () => {
-    const aliases = loadAliases({ bundleRoot: FIXTURE_ROOT, provider: "cloudflare" });
+    const aliases = loadAliases({ terraformRoot: FIXTURE_ROOT, provider: "cloudflare" });
     expect(aliases.length).toBeGreaterThan(0);
   });
 
   it("missing aliases.yaml → [] (not an error)", () => {
-    const aliases = loadAliases({ bundleRoot: FIXTURE_ROOT, provider: "no-such-provider" });
+    const aliases = loadAliases({ terraformRoot: FIXTURE_ROOT, provider: "no-such-provider" });
     expect(aliases).toEqual([]);
   });
 });
@@ -42,17 +42,17 @@ describe("loadAliases — malformed input handling", () => {
 
   it("empty aliases.yaml → []", () => {
     fs.writeFileSync(path.join(tmp, "aws", "aliases.yaml"), "");
-    expect(loadAliases({ bundleRoot: tmp, provider: "aws" })).toEqual([]);
+    expect(loadAliases({ terraformRoot: tmp, provider: "aws" })).toEqual([]);
   });
 
   it("malformed YAML → []", () => {
     fs.writeFileSync(path.join(tmp, "aws", "aliases.yaml"), "{[invalid yaml");
-    expect(loadAliases({ bundleRoot: tmp, provider: "aws" })).toEqual([]);
+    expect(loadAliases({ terraformRoot: tmp, provider: "aws" })).toEqual([]);
   });
 
   it("non-array YAML → []", () => {
     fs.writeFileSync(path.join(tmp, "aws", "aliases.yaml"), "key: value");
-    expect(loadAliases({ bundleRoot: tmp, provider: "aws" })).toEqual([]);
+    expect(loadAliases({ terraformRoot: tmp, provider: "aws" })).toEqual([]);
   });
 
   it("entries missing required fields are skipped", () => {
@@ -60,7 +60,7 @@ describe("loadAliases — malformed input handling", () => {
       path.join(tmp, "aws", "aliases.yaml"),
       "- phrase: ok\n  alias: a\n- phrase: only-phrase\n",
     );
-    const aliases = loadAliases({ bundleRoot: tmp, provider: "aws" });
+    const aliases = loadAliases({ terraformRoot: tmp, provider: "aws" });
     // First entry missing resources → dropped. Second missing alias → dropped.
     expect(aliases).toEqual([]);
   });

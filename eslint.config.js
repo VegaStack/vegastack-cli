@@ -14,8 +14,8 @@ export default [
     ignores: [
       "dist/**",
       "node_modules/**",
-      "references/terraform-providers/**",
-      "npm/bundle/**",
+      "references/registry/**",
+      "npm/registry/**",
       "*.tsbuildinfo",
       "coverage/**",
     ],

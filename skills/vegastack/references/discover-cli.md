@@ -1,31 +1,30 @@
-# `vegastack tf` CLI reference (v0.1)
+# `vegastack ask --entry terraform --tf-provider <provider>` CLI reference
 
-This is the full reference for the single CLI command the SKILL.md body invokes. Load it when the user wants flag-level detail (e.g. `--max`, `--debug`, `--raw`, `--json-schema`), or when you need the exhaustive scoring stages and ambiguity-handling contract. For the dispatch decision tree and 4-channel envelope summary, read the SKILL.md body — this file is the deeper layer of progressive disclosure.
+This is the full reference for the Terraform-specific Registry engine. Load it when the user wants flag-level detail (e.g. `--max`, `--debug`, `--raw`, `--json-schema`), or when you need the exhaustive scoring stages and ambiguity-handling contract. For general cloudops / CI / Docker / Kubernetes / Jenkins / Supabase questions, prefer `vegastack ask`.
 
-`vegastack tf` is the deterministic discovery harness shipped in `@vegastack/cli`. It auto-resolves the docs bundle (`~/.config/vegastack/bundle/`), auto-detects the provider, runs an 11-stage manifest scoring pass plus a parallel grep fallback, enriches each top-K hit with `manifest_entry` + `example_usage` inline, and emits a single JSON envelope on stdout.
+`vegastack ask --entry terraform --tf-provider <provider>` is the deterministic Terraform discovery harness shipped in `@vegastack/cli`. It resolves the installed Terraform Registry pack under `~/.config/vegastack/registry/terraform/`, auto-detects the provider, runs an 11-stage manifest scoring pass plus a parallel grep fallback, enriches each top-K hit with `manifest_entry` + `example_usage` inline, and emits a single JSON envelope on stdout.
 
 ## Synopsis
 
 ```
-vegastack tf "<query>" [--provider <name>] [--max <N>] [--raw] [--debug]
-                  [--json-schema] [--bundle <path>]
+vegastack ask --entry terraform --tf-provider <provider> "<query>" [--provider <name>] [--max <N>] [--raw] [--debug]
+                              [--json-schema]
 ```
 
 | Flag | Default | Notes |
 |---|---|---|
 | `<query>` (positional) | — | **Required.** Free-text natural-language description of the user's intent. |
-| `--provider <name>` | auto-detect | Force the provider scope. Skips the ambiguity check. Must be one of the providers in `bundle/MANIFEST.json.providers`. |
+| `--provider <name>` | auto-detect | Force the provider scope. Skips the ambiguity check. Must be one of the providers in the Terraform Registry pack root `MANIFEST.json`. |
 | `--max <N>` | `10` | Cap on `files[]` length. Use `--max 5` for tight context, `--max 20` for surveys. |
 | `--raw` | off | Disables enrichment: omits `manifest_entry`, `example_usage`, and the four side-channel arrays. Use only when you specifically need the raw scoring output. |
-| `--brief` | off | E1: Strips `manifest_entry` and `example_usage` from each `files[]` entry, adds a `name` field (resource name, e.g. `"aws_s3_bucket"`), and sets `mode: "brief"` in the envelope. Envelope is typically ~80% smaller than default. Use for survey / multi-call dispatch where you only need to know which resources exist. Backward-compatible: default behavior is unchanged. |
-| `--full-examples` | off | E2: Restores the full `## Example Usage` section (pre-truncation behavior). Default (no flag) truncates `example_usage` to the first HCL fenced block plus a `... (truncated; pass --full-examples for the rest)` marker. NOTE: the default truncation is a soft-breaking change for callers that relied on the full example body. |
+| `--brief` | off | Strips `manifest_entry` and `example_usage` from each `files[]` entry, adds a `name` field (resource name, e.g. `"aws_s3_bucket"`), and sets `mode: "brief"` in the envelope. Envelope is typically ~80% smaller than default. Use for survey / multi-call dispatch where you only need to know which resources exist. |
+| `--full-examples` | off | Restores the full `## Example Usage` section. Default output truncates `example_usage` to the first HCL fenced block plus a `... (truncated; pass --full-examples for the rest)` marker. |
 | `--debug` | off | Includes `timings: {…}` and the raw `score` fields in `files[]`. Power-user diagnostic; default UIs should ignore `score` and use `score_norm`. |
 | `--json-schema` | off | Prints the JSON schema of the response envelope and exits. Useful for tooling. |
-| `--bundle <path>` | from `$VEGASTACK_BUNDLE_DIR` then `~/.config/vegastack/bundle/` | Override the bundle directory. Mostly for tests. |
 
 ## Output schema (v0.1)
 
-The full TypeScript types live at `src/lib/discover/types.ts` (sourced from `/tmp/synthesis/contracts/discover-types.ts`) and the wire schema at `bundle/schema/manifest.schema.json`. Here's the envelope summary:
+The full TypeScript types live at `src/lib/discover/types.ts`. Here's the envelope summary:
 
 ```json
 {
@@ -36,7 +35,7 @@ The full TypeScript types live at `src/lib/discover/types.ts` (sourced from `/tm
   "tokens": ["s3", "bucket", "versioning"],
   "tiers_used": ["manifest", "knowledge"],
   "schema_version": 1,
-  "bundle_version": "2026.04.28",
+  "registry_version": "2026.04.28",
   "files": [
     {
       "path": "/abs/path/to/aws/r/s3_bucket.html.markdown",
@@ -73,7 +72,7 @@ Side-channel arrays (`knowledge`, `recipes`, `concept_aliases_used`) are always 
 }
 ```
 
-Two options: ask the user which provider they meant, or call `vegastack tf --provider <name>` once per candidate.
+Two options: ask the user which provider they meant, or call `vegastack ask --entry terraform --tf-provider <name>` once per candidate.
 
 ### Error response
 
@@ -81,8 +80,8 @@ Two options: ask the user which provider they meant, or call `vegastack tf --pro
 {
   "status": "error",
   "query": "...",
-  "error": "Bundle not installed; run `vegastack install`.",
-  "code": "BundleMissing"
+  "error": "Terraform Registry pack not installed; run `vegastack init`.",
+  "code": "RegistryEntryMissing"
 }
 ```
 
@@ -90,11 +89,11 @@ Two options: ask the user which provider they meant, or call `vegastack tf --pro
 
 | `code` | Meaning |
 |---|---|
-| `BundleMissing` | `~/.config/vegastack/bundle/` doesn't exist or is empty. User should `vegastack install`. |
-| `BundleStale` | Bundle exists but the MANIFEST is older than 14 days. Soft-warning version emits as `warnings[]` in an `ok` response; hard-error version is rare. |
-| `ProviderUnknown` | `--provider <name>` was given but `<name>` isn't in `bundle/MANIFEST.json.providers`. |
+| `RegistryEntryMissing` | `~/.config/vegastack/registry/terraform/` doesn't exist or is empty. User should run `vegastack init` or `vegastack registry update terraform`. |
+| `RegistryVersionMismatch` | Installed Registry metadata is not compatible with this CLI. Run `vegastack registry update --force`. |
+| `ProviderUnknown` | `--provider <name>` was given but `<name>` isn't in the Terraform Registry pack root `MANIFEST.json.providers`. |
 | `ProviderUndetectable` | No `--provider` and the query has no detectable provider signal. Re-tokenize with the user. |
-| `ManifestMalformed` | A per-provider MANIFEST.json failed schema validation. Run `vegastack doctor --verify-bundle`. |
+| `ManifestMalformed` | A per-provider MANIFEST.json failed schema validation. Run `vegastack doctor --verify-registry`. |
 
 ## Tier-1 manifest stages (in order)
 
@@ -134,7 +133,7 @@ Uses `rg --json -l` if `ripgrep` is on PATH; otherwise `grep -rlE`. Each invocat
 
 ## Token expansions and aliases
 
-The harness expands certain tokens automatically before scoring (canonical + space-split forms are kept; aliases are folded in via `bundle/<provider>/aliases.yaml`):
+The harness expands certain tokens automatically before scoring (canonical + space-split forms are kept; aliases are folded in from Registry-generated pack indexes):
 
 | Input | Expanded to |
 |---|---|
@@ -162,12 +161,11 @@ If `best − second_best < 0.2` the response is `status: "ambiguous"`. Otherwise
 
 | Var | Purpose |
 |---|---|
-| `VEGASTACK_BUNDLE_DIR` | Override `~/.config/vegastack/bundle/` |
-| `VEGASTACK_BUNDLE` | Set by `vegastack tf` for child processes — points at the active bundle dir |
-| `VEGASTACK_OFFLINE` | Disables any network call (no bundle refresh checks) |
+| `VEGASTACK_REGISTRY_DIR` | Override the local Registry pack cache. Useful for local development against `vegastack-cli-registry/cli/packs`. |
+| `VEGASTACK_REGISTRY_URL` | Override the published Registry base URL. Defaults to `https://cli-registry.vegastack.com/cli`. |
+| `VEGASTACK_OFFLINE` | Disables network-dependent checks where supported. |
 | `VEGASTACK_NO_UPDATE_NOTIFIER` | Suppresses "new CLI version" nag (also `NO_UPDATE_NOTIFIER`, `CI`, `DO_NOT_TRACK`) |
-| `VEGASTACK_NO_RANGE` | Disables HTTP Range requests (corporate proxies that strip them) |
 
 ## When the harness or a manifest is missing
 
-If a per-provider `MANIFEST.json` is missing or unparseable, `vegastack tf` skips Tier 1 silently and runs Tier 2 only. The response includes `warnings: ["manifest unavailable for <provider>; using grep fallback"]`. Run `vegastack doctor --verify-bundle` to diagnose.
+If a per-provider `MANIFEST.json` is missing or unparseable, `vegastack ask --entry terraform --tf-provider <provider>` skips Tier 1 silently and runs Tier 2 only. The response includes `warnings: ["manifest unavailable for <provider>; using grep fallback"]`. Run `vegastack doctor --verify-registry` to diagnose.

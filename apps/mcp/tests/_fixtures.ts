@@ -20,27 +20,25 @@ export interface FakeBundleSeed {
 
 export function makeEnv(seed: FakeBundleSeed): Env {
   const store = new Map<string, string>();
-  // All keys carry the cli/ prefix to mirror the production R2 layout —
-  // the shared `vegastack-agent-kb` bucket hosts other agent-kb surfaces
-  // under different prefixes; the CLI's artifacts live under cli/.
-  store.set("cli/bundle/MANIFEST.json", JSON.stringify(seed.rootManifest));
+  // All keys carry the cli/ prefix to mirror the production R2 layout.
+  store.set("cli/packs/terraform/MANIFEST.json", JSON.stringify(seed.rootManifest));
   for (const [provider, manifest] of Object.entries(seed.providerManifests)) {
-    store.set(`cli/bundle/${provider}/MANIFEST.json`, JSON.stringify(manifest));
+    store.set(`cli/packs/terraform/docs/${provider}/MANIFEST.json`, JSON.stringify(manifest));
   }
   for (const [id, body] of Object.entries(seed.knowledge ?? {})) {
-    store.set(`cli/bundle/knowledge/${id}.md`, body);
+    store.set(`cli/packs/terraform/docs/knowledge/${id}.md`, body);
   }
   for (const [id, body] of Object.entries(seed.recipes ?? {})) {
-    store.set(`cli/bundle/recipes/${id}.toml`, body);
+    store.set(`cli/packs/terraform/docs/recipes/${id}.toml`, body);
   }
 
   const bucket = makeFakeR2(store);
   return {
-    BUNDLE: bucket,
+    REGISTRY: bucket,
     MCP_OBJECT: {} as unknown as Env["MCP_OBJECT"],
     MCP_CACHE: undefined as unknown as KVNamespace,
-    BUNDLE_PUBLIC_BASE_URL: "https://bundles.vegastack.com",
-    BUNDLE_MANIFEST_KEY: "cli/bundle/MANIFEST.json",
+    REGISTRY_PUBLIC_BASE_URL: "https://cli-registry.vegastack.com",
+    REGISTRY_MANIFEST_KEY: "cli/packs/terraform/MANIFEST.json",
     CACHE_TTL_SECONDS: "300",
     LOG_LEVEL: "warn",
   } as Env;
@@ -81,7 +79,7 @@ function makeFakeR2(store: Map<string, string>): R2Bucket {
 export const SEED_BASIC: FakeBundleSeed = {
   rootManifest: {
     manifest_schema_version: 1,
-    bundle_version: "2026.04.28",
+    registry_version: "2026.04.28",
     providers: ["aws", "cloudflare", "datadog"],
     generated_at: "2026-04-28T00:00:00Z",
   },
@@ -89,7 +87,7 @@ export const SEED_BASIC: FakeBundleSeed = {
     aws: {
       manifest_schema_version: 1,
       provider: "aws",
-      bundle_version: "2026.04.28",
+      registry_version: "2026.04.28",
       synced_at: "2026-04-28T00:00:00Z",
       resources: {
         aws_s3_bucket: {
@@ -165,7 +163,7 @@ export const SEED_BASIC: FakeBundleSeed = {
     cloudflare: {
       manifest_schema_version: 1,
       provider: "cloudflare",
-      bundle_version: "2026.04.28",
+      registry_version: "2026.04.28",
       synced_at: "2026-04-28T00:00:00Z",
       resources: {
         cloudflare_dns_record: {
@@ -193,7 +191,7 @@ export const SEED_BASIC: FakeBundleSeed = {
     datadog: {
       manifest_schema_version: 1,
       provider: "datadog",
-      bundle_version: "2026.04.28",
+      registry_version: "2026.04.28",
       synced_at: "2026-04-28T00:00:00Z",
       resources: {},
       data_sources: {},

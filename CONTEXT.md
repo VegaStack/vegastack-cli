@@ -1,16 +1,22 @@
 # vegastack-cli — Gemini context
 
-Use the `vegastack` CLI for any Terraform / HCL question across these 31 providers: aws, azure, gcp, cloudflare, kubernetes, helm, vault, digitalocean, github, gitlab, vercel, netlify, datadog, grafana, splunk, pagerduty, okta, auth0, crowdstrike, 1password, mongodb-atlas, snowflake, redis-cloud, clickhouse, pinecone, ansible, random, tls, time, local, external.
+Use the `vegastack` CLI for infrastructure, cloud operations, CI/CD, Terraform/HCL, GitHub Actions, Docker, Kubernetes, Helm, Supabase, AWS CLI, Jenkins, and other project-selected Registry entries.
 
 ## How to query
 
 ```bash
-vegastack tf "<the user's natural-language Terraform request>"
+vegastack ask "<the user's natural-language operations request>"
 ```
 
-Output is a single JSON envelope with four channels:
+For exact citation lookup, use:
 
-- `files[]` — ranked list of relevant doc paths, each with the resource's full manifest entry (`required_args`, `optional_args`, `enum_values`, `import_syntax`, `deprecated`, `recommended_companions`) and inline `## Example Usage` block. **No follow-up reads required for the common case.**
+```bash
+vegastack search --entry <registry-entry> "<literal query>"
+```
+
+Output is a JSON envelope with grounded evidence:
+
+- `files[]` or `sections[]` — ranked doc paths/sections with citations.
 - `knowledge[]` — date-stamped curated facts about recent provider changes (renames, deprecations, pricing shifts). Read these before generating HCL — they override stale training memory.
 - `recipes[]` — multi-provider scaffolds (zero-trust, scalable backend, etc.) when the query spans providers.
 - `concept_aliases_used[]` — transparency record showing which natural-language phrases mapped to which resources.
@@ -23,9 +29,9 @@ Output is a single JSON envelope with four channels:
 - **Respect `deprecated: true`** — surface to user before emitting code.
 - **Cite every file path** the CLI returned in your reply.
 
-## Bundle location
+## Registry location
 
-The 31-provider docs bundle is downloaded by `vegastack install` to `~/.config/vegastack/bundle/`. If queries fail with "bundle not found", run `vegastack install` (or `vegastack refresh` to pull the latest).
+Registry entries are selected by `vegastack init`, installed into `~/.config/vegastack/registry/`, and locked per project in `.vegastack/vegastack-lock.json`. To refresh selected entries, run `vegastack registry update`.
 
 ## Full skill reference
 

@@ -1,6 +1,6 @@
 // Concept-alias loader.
 //
-// Reads `bundle/<provider>/aliases.yaml` for the detected provider, parses
+// Reads `Registry pack/<provider>/aliases.yaml` for the detected provider, parses
 // each entry into an AliasRewrite, and provides a query-matching helper used
 // by tokenize() to fold aliases BEFORE token splitting.
 //
@@ -29,14 +29,14 @@ interface RawAlias {
 }
 
 export interface LoadAliasesArgs {
-  bundleRoot: string;
+  terraformRoot: string;
   provider: string;
 }
 
 /** Load all aliases for one provider. Returns [] when the file is absent
  *  or empty — that is NOT an error. */
 export function loadAliases(args: LoadAliasesArgs): AliasRewrite[] {
-  const file = path.join(args.bundleRoot, args.provider, "aliases.yaml");
+  const file = path.join(args.terraformRoot, args.provider, "aliases.yaml");
   if (!fs.existsSync(file)) return [];
 
   let raw: string;

@@ -1,13 +1,13 @@
-// `vegastack tf` runtime — native TypeScript implementation (v0.1 envelope).
+// Terraform Registry pack runtime — native TypeScript implementation.
 //
 // Thin wrapper that:
-//   • resolves the bundle dir (env override or canonical $XDG location);
+//   • resolves the Terraform entry docs dir in the Registry cache;
 //   • exports the canonical input/output types;
 //   • forwards everything to src/lib/discover/index.ts.
 
 import { discover as nativeDiscover } from "./discover/index.js";
 import type { DiscoverArgs as NativeArgs, DiscoverResult } from "./discover/index.js";
-import { bundleDir } from "./paths.js";
+import { terraformEntryDocsDir } from "./paths.js";
 
 export type {
   DiscoverFile,
@@ -40,7 +40,7 @@ export interface DiscoverArgs {
 export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
   const nativeArgs: NativeArgs = {
     query: args.query,
-    root: bundleDir(),
+    root: terraformEntryDocsDir(),
     enrich: !args.raw,
     debug: args.debug ?? false,
     brief: args.brief ?? false,

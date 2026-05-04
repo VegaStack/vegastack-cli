@@ -1,4 +1,4 @@
-// Recipe loader unit tests against the bundle-mini fixture.
+// Recipe loader unit tests against the registry-mini fixture.
 
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -8,12 +8,12 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadRecipes } from "../../../src/lib/discover/recipes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "bundle-mini");
+const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "registry-mini");
 
 describe("loadRecipes — happy path", () => {
   it("parses TOML and returns recipes matching a token trigger", () => {
     const recipes = loadRecipes({
-      bundleRoot: FIXTURE_ROOT,
+      terraformRoot: FIXTURE_ROOT,
       tokens: ["ecs", "fargate", "alb", "autoscaling"],
       query: "ecs fargate alb autoscaling",
       provider: "aws",
@@ -26,7 +26,7 @@ describe("loadRecipes — happy path", () => {
 
   it("phrase-trigger matches case-insensitively", () => {
     const recipes = loadRecipes({
-      bundleRoot: FIXTURE_ROOT,
+      terraformRoot: FIXTURE_ROOT,
       tokens: [],
       query: "ecs fargate behind alb with autoscaling",
       provider: "aws",
@@ -36,7 +36,7 @@ describe("loadRecipes — happy path", () => {
 
   it("filters by provider when set", () => {
     const recipes = loadRecipes({
-      bundleRoot: FIXTURE_ROOT,
+      terraformRoot: FIXTURE_ROOT,
       tokens: ["ecs", "fargate", "alb", "autoscaling"],
       query: "ecs fargate alb autoscaling",
       provider: "cloudflare",
@@ -46,7 +46,7 @@ describe("loadRecipes — happy path", () => {
 
   it("returns recipes sorted alphabetically by id", () => {
     const recipes = loadRecipes({
-      bundleRoot: FIXTURE_ROOT,
+      terraformRoot: FIXTURE_ROOT,
       tokens: ["ecs", "fargate", "alb", "autoscaling"],
       query: "ecs fargate alb autoscaling",
     });
@@ -56,7 +56,7 @@ describe("loadRecipes — happy path", () => {
 
   it("returns pitfalls with severity preserved", () => {
     const recipes = loadRecipes({
-      bundleRoot: FIXTURE_ROOT,
+      terraformRoot: FIXTURE_ROOT,
       tokens: ["ecs", "fargate", "alb", "autoscaling"],
       query: "ecs fargate alb autoscaling",
       provider: "aws",
@@ -67,7 +67,7 @@ describe("loadRecipes — happy path", () => {
 
   it("no triggers fired → []", () => {
     const recipes = loadRecipes({
-      bundleRoot: FIXTURE_ROOT,
+      terraformRoot: FIXTURE_ROOT,
       tokens: ["totally-unrelated"],
       query: "totally unrelated query",
     });
@@ -83,17 +83,17 @@ describe("loadRecipes — empty / missing dirs", () => {
   afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));
 
   it("missing recipes/ dir → []", () => {
-    expect(loadRecipes({ bundleRoot: tmp, tokens: [], query: "" })).toEqual([]);
+    expect(loadRecipes({ terraformRoot: tmp, tokens: [], query: "" })).toEqual([]);
   });
 
   it("empty recipes/ dir → []", () => {
     fs.mkdirSync(path.join(tmp, "recipes"));
-    expect(loadRecipes({ bundleRoot: tmp, tokens: [], query: "" })).toEqual([]);
+    expect(loadRecipes({ terraformRoot: tmp, tokens: [], query: "" })).toEqual([]);
   });
 
   it("malformed TOML is skipped (no throw)", () => {
     fs.mkdirSync(path.join(tmp, "recipes"));
     fs.writeFileSync(path.join(tmp, "recipes", "bad.toml"), "this is not [valid toml");
-    expect(loadRecipes({ bundleRoot: tmp, tokens: [], query: "" })).toEqual([]);
+    expect(loadRecipes({ terraformRoot: tmp, tokens: [], query: "" })).toEqual([]);
   });
 });

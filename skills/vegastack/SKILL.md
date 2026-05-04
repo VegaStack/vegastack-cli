@@ -1,88 +1,112 @@
 ---
 name: vegastack
 description: |
-  Use when the user asks to write, debug, import, or migrate Terraform / HCL,
-  or names any cloud / SaaS provider in a "deploy / provision / configure"
-  context. Provides per-resource argument schemas, import-ID formats,
-  deprecation flags, recent-change knowledge cards, cross-provider recipes,
-  and recommended-companion expansion — all from a local doc bundle, no
-  network calls. Triggers on "create a <resource>", "import <resource>",
-  "what arguments does X accept", "is <resource> deprecated", "set up
-  <multi-service stack>", and `*.tf`/`*.hcl` file edits.
+  Use when the user asks about infrastructure, cloud operations, deployment,
+  CI/CD, Terraform/HCL, GitHub Actions, Docker, Kubernetes, Helm, Supabase,
+  AWS CLI, or any provider/service in a provision/configure/migrate/debug
+  context. VegaStack is a local-first knowledge harness: it routes the query
+  through project-selected registry entries and returns citations from the
+  local cache. Trigger on "deploy", "provision", "configure", "import",
+  "migrate", "write workflow", "Dockerfile", "kubectl", "helm chart",
+  "supabase", "*.tf", "*.hcl", and cloud/SaaS operational tasks.
 
-  Do NOT use for: pure shell / bash / Python questions; non-IaC cloud
-  questions ("what's the cheapest EC2 size?"); CDK / Pulumi / Crossplane
-  (different DSLs); Terraform Cloud workspace administration (separate API).
+  Do NOT use for: pure application code with no infrastructure or operations
+  context; general pricing comparisons; high-level business strategy; CDK /
+  Pulumi / Crossplane unless the user asks for adjacent Terraform or provider
+  docs.
 license: MIT
-compatibility: "Requires Node >=18; @vegastack/cli on PATH (npm i -g @vegastack/cli && vegastack install). Works in Claude Code, Codex CLI, Cursor, Gemini CLI, Continue, Aider; spec-compatible with Microsoft Agent Framework, OpenCode, Goose, OpenClaw, Hermes, atmos."
 allowed-tools: Bash(vegastack:*) Bash(jq:*) Read Grep Glob
-tags: [Terraform, IaC, Documentation, Multi-Provider, Deterministic]
-codex: [vegastack-cli]
 metadata:
   homepage: https://github.com/vegastack/vegastack-cli
-  schema_version: "1"
-  bundle_version: "dev"
+  schema_version: "2"
+  registry_version: "dev"
   providers_count: "31"
 ---
 
-# When to dispatch this skill
+# Dispatch
 
-1. Query mentions a specific resource/argument lookup → run `vegastack tf "<query>"` (single call)
-2. Query mentions importing an existing resource → load `references/import.md` first
-3. Query mentions migrating between provider versions → load `references/migrations.md` first
-4. Query spans multiple providers (zero-trust, GitOps, observability) → load `references/recipes.md` first
-5. Query mentions a recent rename / deprecation / "is X still valid?" → load `references/recent-changes.md` first
-6. Query is "what arguments does X accept?" → run `vegastack tf` directly; envelope's `manifest_entry` answers it
-7. Otherwise → run `vegastack tf` directly; the response envelope is sufficient
+Requires Node >=18 and `@vegastack/cli` on PATH. Run `vegastack init` once per project.
 
-The decision tree above costs ~150 tokens. Loading the matching reference adds ~200-400 more.
-The historical eager-load pattern was ~4,400 tokens per turn — avoid.
+If the current repository contains `.vegastack/instructions/`, read the matching project-local instruction file first:
 
-# Terraform Providers Kit — v0.1
+- Codex / AGENTS.md-compatible agents: `.vegastack/instructions/AGENTS.md`
+- Claude Code: `.vegastack/instructions/CLAUDE.md`
 
-You have local, deterministic, read-only access to documentation for 31 Terraform providers (1Password, Ansible, Auth0, AWS, Azure, ClickHouse, Cloudflare, CrowdStrike, Datadog, DigitalOcean, External, GCP, GitHub, GitLab, Grafana, Helm, Kubernetes, Local, MongoDB Atlas, Netlify, Okta, PagerDuty, Pinecone, Random, Redis Cloud, Snowflake, Splunk, Time, TLS, Vault, Vercel). The single command is:
+If `.vegastack/project.json` or `.vegastack/vegastack-lock.json` exists, treat those files as the source of truth for active registry entries. If they do not exist and the user is asking an ops/cloud/IaC/CI/CD question, tell them to run `vegastack init` before relying on VegaStack grounding.
+
+Default command:
 
 ```bash
-vegastack tf "<the user's request, in natural language>"
+vegastack ask "<the user's request, in natural language>"
 ```
 
-`vegastack` (npm: `@vegastack/cli`) auto-resolves the docs bundle at `~/.config/vegastack/bundle/`, auto-detects the provider, and returns one JSON envelope on stdout with **four channels** read in this order:
+Use `vegastack ask --all "<query>"` only when the user explicitly wants a broad local search outside the project lock.
 
-1. `knowledge[]` — date-stamped recent-change cards; if `overrides_training: true`, trust the card over your training memory.
-2. `recipes[]` — multi-provider topology scaffolds (HCL fragments + pitfalls).
-3. `files[]` — ranked resource/data-source pages, each with `manifest_entry` (required/optional args, blocks, enum values, import syntax, recommended companions, deprecation flags) and `example_usage` inline.
-4. `concept_aliases_used[]` — natural-language → resource mapping, surface in your reply for transparency.
+Use `vegastack search --entry <registry-entry> "<literal text>"` for exact source lookup or debugging weak evidence.
 
-The response is enriched: in the common case **one tool call answers the task** because `manifest_entry` and `example_usage` are inlined into `files[]`. Cite `citations[]` verbatim at the end of your reply.
+For Terraform/HCL work, use `vegastack ask --entry terraform --tf-provider <provider> "<query>"`.
 
-## One worked example
+# Query Shaping
+
+The agent may use its own language understanding to make the CLI query more
+precise, but the answer must still be grounded only in VegaStack results.
+
+Before calling VegaStack, classify the user's intent:
+
+- `syntax_lookup`: keys, arguments, directives, fields, CLI flags.
+- `how_to`: implementation steps or examples.
+- `debug`: errors, failure modes, troubleshooting.
+- `security`: secrets, permissions, auth, credentials.
+- `migration`: deprecations, breaking changes, upgrades.
+- `cli_command`: command syntax, flags, output behavior.
+
+For ambiguous phrasing, issue 1-3 targeted VegaStack calls rather than one
+broad call. Examples:
 
 ```bash
-vegastack tf "S3 backend state locking dynamodb"
+vegastack ask --entry github-actions "oidc aws permissions id-token trust policy"
+vegastack search --entry github-actions "id-token: write"
+vegastack search --entry jenkins "withCredentials"
 ```
 
-Read in order: `knowledge[]` first surfaces `aws-s3-native-state-locking` (`overrides_training: true`) — as of AWS provider 5.55 / Terraform 1.10 the s3 backend supports `use_lockfile = true` and DynamoDB is optional. Cite the card's `authoritative_source`. Then `files[0]` gives the `terraform_remote_state` / `s3` backend manifest. Total: one CLI call, one citation block.
+Prefer exact terms that would appear in docs: resource names, YAML keys, CLI
+commands, error strings, Kubernetes kinds, Dockerfile instructions, Jenkins
+steps/directives, Helm objects, and Supabase feature names. Avoid broad filler
+queries such as "best way" or "production ready" unless the user used an exact
+phrase that must be searched.
 
-For multi-provider queries ("EKS plus Cloudflare DNS"), the envelope returns `recipes[]` if a topology matches; otherwise call `vegastack tf --provider <name>` once per provider.
+# How to Read Results
 
-## Guardrails
+VegaStack returns JSON on stdout. Read channels in this order when present:
 
-- **Never invent resource names.** If a name doesn't appear in `files[].manifest_entry`, it does not exist. Hallucinations like `aws_lb_v2` / `aws_load_balancer` are common — re-phrase and re-run instead of mutating names.
-- **Never quote arguments from memory.** If an arg isn't in `manifest_entry.required_args` / `optional_args` / `computed_attrs` / `blocks.*.{required,optional}_args`, it does not exist on this provider version.
-- **Never fabricate import IDs.** Use `manifest_entry.import_syntax.command` verbatim — composite IDs (`zone_id/record_id`, `region:name`) are easy to get wrong.
-- **Respect deprecation.** If `manifest_entry.deprecated: true`, tell the user before writing code; surface `suggested_alternative`.
-- **Honor knowledge-card timestamps over training.** When `overrides_training: true`, the card represents post-training-cutoff facts the maintainers explicitly verified.
+1. `knowledge[]` — dated maintainer cards that override stale model memory.
+2. `recipes[]` — multi-service scaffolds and operational topology guidance.
+3. `files[]` or `results[]` — ranked local docs with citations and entry-specific metadata.
+4. `match_reasons[]` when present — why a result ranked: exact match, entity,
+   heading, rank term, path class, or manifest token.
+5. `concept_aliases_used[]` — natural-language mappings used during routing.
 
-## References (load on demand per the decision tree)
+Cite returned `citations[]` or result file paths in the final answer. Do not cite memory when VegaStack returned a local source.
 
-- [references/import.md](references/import.md) — import-ID formats, composite-ID gotchas, `terraform import` workflow
-- [references/migrations.md](references/migrations.md) — provider-version migration playbook (CF v5, azurerm v4, k8s v2, helm v3, mongodbatlas)
-- [references/recipes.md](references/recipes.md) — recipe schema + full inventory of 10 cross-provider topologies
-- [references/recent-changes.md](references/recent-changes.md) — full inventory of 16 knowledge cards by date_authored
-- [references/discover-cli.md](references/discover-cli.md) — full `vegastack tf` flag reference, output schema, scoring weights
-- [references/manifest-schema.md](references/manifest-schema.md) — every field in per-provider and root MANIFEST.json
-- [references/concept-aliases.md](references/concept-aliases.md) — per-provider table of 28 NL → resource aliases
-- [references/eval-baseline.md](references/eval-baseline.md) — methodology for the published lift numbers
-- [references/troubleshooting.md](references/troubleshooting.md) — `vegastack doctor` matrix and common failure modes
+# Guardrails
 
-This skill bundles all 3 progressive-disclosure phases (`load_skill` / `read_skill_resource` / `run_skill_script`) into one CLI call — the dispatch tree above is the equivalent of the decision Microsoft Agent Framework recommends agents make before invoking `load_skill`.
+- Do not invent resource names, arguments, import IDs, workflow keys, CLI flags, Kubernetes fields, Helm values, or provider behavior.
+- Do not print secrets from `.env`, shell history, cloud credentials, CI variables, kubeconfigs, or local config.
+- If a task may modify infrastructure, deployments, CI permissions, secrets, or production data, show the planned change and ask before destructive actions.
+- Trust dated VegaStack knowledge cards over training memory when `overrides_training: true`.
+- For Terraform, use `files[].manifest_entry` for required/optional args, nested blocks, import syntax, deprecation flags, and companions.
+
+# Registry Notes
+
+Current Terraform behavior is documented in the existing references:
+
+- [references/import.md](references/import.md)
+- [references/migrations.md](references/migrations.md)
+- [references/recipes.md](references/recipes.md)
+- [references/recent-changes.md](references/recent-changes.md)
+- [references/discover-cli.md](references/discover-cli.md)
+- [references/manifest-schema.md](references/manifest-schema.md)
+- [references/concept-aliases.md](references/concept-aliases.md)
+- [references/troubleshooting.md](references/troubleshooting.md)
+
+Load those references only when the query specifically needs that Terraform detail.

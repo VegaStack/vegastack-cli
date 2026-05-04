@@ -1,11 +1,9 @@
-// Worker-side discovery (v0.1 stub).
+// Worker-side discovery for the Remote MCP server.
 //
 // SCOPE: this is a deliberately minimal implementation that produces the
 // canonical envelope shape (see ./types.ts) by reading per-provider
-// MANIFEST.json files from R2. When E2 lands the full TS port at
-// /Users/mk/projects/vegastack-cli/src/lib/discover/, replace the body of
-// `discover()` below with a worker-friendly fork of that pipeline (no
-// node:fs, no node:path beyond "node:path/posix").
+// MANIFEST.json files from R2. Keep this implementation worker-friendly:
+// no node:fs, no shelling out to ripgrep, and no local cache assumptions.
 //
 // What this stub does TODAY:
 //   1. Detect the provider — explicit `provider` argument wins; otherwise
@@ -22,23 +20,21 @@
 //        +  3  primary_resources hint
 //   5. Normalize per-provider (top score → 100), pick top `max`.
 //   6. Emit a fully-shaped DiscoverOk including knowledge[] / recipes[] /
-//      concept_aliases_used[] (empty for v0.1 stub — populated when E2 lands).
+//      concept_aliases_used[] when the Registry data needed by this worker is available.
 //
-// What this stub deliberately omits (deferred to the post-E2 swap):
+// Current Remote MCP limitations:
 //   * Tier-2 grep fallback (Workers can't shell out — would need a separate
 //     content-indexed shard).
-//   * Knowledge / recipe loading (need bundle/knowledge/*.md fetcher; trivial
-//     to add once E3 publishes the files).
-//   * Concept-alias rewrites (need bundle/<provider>/aliases.yaml fetcher).
+//   * Full parity with the local CLI's Registry search and pack routing.
 //   * Per-resource HCL example extraction (currently echoes a synthesized stub).
 
 import {
-  BundleCorrupt,
-  BundleNotFound,
+  ArtifactCorrupt,
+  RegistryKeyNotFound,
   listProviders,
   readProviderManifest,
   readRootManifest,
-} from "./r2-bundle.js";
+} from "./r2-registry.js";
 import type {
   DiscoverFile,
   DiscoverResult,
@@ -67,13 +63,13 @@ export async function discover(env: Env, input: DiscoverInput): Promise<Discover
   const { query } = input;
   const max = input.max ?? DEFAULT_MAX;
 
-  // ── Root manifest (for provider list + bundle_version) ───────────────────
+  // ── Root manifest (for provider list + registry_version) ───────────────────
   let providers: string[];
-  let bundleVersion: string;
+  let registryVersion: string;
   try {
     const root = await readRootManifest(env);
     providers = await listProviders(env);
-    bundleVersion = root.bundle_version ?? "unknown";
+    registryVersion = root.registry_version ?? "unknown";
   } catch (e) {
     return errorResult(query, e);
   }
@@ -104,7 +100,7 @@ export async function discover(env: Env, input: DiscoverInput): Promise<Discover
         query,
         tokens: tokenize(query, undefined),
         candidate_providers: candidates,
-        recipes: [], // recipe loader lands when E3 publishes recipes/
+        recipes: [],
         hint: "Use `provider` to disambiguate.",
       };
     }
@@ -147,7 +143,7 @@ export async function discover(env: Env, input: DiscoverInput): Promise<Discover
     .slice(0, max);
 
   const files: DiscoverFile[] = ranked.map(([, v]) => ({
-    path: `cli/bundle/${provider}/${v.entry.file}`,
+    path: `cli/packs/terraform/docs/${provider}/${v.entry.file}`,
     score: round1(v.score),
     score_norm: topRaw > 0 ? Math.round((v.score / topRaw) * 100) : 0,
     tier: "manifest",
@@ -166,11 +162,11 @@ export async function discover(env: Env, input: DiscoverInput): Promise<Discover
     tokens,
     tiers_used: tiersUsed,
     schema_version: 1,
-    bundle_version: bundleVersion,
+    registry_version: registryVersion,
     files,
-    knowledge: [], // tf_get_knowledge_card serves cli/bundle/knowledge/*.md on demand
-    recipes: [],   // tf_get_recipe serves cli/bundle/recipes/*.toml on demand
-    concept_aliases_used: [], // populated by tokenize when cli/bundle/<provider>/aliases.yaml loader lands
+    knowledge: [], // registry_get_knowledge_card serves cli/packs/terraform/docs/knowledge/*.md on demand
+    recipes: [],   // registry_get_recipe serves cli/packs/terraform/docs/recipes/*.toml on demand
+    concept_aliases_used: [], // populated by tokenize when cli/packs/terraform/docs/<provider>/aliases.yaml loader lands
     citations: files.map((f) => f.path),
     count: files.length,
   };
@@ -179,11 +175,11 @@ export async function discover(env: Env, input: DiscoverInput): Promise<Discover
 // ─── helpers ───────────────────────────────────────────────────────────────
 
 function errorResult(query: string, e: unknown): DiscoverResult {
-  if (e instanceof BundleNotFound) {
-    return { status: "error", query, error: e.message, code: "BundleMissing" };
+  if (e instanceof RegistryKeyNotFound) {
+    return { status: "error", query, error: e.message, code: "RegistryEntryMissing" };
   }
-  if (e instanceof BundleCorrupt) {
-    return { status: "error", query, error: e.message, code: "BundleCorrupt" };
+  if (e instanceof ArtifactCorrupt) {
+    return { status: "error", query, error: e.message, code: "ArtifactCorrupt" };
   }
   return {
     status: "error",

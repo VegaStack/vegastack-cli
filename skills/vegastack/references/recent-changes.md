@@ -1,13 +1,13 @@
 # Recent changes — knowledge-card inventory (v0.1)
 
-The harness ships **16 date-stamped knowledge cards** at `bundle/knowledge/<id>.md`. Each captures a post-training-cutoff change (rename, deprecation, new default, native-feature replacement) the maintainers explicitly verified. When the user asks "is X still valid?", "did Y change recently?", or "what's the modern way to do Z?", the card is the right starting point — it overrides training memory when `overrides_training: true`.
+The Registry ships date-stamped knowledge cards in each pack's `index/knowledge.json`. Each captures a recent change or risk signal such as a rename, deprecation, new default, or native-feature replacement. When the user asks "is X still valid?", "did Y change recently?", or "what's the modern way to do Z?", the card is the right starting point.
 
 For card schema, frontmatter spec, and authoring guidelines see [knowledge-cards.md](knowledge-cards.md). This file is the **inventory**, sorted by `date_authored` newest-first.
 
 ## The single workflow
 
 ```bash
-vegastack tf "<the user's exact phrasing>"
+vegastack ask --entry terraform --tf-provider <provider> "<the user's exact phrasing>"
 ```
 
 The envelope's `knowledge[]` returns every card whose triggers fire (token AND-within, OR-across; or substring `phrase` match). The card body is included inline; cite `authoritative_source` in your reply.
@@ -41,7 +41,7 @@ The envelope's `knowledge[]` returns every card whose triggers fire (token AND-w
 
 ## Freshness
 
-Cards age. The quarterly review checklist (`bundle/scripts/check-card-staleness.sh`) flags cards older than 180 days for re-verification. If a card stops boosting eval lift (archetype A12 in `evals/runner.ts`), it's a candidate for retirement. Until then, the dates above are authoritative — when training memory disagrees with a card whose `overrides_training: true`, the card wins.
+Cards age. If a card stops boosting eval lift (archetype A12 in `evals/runner.ts`), it's a candidate for retirement. Until then, the dates above are authoritative — when training memory disagrees with a card whose `overrides_training: true`, the card wins.
 
 ## Citation
 

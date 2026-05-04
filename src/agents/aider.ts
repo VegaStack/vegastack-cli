@@ -19,35 +19,34 @@ import { existsOrLink, removeIfExists } from "../lib/fs-utils.js";
 import { aiderConfPath, aiderConventionsPath } from "../lib/paths.js";
 import type { AgentRenderer, InstallContext, InstallResult, Scope } from "./types.js";
 
-const CONVENTIONS_BODY = `# Vegastack Terraform conventions (managed by @vegastack/cli)
+const CONVENTIONS_BODY = `# VegaStack conventions (managed by @vegastack/cli)
 
-When the user asks about Terraform, HCL, or any of the providers covered by
-the vegastack docs harness (AWS, Azure, GCP, Cloudflare, Kubernetes, Helm,
-Vault, DigitalOcean, GitHub, GitLab, Vercel, Netlify, Datadog, Grafana,
-Splunk, PagerDuty, Okta, Auth0, CrowdStrike, 1Password, MongoDB Atlas,
-Snowflake, Redis Cloud, ClickHouse, Pinecone, Ansible, and the standard
-utility providers), invoke the local CLI before writing HCL:
+When the user asks about infrastructure, cloud operations, CI/CD, Terraform,
+GitHub Actions, Docker, Kubernetes, Helm, Supabase, AWS CLI, or any installed
+VegaStack Registry pack, invoke the local CLI before answering:
 
-    vegastack tf "<the user's request, in natural language>"
+    vegastack ask "<the user's request, in natural language>"
+
+For Terraform work, specify both the Registry pack and provider:
+
+    vegastack ask --entry terraform --tf-provider <provider> "<query>"
 
 The response is one JSON envelope with four channels:
 
-  knowledge[]              — date-stamped recent-change cards; read FIRST
-  recipes[]                — cross-provider topology scaffolds
-  files[]                  — top-K resource docs, with manifest_entry +
-                              example_usage inline (no follow-up jq/grep)
-  concept_aliases_used[]   — NL phrase → resource mapping (transparency)
+  knowledge[]              - date-stamped recent-change cards; read first
+  recipes[]                - cross-provider topology scaffolds
+  files[] or results[]     - ranked docs with citations and metadata
+  concept_aliases_used[]   - NL phrase to source mapping
 
 Hard rules:
 
-- Never invent resource names or arguments. If it isn't in
-  files[].manifest_entry (top-level or .blocks.*), it doesn't exist.
+- Never invent resource names, arguments, workflow keys, CLI flags, or fields.
+- For Terraform, if it isn't in files[].manifest_entry, it doesn't exist.
 - Never fabricate import IDs. Use manifest_entry.import_syntax.command.
-- Respect deprecated:true — tell the user before writing code.
-- One provider per vegastack tf call; multi-provider work uses recipes[].
+- Respect deprecated:true - tell the user before writing code.
 - Cite citations[] (file paths + knowledge-card / recipe IDs) in your reply.
 
-If \`vegastack\` isn't on PATH, run \`npm i -g @vegastack/cli\` and \`vegastack install\`.
+If \`vegastack\` isn't on PATH, run \`npm i -g @vegastack/cli\` and \`vegastack init\`.
 `;
 
 interface ParsedConf {

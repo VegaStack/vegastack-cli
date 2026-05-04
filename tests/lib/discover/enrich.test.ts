@@ -1,4 +1,4 @@
-// Enrich unit tests against the bundle-mini fixture.
+// Enrich unit tests against the registry-mini fixture.
 
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,7 +8,7 @@ import { loadManifest } from "../../../src/lib/discover/manifest.js";
 import type { RankedFile } from "../../../src/lib/discover/merge.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "bundle-mini");
+const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "registry-mini");
 const AWS_DIR = path.join(FIXTURE_ROOT, "aws");
 
 function fakeRanked(file: string, score = 200): RankedFile {

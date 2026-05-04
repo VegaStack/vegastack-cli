@@ -11,13 +11,13 @@ name: Evals — upload single report + maintain INDEX.json
 #
 # The dashboard fetches the index first to find the latest date, then
 # fetches the matching <date>.json. CORS is configured in the bucket
-# settings (see bundle/docs/RELEASE.md).
+# settings for cli-registry.vegastack.com.
 
 on:
   workflow_call:
     inputs:
       report-path:
-        description: "Local path to the SINGLE eval-report JSON file (E6's runner output)."
+        description: "Local path to the single eval-report JSON file."
         required: true
         type: string
       report-date:
@@ -25,10 +25,10 @@ on:
         required: false
         type: string
         default: ""
-      bundle-domain:
-        description: "Public R2 hostname (defaults to bundles.vegastack.com)."
+      registry-domain:
+        description: "Public R2 hostname (defaults to cli-registry.vegastack.com)."
         required: false
-        default: "bundles.vegastack.com"
+        default: "cli-registry.vegastack.com"
         type: string
 
 jobs:
@@ -153,7 +153,7 @@ jobs:
 
       - name: Print public URLs
         env:
-          DOMAIN: ${{ inputs.bundle-domain }}
+          DOMAIN: ${{ inputs.registry-domain }}
           DATE: ${{ steps.stamp.outputs.date }}
         run: |
           echo "Report:  https://${DOMAIN}/cli/evals/reports/${DATE}.json"

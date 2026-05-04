@@ -1,9 +1,9 @@
 /**
  * R2 + KV cache helpers.
  *
- * Eval reports live in the shared `vegastack-agent-kb` bucket at
+ * Eval reports live in the shared `vegastack-cli-registry` bucket at
  * `cli/evals/reports/<YYYY-MM-DD>.json` (custom domain
- * `bundles.vegastack.com`, bucket prefix `cli/` keeps the CLI's artifacts
+ * `cli-registry.vegastack.com`, bucket prefix `cli/` keeps the CLI's artifacts
  * isolated from other agent-kb surfaces in the same bucket).
  * Reads are cached in Workers KV with a 1h TTL so the homepage TTFB stays
  * under 100ms even on cold edges.
@@ -13,7 +13,7 @@
  * was removed. We accept an explicit `env` arg so the same helpers are
  * usable from both pages and the test suite.
  *
- * Contract owner: E4 ships `bundles.vegastack.com/cli`; E6 writes the JSON.
+ * Registry publishing owns `cli-registry.vegastack.com/cli`; eval workflows write the JSON.
  * If the prefix moves, change `REPORTS_PREFIX` only.
  */
 
@@ -32,7 +32,7 @@ export interface ReportIndex {
 }
 
 export interface RuntimeEnv {
-  BUNDLES?: R2Bucket;
+  REGISTRY?: R2Bucket;
   REPORTS_CACHE?: KVNamespace;
 }
 
@@ -53,7 +53,7 @@ export async function getEnv(): Promise<RuntimeEnv | undefined> {
   }
 }
 
-/** Best-effort R2 fetch with KV cache. Falls back to the bundled fixture. */
+/** Best-effort R2 fetch with KV cache. Falls back to the Registry-provided fixture. */
 export async function getReport(
   env: RuntimeEnv | undefined,
   date: string,
@@ -70,7 +70,7 @@ export async function getReport(
     if (parsed) return parsed;
   }
 
-  const obj = await env?.BUNDLES?.get(`${REPORTS_PREFIX}${safeDate}.json`).catch(
+  const obj = await env?.REGISTRY?.get(`${REPORTS_PREFIX}${safeDate}.json`).catch(
     () => null,
   );
   if (!obj) return fallbackReport(safeDate);
@@ -125,7 +125,7 @@ async function getReportIndex(
   );
   if (cached && isIndex(cached)) return cached;
 
-  const obj = await env?.BUNDLES?.get(INDEX_KEY).catch(() => null);
+  const obj = await env?.REGISTRY?.get(INDEX_KEY).catch(() => null);
   if (!obj) return null;
 
   let raw: unknown;

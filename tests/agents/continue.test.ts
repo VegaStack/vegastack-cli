@@ -48,7 +48,7 @@ describe("continue renderer", () => {
     expect(fs.existsSync(dest)).toBe(true);
     const text = fs.readFileSync(dest, "utf8");
     expect(text).toContain("mcpServers:");
-    expect(text).toContain("vegastack-tf");
+    expect(text).toContain("vegastack");
     expect(text).toMatch(/url: https?:\/\//);
   });
 
@@ -116,7 +116,7 @@ describe("continue renderer", () => {
       dryRun: false,
     });
     expect(r.installed).toBe(true);
-    expect(fs.readFileSync(dest, "utf8")).toContain("vegastack-tf");
+    expect(fs.readFileSync(dest, "utf8")).toContain("vegastack");
   });
 
   it("uninstall removes the file and is idempotent", async () => {

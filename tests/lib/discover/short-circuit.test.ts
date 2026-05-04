@@ -4,7 +4,7 @@
 // files[1].score_norm < 50), the pipeline returns files: [files[0]] only.
 // Override: if args.max is set explicitly, do NOT short-circuit.
 //
-// Tests use a synthetic bundle where we can control what gets scored.
+// Tests use a synthetic Registry pack where we can control what gets scored.
 
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -15,12 +15,12 @@ import { discover } from "../../../src/lib/discover/index.js";
 import { clearManifestCache } from "../../../src/lib/discover/manifest.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const MINI_FIXTURE = path.resolve(__dirname, "..", "..", "fixtures", "bundle-mini");
+const MINI_FIXTURE = path.resolve(__dirname, "..", "..", "fixtures", "registry-mini");
 
 // ─── helpers ─────────────────────────────────────────────────────────────
 
 /**
- * Create a synthetic bundle with one provider and a set of resources.
+ * Create a synthetic Registry pack with one provider and a set of resources.
  * Returns the tmp directory path.
  */
 function makeBundle(
@@ -31,7 +31,7 @@ function makeBundle(
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-sc-"));
   fs.writeFileSync(
     path.join(tmp, "MANIFEST.json"),
-    JSON.stringify({ bundle_version: "test", providers: [provider] }),
+    JSON.stringify({ registry_version: "test", providers: [provider] }),
   );
   const dir = path.join(tmp, provider);
   fs.mkdirSync(dir);
@@ -62,7 +62,7 @@ function makeBundle(
     JSON.stringify({
       manifest_schema_version: 1,
       provider,
-      bundle_version: "test",
+      registry_version: "test",
       resources: resourceEntries,
       data_sources: {},
       subcategory_useful: false,
@@ -94,7 +94,7 @@ describe("E3: auto short-circuit for high-confidence single-resource queries", (
   });
 
   it("exact-match query returns only 1 file when score gap is large (no --max)", async () => {
-    // Create a bundle with one exact-match resource and several weak alternatives.
+    // Create a Registry pack with one exact-match resource and several weak alternatives.
     // The exact resource name match scores +100 (exact_resource), which is much
     // higher than any partial matches — triggering the short-circuit.
     tmp = makeBundle(
@@ -148,7 +148,7 @@ describe("E3: auto short-circuit for high-confidence single-resource queries", (
   });
 
   it("balanced scores (no dominant top1) return more than 1 file", async () => {
-    // Use bundle-mini: query something that matches multiple resources roughly
+    // Use registry-mini: query something that matches multiple resources roughly
     // equally. "iam" matches iam_role, iam_openid_connect_provider — multiple
     // files with similar scores, so short-circuit should NOT fire.
     clearManifestCache();
@@ -186,12 +186,12 @@ describe("E3: auto short-circuit for high-confidence single-resource queries", (
     if (r.status !== "ok") return;
 
     // With max=10 explicitly, should return all matched files up to 10.
-    // The bundle-mini has 5 aws resources, so count >= 1.
+    // The registry-mini has 5 aws resources, so count >= 1.
     expect(r.files.length).toBeGreaterThan(0);
     expect(r.count).toBe(r.files.length);
 
     // The key assertion: when max is explicit, we should get MORE than 1 result
-    // (since "s3 bucket" also matches related resources in the mini bundle).
+    // (since "s3 bucket" also matches related resources in the mini Registry pack).
     // At minimum count should equal files.length (consistency).
     expect(r.count).toBe(r.files.length);
   });

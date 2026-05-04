@@ -15,10 +15,10 @@ This file is for code reviewers. Cite it in PR comments by section.
 
 ## Errors
 
-- **Throw `VegastackError`**, never plain `Error`, in command handlers. Each variant
+- **Throw `VegaStackError`**, never plain `Error`, in command handlers. Each variant
   has a stable exit code and a `hint()` so the user gets _problem → cause → fix_.
 - **Catch only what you understand.** `try/catch` should narrow to a specific
-  `VegastackError` subtype or rethrow.
+  `VegaStackError` subtype or rethrow.
 - **Never silently swallow errors.** If a path is "best-effort," call it out
   with `log.warn` and continue.
 
@@ -65,12 +65,12 @@ This file is for code reviewers. Cite it in PR comments by section.
 
 ## Helpers (rare; v0.2+)
 
-If you're adding a `+helper` command (e.g. a future `vegastack tf import`), it must:
+If you're adding a helper command, it must:
 
 - Compose at least two CLI calls or transform the response in a non-trivial way.
 - Do something that can't be expressed as a one-liner shell pipeline of
   existing commands. (If it can, document the pipeline instead.)
-- Have a unit test plus an integration test against the real bundle.
+- Have a unit test plus an integration test against real Registry data.
 
 Lifted from gws-cli's helper anti-pattern list:
 

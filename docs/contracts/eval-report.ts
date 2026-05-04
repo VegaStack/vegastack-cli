@@ -1,13 +1,13 @@
 // Canonical TypeScript contract for the eval-report JSON shape produced by
-// `evals/runner.ts` (E6) and consumed by `apps/dashboard/src/lib/parse-report.ts` (E8).
+// Produced by `evals/runner.ts` and consumed by `apps/dashboard/src/lib/parse-report.ts`.
 //
 // Closes punch-list #2 (A4 must-fix): the two consumers were defining
 // incompatible shapes; `parseReport()` returned null on every real run and the
-// dashboard silently fell back to its bundled fixture. This file is now THE
+// dashboard silently fell back to its Registry-provided fixture. This file is now THE
 // source of truth — both consumers import from here.
 //
 // One report per nightly run. Stored in R2 at:
-//   bundles.vegastack.com/evals/reports/<YYYY-MM-DD>.json
+//   cli-registry.vegastack.com/cli/evals/reports/<YYYY-MM-DD>.json
 //
 // Lift formula (per v1-plan §4):
 //   lift = (with_skill_pct - baseline_pct) / max(0.01, 1 - baseline_pct)
@@ -116,8 +116,8 @@ export interface RecipeHit {
 export interface EvalReport {
   schema_version: 1;
   date: string; // YYYY-MM-DD
-  bundle_version: string; // CalVer e.g. "2026.04.28"
-  cli_version: string; // semver e.g. "0.1.0"
+  registry_version: string; // CalVer e.g. "2026.04.28"
+  cli_version: string; // semver e.g. "0.1.11-next.0"
   model: string; // e.g. "claude-sonnet-4-7"
   prompt_count: number;
   /** Headline: fraction of remaining error closed. -1..1. */

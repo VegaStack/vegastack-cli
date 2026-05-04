@@ -1,0 +1,90 @@
+name: Managed Tools Weekly
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Mondays 09:15 UTC. The workflow opens a tested release PR only when
+    # upstream managed-tool pins changed.
+    - cron: "15 9 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: managed-tools-weekly
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Refresh managed tool pins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+        env:
+          VEGASTACK_SKIP_POSTINSTALL: "1"
+
+      - name: Discover latest upstream releases and update manifest
+        run: npm run managed-tools:update
+
+      - name: Stop when pins did not change
+        id: diff
+        run: |
+          if git diff --quiet -- src/lib/managed-tools-manifest.ts; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Add patch changeset
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          mkdir -p .changeset
+          cat > ".changeset/managed-tools-$(date +%Y%m%d).md" <<'EOF'
+          ---
+          "@vegastack/cli": patch
+          ---
+
+          Update VegaStack-managed tool pins for Gitleaks, cloudflared, and ripgrep.
+          EOF
+
+      - name: Format
+        if: steps.diff.outputs.changed == 'true'
+        run: npx prettier --write src/lib/managed-tools-manifest.ts
+
+      - name: Verify
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          npm run typecheck
+          npm run build
+          npm test
+          npm run managed-tools:smoke
+
+      - name: Create managed-tools update PR
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: bot/managed-tools-weekly
+          delete-branch: true
+          title: "chore: update managed tool pins"
+          commit-message: "chore: update managed tool pins"
+          body: |
+            Updates the generated managed tool manifest from upstream GitHub releases.
+
+            Verification run in this workflow:
+            - `npm run typecheck`
+            - `npm run build`
+            - `npm test`
+            - `npm run managed-tools:smoke`
+
+            Merging this PR feeds the normal Changesets release flow so the pinned
+            tool manifest ships with the next `@vegastack/cli` release.
+          labels: dependencies, managed-tools

@@ -3,7 +3,7 @@
 // Loads the canonical SKILL.md once and caches it per process. Renderers
 // consume the result. The on-disk source is the package-installed
 // `skills/vegastack/SKILL.md` (which itself is generated from
-// `bundle/skill-source/SKILL.md.template` by `scripts/generate-skill-from-bundle.ts`).
+// `registry/skill-source/SKILL.md.template` by `scripts/generate-skill-from-registry.ts`).
 
 import * as fs from "node:fs";
 import * as path from "node:path";

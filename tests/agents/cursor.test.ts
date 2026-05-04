@@ -51,7 +51,7 @@ describe("cursor installer", () => {
     // User edit is preserved.
     expect(fs.readFileSync(cursorRulePath(cwd), "utf8")).toBe("# user-edited\n");
     // Sanity: the original install did write the canonical rule.
-    expect(before).toContain("vegastack-terraform");
+    expect(before).toContain("# vegastack (Cursor rule)");
   });
 
   it("re-install with byte-identical content is idempotent (no warning, no --force needed)", () => {

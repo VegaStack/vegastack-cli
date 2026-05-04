@@ -1,6 +1,6 @@
 # Knowledge cards (v0.1)
 
-Knowledge cards are date-stamped, hand-curated markdown files capturing **recent changes** in any provider — renames, deprecations, pricing shifts, native features that obsolete previous patterns. They live at `bundle/knowledge/<id>.md` (one file per card; no per-provider subfolder — the `providers: []` frontmatter does the routing).
+Knowledge cards are date-stamped records capturing **recent changes** in any pack — renames, deprecations, pricing shifts, native features that obsolete previous patterns. In the Registry architecture they are generated into each installed pack under `index/knowledge.json`.
 
 ## Frontmatter schema
 
@@ -28,9 +28,9 @@ Body markdown — multi-paragraph allowed. Cite sources inline.
 
 `overrides_training: true` is the signal to the agent: this is a post-training-cutoff fact the maintainer explicitly verified. Trust the card and cite its `authoritative_source` in your reply.
 
-## Card inventory (16 cards in v0.1)
+## Terraform card inventory (16 cards in v0.1)
 
-E3 ships these. The IDs are stable; eval prompts (`evals/evals.json`) reference them by ID.
+The Terraform Registry pack includes these cards. The IDs are stable; eval prompts (`evals/evals.json`) reference them by ID.
 
 | id | one-line summary |
 |---|---|
@@ -41,7 +41,7 @@ E3 ships these. The IDs are stable; eval prompts (`evals/evals.json`) reference 
 | `aws-ebs-encryption-default` | `encrypted=false` is silently overridden when account-default EBS encryption is on. Triggers: `{tokens: [ebs,encryption]}`. |
 | `aws-iam-oidc-github` | AWS now trusts GitHub's OIDC JWT directly; `thumbprint_list` accepts a sentinel value. Triggers: `{tokens: [iam,oidc,github]}`. |
 | `cloudflare-resource-renames-v5` | CF provider v5 (Sep 2024) mass-renamed many resources (`cloudflare_record` → `cloudflare_dns_record`, etc). State migration required. Triggers: `{tokens: [cloudflare_record]}`, `{phrase: "cloudflare provider v5"}`. |
-| `cloudflare-empty-subcategory` | CF docs lack `subcategory:` frontmatter; the alias layer (`bundle/cloudflare/aliases.yaml`) is the only way NL queries hit. Triggers: `{phrase: "cloudflare subcategory"}`. |
+| `cloudflare-empty-subcategory` | CF docs lack `subcategory:` frontmatter; generated aliases are the reliable way NL queries hit. Triggers: `{phrase: "cloudflare subcategory"}`. |
 | `gcp-google-beta-split` | Some GCP features need the `google-beta` provider; others split between GA and beta variants of the same resource. Triggers: `{tokens: [google_beta]}`. |
 | `gcp-cloud-run-v2-default` | Use `google_cloud_run_v2_service` / `_job` for new work; v1 is in maintenance. Triggers: `{tokens: [cloud_run]}`. |
 | `azure-azurerm-v4-renames` | azurerm v4 (Aug 2024) tightened defaults and renamed some resources. Triggers: `{tokens: [azurerm,v4]}`. |
@@ -51,11 +51,11 @@ E3 ships these. The IDs are stable; eval prompts (`evals/evals.json`) reference 
 | `vault-kv-v2-mount` | KV v2 needs `data/` in the API path, not the resource path; common 404 source. Triggers: `{tokens: [vault_kv,v2]}`. |
 | `mongodb-atlas-cluster-vs-advanced` | `mongodbatlas_cluster` is deprecated; use `mongodbatlas_advanced_cluster`. Triggers: `{tokens: [mongodbatlas_cluster]}`. |
 
-E3 owns the bodies and the `authoritative_source` URLs for each card. The harness's `loadKnowledge()` (`src/lib/discover/knowledge.ts`) reads every `.md` under `bundle/knowledge/` and matches triggers against the query tokens.
+The Registry sync owns the bodies and `authoritative_source` URLs for each card. The CLI reads `index/knowledge.json` from installed Registry entries and matches trigger-like evidence against query tokens.
 
 ## How knowledge cards land in the response
 
-The `knowledge[]` array in `vegastack tf`'s response contains every card whose triggers fired, in order of trigger specificity (more-specific triggers — longer token lists, exact phrases — sort first). The `KnowledgeCard` shape mirrors the frontmatter plus a `body: string` field with the post-frontmatter markdown.
+The `knowledge[]` array in `vegastack ask`'s response contains every card whose triggers fired, in order of trigger specificity (more-specific triggers — longer token lists, exact phrases — sort first). The `KnowledgeCard` shape mirrors the frontmatter plus a `body: string` field with the post-frontmatter markdown.
 
 ## Authoring guidelines
 
@@ -66,4 +66,4 @@ The `knowledge[]` array in `vegastack tf`'s response contains every card whose t
 
 ## Freshness
 
-Cards age. The quarterly "review knowledge cards" checklist (`bundle/scripts/check-card-staleness.sh`, v0.3) flags cards older than 180 days for re-verification. Until then, the eval suite (archetype A12, "deprecation/recent-change") catches obvious staleness — if a card stops boosting eval lift, it's a candidate for retirement.
+Cards age. The eval suite (archetype A12, "deprecation/recent-change") catches obvious staleness — if a card stops boosting eval lift, it's a candidate for retirement.

@@ -1,13 +1,13 @@
 // Recipe loader.
 //
-// Reads `bundle/recipes/*.toml` files (parsed via `@iarna/toml` — already
+// Reads `Registry pack/recipes/*.toml` files (parsed via `@iarna/toml` — already
 // in deps). Filters by:
 //   1. `triggers[]` matched against current query/tokens (same semantics
 //      as knowledge cards).
 //   2. Optional `providers[]` overlap with the detected provider — when
 //      a provider is set, recipe.providers must contain it (or be empty).
 //
-// Empty `bundle/recipes/` is NOT an error — returns []. Closes F3, F4.
+// Empty `Registry pack/recipes/` is NOT an error — returns []. Closes F3, F4.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -24,14 +24,14 @@ interface RawRecipe {
 }
 
 export interface LoadRecipesArgs {
-  bundleRoot: string;
+  terraformRoot: string;
   tokens: string[];
   query: string;
   provider?: string;
 }
 
 export function loadRecipes(args: LoadRecipesArgs): RecipeMatch[] {
-  const dir = path.join(args.bundleRoot, "recipes");
+  const dir = path.join(args.terraformRoot, "recipes");
   const files = listTomlFiles(dir);
   if (files.length === 0) return [];
 

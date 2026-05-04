@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // vegastack — bin entry. Delegates to the compiled CLI in dist/cli.js.
 // If dist/ is missing (rare — published package always includes it), runs
-// install.js to recover. If the docs bundle is missing, the CLI itself
+// install.js to recover. If Registry data is missing, the CLI itself
 // surfaces the problem via `vegastack doctor`.
 
 import { existsSync } from "node:fs";

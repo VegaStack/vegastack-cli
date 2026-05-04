@@ -70,7 +70,7 @@ export const PROVIDER_CONFIDENCE = {
 export const AMBIGUOUS_GAP = 0.2;
 
 /** Phrase → canonical provider name. Multi-word phrases that aren't simply the
- *  canonical name. Augmented at runtime by the bundle-resolved provider list. */
+ *  canonical name. Augmented at runtime by the Registry pack-resolved provider list. */
 export const PROVIDER_SUBSTRING_PHRASES: readonly (readonly [string, string])[] = [
   ["mongodb atlas", "mongodb-atlas"],
   ["redis cloud", "redis-cloud"],
@@ -85,9 +85,9 @@ export const PROVIDER_CONTEXT_EXCLUSIONS: Readonly<Record<string, ReadonlySet<st
     vault: new Set(["tls"]),
   });
 
-/** Default (built-in) service alias → provider table. The bundle's per-provider
+/** Default (built-in) service alias → provider table. The Registry pack's per-provider
  *  MANIFEST.json `service_aliases` adds to this; this list keeps a minimal
- *  sensible default for cases where a fresh bundle hasn't filled them in yet. */
+ *  sensible default for cases where a fresh Registry pack hasn't filled them in yet. */
 export const DEFAULT_SERVICE_ALIASES: readonly (readonly [string, string])[] = [
   // AWS – the most common service shorthands
   ["ec2", "aws"],
@@ -186,7 +186,7 @@ export const NOISE: ReadonlySet<string> = new Set([
 ]);
 
 /** Token → expanded synonyms. Applied to every token after the noise filter.
- *  Kept compact; provider-specific expansions belong in the bundle. */
+ *  Kept compact; provider-specific expansions belong in the Registry pack. */
 export const TOKEN_EXPANSIONS: Readonly<Record<string, readonly string[]>> = Object.freeze({
   eip: ["eip", "elastic_ip"],
   elb: ["load_balancer", "alb", "nlb", "elb", "lb"],
@@ -270,14 +270,17 @@ export const TIER2_GREP_SKIP: ReadonlySet<string> = new Set([
 
 export const INTENT_KEYWORDS: ReadonlySet<string> = new Set([
   "migrate",
+  "migration",
   "upgrade",
-  "version",
+  "upgrading",
   "breaking",
+  "deprecated",
+  "deprecation",
   "move",
 ]);
 
 // ── Theoretical maximum raw score per provider — used to compute score_norm.
 // We cap at a generous upper bound so a perfect aws_s3_bucket primary+exact+
 // peers+args combo lands at score_norm ≈ 100. Tunable per-provider via
-// ProviderManifest.bundle_version-keyed override (future work).
+// ProviderManifest.registry_version-keyed override (future work).
 export const THEORETICAL_MAX_SCORE = 400;

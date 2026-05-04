@@ -1,14 +1,13 @@
 name: Release (Changesets)
 
-# Opens (or updates) the "Version Packages" PR. When that PR is merged,
-# scripts/tag-release.js cuts the git tag, and .github/workflows/release.yml
-# (the tag-triggered workflow) does the actual npm publish via OIDC trusted
-# publishing — there is NO NPM_TOKEN involved anywhere in this pipeline.
+# Opens or updates the "Version Packages" PR for main or develop. Public npm
+# publishing is handled by release.yml: develop prerelease tags publish to
+# npm dist-tag `next`; main stable tags publish to `latest`.
 
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, develop]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -16,12 +15,12 @@ concurrency:
 
 jobs:
   release:
-    name: Open Release PR or Cut Tag
+    name: Open Release PR
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
-      id-token: write   # reserved for the publish path triggered downstream
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,21 +43,13 @@ jobs:
           git config --global user.name  "vegastack-bot"
           git config --global user.email "bot@vegastack.com"
 
-      # On main: if there are pending changesets, open the Version Packages PR.
-      # If the Version Packages PR has just been merged, run `npm run tag-release`
-      # which writes expectedBundleSha/expectedBundleVersion into package.json,
-      # commits, and pushes a vX.Y.Z tag. The tag-push triggers .github/workflows/
-      # release.yml which performs the OIDC publish.
-      - name: Create Release Pull Request or Cut Tag
+      - name: Create Release Pull Request
         id: changesets
-        # Pinned to a commit SHA. Dependabot keeps this updated.
         uses: changesets/action@e87c8ed249971350e47fab7515075f44eb134e5b # v1.7.0
         with:
           version: npm run version-sync
-          publish: npm run tag-release
           commit: "chore: release versions"
           title: "chore: release versions"
           setupGitUser: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # No NPM_TOKEN. Publish is delegated to release.yml (OIDC trusted publishing).

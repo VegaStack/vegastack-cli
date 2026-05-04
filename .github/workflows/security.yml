@@ -2,9 +2,9 @@ name: Security
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   schedule:
     # Run weekly on Mondays at 06:00 UTC so we catch new CVEs against the same
     # locked deps even if no one has pushed.

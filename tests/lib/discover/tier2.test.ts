@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { _ripgrepCacheForTesting, clearCaches, tier2 } from "../../../src/lib/discover/tier2.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "bundle-mini");
+const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "registry-mini");
 const AWS_DIR = path.join(FIXTURE_ROOT, "aws");
 
 describe("tier2 — happy path", () => {

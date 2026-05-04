@@ -1,15 +1,15 @@
 # MANIFEST.json schema reference (v0.1)
 
-Two manifests ship with the bundle: a **root catalog** at `bundle/MANIFEST.json` and a **per-provider manifest** at `bundle/<provider>/MANIFEST.json`. The harness depends on both; the agent (you) queries them with `jq` for precise lookups.
+Terraform ships two manifest layers: a **Terraform pack manifest** at `cli/packs/terraform/MANIFEST.json` and **per-provider manifests** at `cli/packs/terraform/docs/<provider>/MANIFEST.json`. The harness depends on both; the agent queries them through `vegastack ask` / `vegastack search` rather than reading them directly in normal use.
 
 The schema is identified by `manifest_schema_version: 1` on every per-provider manifest. v0.1 restarts numbering from the Python prototype's v4 — there is no migration; this is the first public release.
 
-## Root catalog (`bundle/MANIFEST.json`)
+## Terraform pack manifest (`cli/packs/terraform/MANIFEST.json`)
 
 ```json
 {
   "format_version": 1,
-  "bundle_version": "2026.04.28",
+  "registry_version": "2026.04.28",
   "generated_at": "2026-04-28T17:50:07Z",
   "providers": [
     "1password", "ansible", "auth0", "aws", "azure", "clickhouse",
@@ -22,9 +22,9 @@ The schema is identified by `manifest_schema_version: 1` on every per-provider m
 }
 ```
 
-Use this to enumerate providers, confirm a provider exists, and pull `bundle_version` for `required_providers` pinning logic.
+Use this to enumerate providers, confirm a provider exists, and pull `registry_version` for `required_providers` pinning logic.
 
-## Per-provider manifest (`bundle/<provider>/MANIFEST.json`)
+## Per-provider manifest (`cli/packs/terraform/docs/<provider>/MANIFEST.json`)
 
 Top-level keys (v0.1 schema):
 
@@ -32,7 +32,7 @@ Top-level keys (v0.1 schema):
 |---|---|---|
 | `manifest_schema_version` | int | Always `1` in v0.1 |
 | `provider` | string | Provider name (e.g. `aws`) |
-| `bundle_version` | string | CalVer; mirrors root catalog |
+| `registry_version` | string | CalVer; mirrors root catalog |
 | `upstream_sha` | string | git SHA from upstream provider docs repo |
 | `synced_at` | ISO8601 string | When this manifest was built |
 | `resources` | dict | `{resource_name: ManifestResourceEntry}` for every resource |
@@ -133,37 +133,37 @@ Each resource carries `"schema_origin": "sdkv2" | "plugin_framework" | "mixed"`.
 
 ```bash
 # All required args of a resource (top level only — sub-block args are under .blocks.*)
-jq '.resources.aws_db_instance.required_args[].name' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
+jq '.resources.aws_db_instance.required_args[].name' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # All sub-block names for a resource
-jq '.resources.aws_db_instance.blocks | keys' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
+jq '.resources.aws_db_instance.blocks | keys' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # Required args inside a specific sub-block
-jq '.resources.aws_db_instance.blocks.s3_import.required_args[].name' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
+jq '.resources.aws_db_instance.blocks.s3_import.required_args[].name' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # Is this resource deprecated?
-jq '.resources.aws_s3_bucket | {dep: .deprecated, alt: .suggested_alternative}' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
+jq '.resources.aws_s3_bucket | {dep: .deprecated, alt: .suggested_alternative}' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # Files where a particular argument appears
-jq '.argument_index.health_check' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
+jq '.argument_index.health_check' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # Companion resources
-jq '.recommended_companions.aws_instance' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
+jq '.recommended_companions.aws_instance' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # What does this resource refer to in upstream HCL examples?
-jq '.hcl_references.aws_lb' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
+jq '.hcl_references.aws_lb' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # All resources in a subcategory
-jq '.subcategories["RDS (Relational Database)"]' "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
+jq '.subcategories["RDS (Relational Database)"]' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # All synthetic subcategories (filename prefixes — Cloudflare in particular)
-jq '.synthetic_subcategories | keys' "$VEGASTACK_BUNDLE/cloudflare/MANIFEST.json"
+jq '.synthetic_subcategories | keys' "~/.config/vegastack/registry/terraform/docs/cloudflare/MANIFEST.json"
 
 # Guide files with the "migrate" intent
 jq '.guides | to_entries | map(select(.value.intent_tags | contains(["migrate"])))' \
-   "$VEGASTACK_BUNDLE/aws/MANIFEST.json"
+   "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
 ```
 
 ## Validation
 
-Every manifest is checked by `bundle/scripts/validate_manifest.py` against `bundle/schema/manifest.schema.json` (JSON Schema Draft 7). 19 per-provider checks plus 10 root-catalog checks. Any failure during the daily sync demotes the provider to `failed`, and its docs are not pushed to R2 — so a manifest you read here is guaranteed structurally consistent.
+Every manifest is checked by the VegaStack Registry sync pipeline against the Registry schema before upload. Any failure during sync demotes the entry to `failed`, and its docs are not pushed to R2, so installed manifests are structurally consistent with the CLI contract.

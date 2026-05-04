@@ -1,9 +1,9 @@
 // Integration tests for the distinctive_tokens tiebreaker + concept-alias
-// pre-detection, using the REAL provider bundle (not mocks).
+// pre-detection, using the REAL provider Registry pack (not mocks).
 //
-// Purpose: catch real-world drift between the bundle's MANIFEST.json
+// Purpose: catch real-world drift between the Registry pack's MANIFEST.json
 // distinctive_tokens / aliases.yaml content and the TS classifier. If these
-// tests fail, either the bundle changed (bundle side) or the classifier
+// tests fail, either the Registry pack changed (Registry pack side) or the classifier
 // logic regressed (TS side) — the error message identifies which.
 //
 // S2 shipped distinctive_tokens per-provider and concept-alias phrases for
@@ -20,17 +20,21 @@ import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 import { discover } from "../../src/lib/discover/index.js";
 
-const BUNDLE_ROOT =
-  process.env.VEGASTACK_BUNDLE_DIR_TEST ??
-  "/Users/mk/projects/engg-vegastack-agent-tf-providers/terraform-providers";
+const TERRAFORM_DOCS_ROOT =
+  process.env.VEGASTACK_TERRAFORM_DOCS_DIR_TEST ??
+  path.join(
+    process.env.VEGASTACK_REGISTRY_DIR ?? "/Users/mk/projects/vegastack-cli-registry/cli/packs",
+    "terraform",
+    "docs",
+  );
 
-const HAVE_BUNDLE = fs.existsSync(path.join(BUNDLE_ROOT, "MANIFEST.json"));
+const HAVE_TERRAFORM_DOCS = fs.existsSync(path.join(TERRAFORM_DOCS_ROOT, "MANIFEST.json"));
 
 /** Helper: run discover() and return a summary. Throws a clear error when
  *  the result doesn't match expectations so CI output identifies the side
- *  (bundle vs TS classifier) that caused the failure. */
+ *  (Registry pack vs TS classifier) that caused the failure. */
 async function classify(query: string) {
-  const r = await discover({ query, root: BUNDLE_ROOT });
+  const r = await discover({ query, root: TERRAFORM_DOCS_ROOT });
   return {
     status: r.status,
     provider: r.status === "ok" ? r.provider : undefined,
@@ -41,8 +45,8 @@ async function classify(query: string) {
   };
 }
 
-describe.runIf(HAVE_BUNDLE)(
-  "classifier — distinctive_tokens + concept-alias integration (real bundle)",
+describe.runIf(HAVE_TERRAFORM_DOCS)(
+  "classifier — distinctive_tokens + concept-alias integration (real Registry pack)",
   () => {
     // ── MongoDB Atlas C6 failure cases ─────────────────────────────────────
 
@@ -53,7 +57,7 @@ describe.runIf(HAVE_BUNDLE)(
         r.provider,
         `Expected mongodb-atlas but got ${r.provider}. ` +
           `If this fails, either (a) 'atlas' was removed from DEFAULT_SERVICE_ALIASES ` +
-          `or (b) the bundle no longer ships 'tune Atlas cluster' in mongodb-atlas/aliases.yaml.`,
+          `or (b) the Registry pack no longer ships 'tune Atlas cluster' in mongodb-atlas/aliases.yaml.`,
       ).toBe("mongodb-atlas");
       expect(r.confidence).toBeGreaterThanOrEqual(0.6);
     });
@@ -165,7 +169,7 @@ describe.runIf(HAVE_BUNDLE)(
 
     // ── Manifest cache invalidation note ─────────────────────────────────
     // The TS harness uses mtime-based caching (src/lib/discover/manifest.ts).
-    // After a bundle update (e.g. vegastack refresh), the mtime changes and the
+    // After a registry update, the mtime changes and the
     // cache auto-invalidates on the next read — no manual cache busting needed.
     // The clearManifestCache() export is available for test isolation.
   },

@@ -2,7 +2,7 @@ name: Policy
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 permissions:
   contents: read
@@ -21,7 +21,7 @@ jobs:
         id: scope
         run: |
           # Files whose changes warrant a changeset.
-          PATTERNS='^(src/|npm/|skills/|recipes/|knowledge/|concept-aliases/|cursor-rule\.mdc|gemini-extension\.json|CONTEXT\.md|AGENTS\.md|\.claude-plugin/|package\.json)'
+          PATTERNS='^(src/|npm/|skills/|recipes/|personas/|cursor-rule\.mdc|gemini-extension\.json|CONTEXT\.md|AGENTS\.md|\.claude-plugin/|package\.json)'
 
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
@@ -57,5 +57,5 @@ jobs:
     steps:
       - name: Note
         run: |
-          echo "If your PR doesn't touch src/ npm/ skills/ recipes/ knowledge/ concept-aliases/, the changeset gate above is skipped automatically."
+          echo "If your PR doesn't touch src/ npm/ skills/ recipes/ personas/, the changeset gate above is skipped automatically."
           echo "If you genuinely need to bypass it for an exceptional case, add the 'no-changeset' label and re-run."

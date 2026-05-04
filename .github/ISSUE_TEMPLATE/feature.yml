@@ -37,7 +37,7 @@ body:
         - Tiny — single flag or message
         - Small — new option on an existing command
         - Medium — new command or per-agent installer
-        - Large — touches the harness / bundle format / CI
+        - Large — touches the harness / Registry pack format / CI
     validations:
       required: true
   - type: checkboxes

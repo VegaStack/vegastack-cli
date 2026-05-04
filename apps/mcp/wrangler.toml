@@ -6,12 +6,12 @@
 #     migration. Cloudflare recommends SQLite-backed DOs for all new namespaces.
 #   * compatibility_date pinned to today; nodejs_compat is required by the
 #     Agents SDK runtime.
-#   * R2 binding `BUNDLE` reads the canonical bundle published by E4 to
-#     `bundles.vegastack.com`. v0.1 reads MANIFEST.json files only — per-shard
+#   * R2 binding `REGISTRY` reads the canonical VegaStack Registry published to
+#     `cli-registry.vegastack.com`. v0.1 reads MANIFEST.json files only — per-shard
 #     fetching is deferred to v0.2.
 #   * KV binding `MCP_CACHE` caches manifest blobs (5-min TTL) to keep cold
 #     starts fast. Optional — the worker degrades gracefully without it.
-#   * Custom domain `mcp.vegastack.com` is documented but commented out; the
+#   * Custom domain `cli-mcp.vegastack.com` is documented but commented out; the
 #     user provisions DNS + the route after first deploy.
 
 name = "vegastack-mcp"
@@ -32,19 +32,19 @@ head_sampling_rate = 1.0
 # each MCP session gets its own isolated, hibernating instance.
 [[durable_objects.bindings]]
 name = "MCP_OBJECT"
-class_name = "VegastackMcp"
+class_name = "VegaStackMcp"
 
 [[migrations]]
 tag = "v1"
-new_sqlite_classes = ["VegastackMcp"]
+new_sqlite_classes = ["VegaStackMcp"]
 
-# ── R2: bundle reader ─────────────────────────────────────────────────────
-# E4 publishes the bundle to this bucket. The worker reads `bundle/MANIFEST.json`
-# (root) and `<provider>/MANIFEST.json` files on demand.
+# ── R2: Registry reader ─────────────────────────────────────────────────────
+# Registry publishing uploads `cli/` to this bucket. The worker reads
+# `cli/packs/terraform/MANIFEST.json` and per-provider manifests on demand.
 [[r2_buckets]]
-binding = "BUNDLE"
-bucket_name = "vegastack-agent-kb"
-preview_bucket_name = "vegastack-agent-kb-preview"
+binding = "REGISTRY"
+bucket_name = "vegastack-cli-registry"
+preview_bucket_name = "vegastack-cli-registry-preview"
 
 # ── KV: warm cache for manifest blobs (optional) ──────────────────────────
 # Create with: wrangler kv namespace create MCP_CACHE
@@ -55,12 +55,12 @@ preview_bucket_name = "vegastack-agent-kb-preview"
 
 # ── Public read-only configuration via vars ───────────────────────────────
 [vars]
-BUNDLE_PUBLIC_BASE_URL = "https://bundles.vegastack.com"
-BUNDLE_MANIFEST_KEY = "cli/bundle/MANIFEST.json"
+REGISTRY_PUBLIC_BASE_URL = "https://cli-registry.vegastack.com"
+REGISTRY_MANIFEST_KEY = "cli/packs/terraform/MANIFEST.json"
 CACHE_TTL_SECONDS = "300"
 LOG_LEVEL = "info"
 
 # ── Custom domain (provision after first deploy) ──────────────────────────
 # [[routes]]
-# pattern = "mcp.vegastack.com/*"
+# pattern = "cli-mcp.vegastack.com/*"
 # custom_domain = true

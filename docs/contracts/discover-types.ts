@@ -1,11 +1,8 @@
 // Canonical TypeScript contract for the v0.1 discover envelope.
-// This file is THE SOURCE OF TRUTH for the response shape produced by `vegastack tf` and consumed by:
-//   - the SKILL.md (E5)
-//   - the eval runner (E6)
-//   - the MCP server (E7)
-//   - the dashboard (E8)
-// E2 implements producer; E1 produces the manifest the producer consumes.
-// Update this file ONLY through synchronized PRs across teams.
+// This file is the source of truth for the response shape produced by
+// `vegastack ask --entry terraform --tf-provider <provider>` and consumed by
+// the shipped skill, eval runner, MCP server, and dashboard.
+// Update this file only when all consumers are updated in the same PR.
 
 export type DiscoverResult =
   | ({ status: "ok" } & DiscoverOk)
@@ -19,7 +16,7 @@ export interface DiscoverOk {
   tokens: string[];
   tiers_used: ("manifest" | "grep" | "alias" | "knowledge" | "recipe")[];
   schema_version: 1;                   // v0.1 — restart numbering, was Python's 4
-  bundle_version: string;              // CalVer e.g. "2026.04.28" — from bundle/MANIFEST.json
+  registry_version: string;              // CalVer e.g. "2026.04.28" — from Registry MANIFEST.json
   files: DiscoverFile[];
   knowledge: KnowledgeCard[];          // populated by loadKnowledge() — closes F3, F4
   recipes: RecipeMatch[];              // populated by loadRecipes() — closes F3, F4
@@ -28,15 +25,15 @@ export interface DiscoverOk {
   count: number;                       // = files.length
   intents?: IntentGroup[];             // unchanged; omitted when empty
   timings?: DiscoverTimings;           // when --debug
-  warnings?: string[];                 // soft-fail surfaces (e.g. "stale bundle (>14 days)")
+  warnings?: string[];                 // soft-fail surfaces (e.g. "stale Registry pack (>14 days)")
   /** When the discoverer auto-merged an ambiguous envelope (≤4 candidate
    *  providers), this is the sorted list of providers whose pipelines were
    *  fanned out and unioned. `provider` becomes the comma-joined list and
    *  `provider_confidence` is the mean of per-provider confidences.
-   *  Omitted for single-provider responses. Closes E9 §Recs #2 / A7. */
+   *  Omitted for single-provider responses. */
   merged_from_providers?: string[];
   /**
-   * E1: Present when --brief was passed. Consumers can branch on this field
+   * Present when --brief was passed. Consumers can branch on this field
    * without inspecting individual file objects.
    * Additive — existing callers that don't check this field are unaffected.
    */
@@ -54,21 +51,21 @@ export interface DiscoverAmbiguous {
 export interface DiscoverError {
   query: string;
   error: string;                       // human-readable
-  code: string;                        // machine-readable: BundleMissing | ProviderUnknown | etc.
+  code: string;                        // machine-readable: RegistryEntryMissing | ProviderUnknown | etc.
 }
 
 // ─── files[] ────────────────────────────────────────────────────────────
 
 export interface DiscoverFile {
-  path: string;                         // absolute path under bundle/<provider>/
+  path: string;                         // absolute path under the installed Terraform pack provider dir
   score: number;                        // raw, kept for --debug; do NOT depend on this
   score_norm: number;                   // 0..100, per-provider normalized — closes F7
   tier: "manifest" | "grep" | "manifest+grep";
   reasons: string[];                    // "kind:detail" e.g. "primary_resource:cloudflare_dns_record"
   manifest_entry: ManifestResourceEntry;// always present in enrich mode (default)
-  example_usage: string;                // always present in enrich mode (default); E2 truncates by default
+  example_usage: string;                // always present in enrich mode (default); truncated unless --full-examples
   /**
-   * E1: Only present in --brief mode. The resource or data_source name
+   * Only present in --brief mode. The resource or data_source name
    * (e.g. "aws_s3_bucket") derived from the manifest lookup. Agents can use
    * this directly without deriving the name from the path.
    * Additive — omitted in default (non-brief) mode.

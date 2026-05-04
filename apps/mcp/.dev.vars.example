@@ -7,8 +7,8 @@
 # Copy to `.dev.vars` (NOT checked in) before `wrangler dev` if you need to
 # override anything.
 
-# Override the public CDN bundle base URL (defaults to vars.BUNDLE_PUBLIC_BASE_URL)
-# BUNDLE_PUBLIC_BASE_URL=https://bundles-staging.vegastack.com
+# Override the public CDN Registry pack base URL (defaults to vars.REGISTRY_PUBLIC_BASE_URL)
+# REGISTRY_PUBLIC_BASE_URL=https://cli-registry.vegastack.com
 
 # Override the cache TTL while iterating
 # CACHE_TTL_SECONDS=60

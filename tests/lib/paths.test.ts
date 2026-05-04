@@ -1,18 +1,25 @@
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
-  bundleDir,
-  bundleManifestPath,
-  bundleVersionFile,
   claudePluginDir,
+  cloudflaredMetadataPath,
+  cloudflaredToolDir,
   codexAgentsMdPath,
   codexSkillDir,
   cursorRulePath,
   geminiContextPath,
   geminiExtensionPath,
+  sharedInstructionsDir,
+  projectInstructionsDir,
+  projectLockPath,
+  projectManifestPath,
+  projectVegaStackDir,
+  registryCacheRoot,
+  terraformEntryDocsDir,
+  terraformEntryManifestPath,
 } from "../../src/lib/paths.js";
 
-const ENV_KEY = "VEGASTACK_BUNDLE_DIR";
+const ENV_KEY = "VEGASTACK_REGISTRY_DIR";
 let originalEnv: string | undefined;
 
 beforeEach(() => {
@@ -24,24 +31,45 @@ afterEach(() => {
   else delete process.env[ENV_KEY];
 });
 
-describe("bundleDir", () => {
-  it("defaults to ~/.config/vegastack/bundle", () => {
-    const dir = bundleDir();
-    expect(dir).toMatch(/[\\/]\.config[\\/]vegastack[\\/]bundle$/);
+describe("terraformEntryDocsDir", () => {
+  it("defaults to Terraform docs inside the registry cache", () => {
+    const dir = terraformEntryDocsDir();
+    expect(dir).toMatch(/[\\/]\.config[\\/]vegastack[\\/]registry[\\/]terraform[\\/]docs$/);
   });
 
-  it("respects VEGASTACK_BUNDLE_DIR override", () => {
-    process.env[ENV_KEY] = "/tmp/custom-bundle";
-    expect(bundleDir()).toBe("/tmp/custom-bundle");
+  it("follows VEGASTACK_REGISTRY_DIR", () => {
+    process.env[ENV_KEY] = "/tmp/custom-registry";
+    expect(terraformEntryDocsDir()).toBe(path.join("/tmp/custom-registry", "terraform", "docs"));
   });
 });
 
-describe("bundle paths", () => {
-  it("manifest path lives inside bundle dir", () => {
-    expect(bundleManifestPath()).toBe(path.join(bundleDir(), "MANIFEST.json"));
+describe("Terraform entry paths", () => {
+  it("manifest path lives inside Registry pack dir", () => {
+    expect(terraformEntryManifestPath()).toBe(path.join(terraformEntryDocsDir(), "MANIFEST.json"));
   });
-  it("version file lives inside bundle dir", () => {
-    expect(bundleVersionFile()).toBe(path.join(bundleDir(), ".version"));
+});
+
+describe("project harness paths", () => {
+  it("registry cache defaults to ~/.config/vegastack/registry", () => {
+    expect(registryCacheRoot()).toMatch(/[\\/]\.config[\\/]vegastack[\\/]registry$/);
+  });
+
+  it("project state lives under .vegastack", () => {
+    const cwd = "/tmp/proj";
+    expect(projectVegaStackDir(cwd)).toBe(path.join(cwd, ".vegastack"));
+    expect(projectManifestPath(cwd)).toBe(path.join(cwd, ".vegastack", "project.json"));
+    expect(projectLockPath(cwd)).toBe(path.join(cwd, ".vegastack", "vegastack-lock.json"));
+    expect(projectInstructionsDir(cwd)).toBe(path.join(cwd, ".vegastack", "instructions"));
+    expect(sharedInstructionsDir()).toMatch(/[\\/]\.config[\\/]vegastack[\\/]instructions$/);
+  });
+
+  it("managed cloudflared lives in the shared tools cache", () => {
+    expect(cloudflaredToolDir("2026.3.0")).toMatch(
+      /[\\/]\.config[\\/]vegastack[\\/]tools[\\/]cloudflared[\\/]2026\.3\.0$/,
+    );
+    expect(cloudflaredMetadataPath()).toMatch(
+      /[\\/]\.config[\\/]vegastack[\\/]tools[\\/]cloudflared[\\/]current\.json$/,
+    );
   });
 });
 

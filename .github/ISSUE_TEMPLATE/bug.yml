@@ -37,9 +37,9 @@ body:
       label: Reproduction steps
       description: |
         Minimal command sequence that reproduces the issue. Include the exact `vegastack …` invocation
-        and any relevant environment variables (`VEGASTACK_BUNDLE_URL`, `HTTP_PROXY`, etc.).
+        and any relevant environment variables (`VEGASTACK_REGISTRY_DIR`, etc.).
       placeholder: |
-        1. `npm i -g @vegastack/cli@0.1.0`
+        1. `npm i -g @vegastack/cli`
         2. `vegastack skills install --agent cursor --scope project`
         3. ...
     validations:
@@ -48,7 +48,7 @@ body:
     id: cli-version
     attributes:
       label: CLI version
-      placeholder: e.g. 0.1.0 (or `vegastack --version`)
+      placeholder: e.g. 0.1.11-next.0 (or `vegastack --version`)
     validations:
       required: true
   - type: dropdown

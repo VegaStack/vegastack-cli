@@ -1,9 +1,9 @@
 {
   "mcpServers": {
-    "vegastack-tf": {
+    "vegastack": {
       "type": "http",
       "url": "https://mcp.vegastack.com/mcp",
-      "description": "Vegastack remote MCP server (Cloudflare Workers). Mirrors `vegastack tf` over MCP for agents that prefer MCP tools over Bash. Defaults to the modern StreamableHTTP transport at /mcp; `apps/mcp/` also serves the legacy /sse endpoint for clients that still require it (notably Claude Desktop pre-Apr-2026)."
+      "description": "VegaStack remote MCP server (Cloudflare Workers). Mirrors the VegaStack Registry harness over MCP for agents that prefer MCP tools over Bash. Defaults to the modern StreamableHTTP transport at /mcp; `apps/mcp/` also serves the legacy /sse endpoint for clients that still require it."
     }
   }
 }

@@ -13,9 +13,9 @@
 import { describe, expect, it } from "vitest";
 import { detectMultiProviderPhrasing } from "../../../src/lib/discover/index.js";
 
-// A representative list of canonical providers from the bundle. Tests use
+// A representative list of canonical providers from the Registry pack. Tests use
 // this same set so resolution is deterministic and doesn't depend on the
-// installed bundle.
+// installed Registry pack.
 const KNOWN_PROVIDERS: readonly string[] = [
   "aws",
   "azure",

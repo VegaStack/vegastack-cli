@@ -9,7 +9,6 @@
 # Security-sensitive paths require an additional security review.
 /SECURITY.md                            @vegastack/engineering @vegastack/security
 /npm/install.js                         @vegastack/engineering @vegastack/security
-/npm/safe-tar.js                        @vegastack/engineering @vegastack/security
 /src/lib/validate.ts                    @vegastack/engineering @vegastack/security
 /src/lib/errors.ts                      @vegastack/engineering @vegastack/security
 

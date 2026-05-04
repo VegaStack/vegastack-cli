@@ -8,7 +8,7 @@ import tailwindcss from "@tailwindcss/vite";
 // support (NOT Pages). Tailwind v4 wired via the Vite plugin per the
 // Tailwind v4 + Astro guide (the @astrojs/tailwind integration is deprecated).
 export default defineConfig({
-  site: "https://evals.vegastack.com",
+  site: "https://cli-evals.vegastack.com",
   output: "static",
   adapter: cloudflare({
     // Use the modern Workers static-assets binding — no Pages.

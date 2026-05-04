@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://vegastack.com/schemas/manifest-v1.json",
-  "title": "Vegastack provider MANIFEST.json (v1)",
+  "title": "VegaStack provider MANIFEST.json (v1)",
   "type": "object",
   "required": [
     "manifest_schema_version",
     "provider",
-    "bundle_version",
+    "registry_version",
     "synced_at",
     "resources",
     "data_sources"
@@ -19,7 +19,7 @@
       "description": "Canonical provider name, e.g. aws, cloudflare, mongodb-atlas",
       "pattern": "^[a-z0-9][a-z0-9-]*$"
     },
-    "bundle_version": {
+    "registry_version": {
       "type": "string",
       "description": "CalVer YYYY.MM.DD[.N]",
       "pattern": "^[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}(\\.[0-9]+)?$"

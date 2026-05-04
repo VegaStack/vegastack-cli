@@ -1,6 +1,6 @@
 // Integration test: shell out to the built CLI and verify help/version output.
 // This makes sure cli.ts wires up correctly end-to-end without depending on
-// the docs bundle.
+// the docs Registry pack.
 
 import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
@@ -29,17 +29,44 @@ describe("vegastack CLI help / version", () => {
   it("`vegastack --help` lists every command", () => {
     const r = spawnSync("node", [CLI, "--help"], { encoding: "utf8" });
     expect(r.status).toBe(0);
-    for (const cmd of ["doctor", "install", "refresh", "tf", "skills"]) {
+    for (const cmd of [
+      "init",
+      "ask",
+      "search",
+      "doctor",
+      "registry",
+      "skills",
+      "secrets",
+      "preview",
+    ]) {
       expect(r.stdout).toContain(cmd);
     }
+    expect(r.stdout).not.toMatch(/\n {2}install \[options\]/);
+    expect(r.stdout).not.toMatch(/\n {2}refresh \[options\]/);
   });
 
   it("`vegastack --help` documents env vars and exit codes", () => {
     const r = spawnSync("node", [CLI, "--help"], { encoding: "utf8" });
-    expect(r.stdout).toContain("VEGASTACK_BUNDLE_DIR");
-    expect(r.stdout).toContain("HTTPS_PROXY");
+    expect(r.stdout).toContain("VEGASTACK_REGISTRY_DIR");
+    expect(r.stdout).toContain("VEGASTACK_CLOUDFLARED_BIN");
     expect(r.stdout).toContain("NO_COLOR");
     expect(r.stdout).toMatch(/Exit codes/);
+  });
+
+  it("`vegastack preview --help` discloses Cloudflare Tunnel usage", () => {
+    const r = spawnSync("node", [CLI, "preview", "--help"], { encoding: "utf8" });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("Cloudflare Quick Tunnels");
+    expect(r.stdout).toContain("cloudflare/cloudflared");
+    expect(r.stdout).toContain("--hostname");
+  });
+
+  it("`vegastack registry --help` lists registry actions", () => {
+    const r = spawnSync("node", [CLI, "registry", "--help"], { encoding: "utf8" });
+    expect(r.stdout).toContain("list");
+    expect(r.stdout).toContain("update");
+    expect(r.stdout).toContain("status");
+    expect(r.stdout).not.toMatch(/\n\s+install\b/);
   });
 
   it("`vegastack skills --help` lists the three actions", () => {
@@ -57,9 +84,13 @@ describe("vegastack CLI help / version", () => {
     expect(`${r.stdout}${r.stderr}`).toMatch(/global.*project/);
   });
 
-  it("`vegastack tf` with empty query returns ValidationError exit code", () => {
-    const r = spawnSync("node", [CLI, "tf", ""], { encoding: "utf8" });
-    expect(r.status).toBe(10); // ValidationError
-    expect(`${r.stdout}${r.stderr}`).toMatch(/usage:.*vegastack tf/);
+  it("does not expose legacy Terraform shortcuts", () => {
+    const help = spawnSync("node", [CLI, "--help"], { encoding: "utf8" });
+    expect(help.stdout).not.toMatch(/\n\s+terraform\b/);
+    expect(help.stdout).not.toMatch(/\n\s+tf\b/);
+
+    const r = spawnSync("node", [CLI, "terraform", ""], { encoding: "utf8" });
+    expect(r.status).not.toBe(0);
+    expect(`${r.stdout}${r.stderr}`).toMatch(/unknown command/i);
   });
 });

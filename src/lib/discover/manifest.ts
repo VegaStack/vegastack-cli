@@ -1,11 +1,11 @@
 // Per-provider MANIFEST.json reader with mtime-based caching. Also loads
-// the bundle root MANIFEST.json (for the canonical provider list and the
-// CalVer bundle_version). Closes F20.
+// the Terraform root MANIFEST.json (for the canonical provider list and the
+// CalVer registry_version). Closes F20.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { VegastackError } from "../errors.js";
-import type { BundleRootManifest, ProviderManifest } from "./types.js";
+import { VegaStackError } from "../errors.js";
+import type { TerraformRootManifest, ProviderManifest } from "./types.js";
 
 interface CacheEntry {
   mtimeMs: number;
@@ -13,7 +13,7 @@ interface CacheEntry {
 }
 
 const CACHE = new Map<string, CacheEntry>();
-const ROOT_CACHE = new Map<string, { mtimeMs: number; manifest: BundleRootManifest }>();
+const ROOT_CACHE = new Map<string, { mtimeMs: number; manifest: TerraformRootManifest }>();
 
 /** Load and parse a provider's MANIFEST.json (cached by mtime). */
 export function loadManifest(providerDir: string): ProviderManifest {
@@ -22,7 +22,7 @@ export function loadManifest(providerDir: string): ProviderManifest {
   try {
     stat = fs.statSync(manifestPath);
   } catch {
-    throw new VegastackError("BundleCorrupt", `provider manifest missing: ${manifestPath}`, {
+    throw new VegaStackError("ArtifactCorrupt", `provider manifest missing: ${manifestPath}`, {
       context: { providerDir, manifestPath },
     });
   }
@@ -34,8 +34,8 @@ export function loadManifest(providerDir: string): ProviderManifest {
   try {
     raw = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   } catch (e) {
-    throw new VegastackError(
-      "BundleCorrupt",
+    throw new VegaStackError(
+      "ArtifactCorrupt",
       `provider manifest is not valid JSON: ${manifestPath}`,
       {
         cause: e,
@@ -44,8 +44,8 @@ export function loadManifest(providerDir: string): ProviderManifest {
     );
   }
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
-    throw new VegastackError(
-      "BundleCorrupt",
+    throw new VegaStackError(
+      "ArtifactCorrupt",
       `provider manifest is not a JSON object: ${manifestPath}`,
     );
   }
@@ -55,15 +55,16 @@ export function loadManifest(providerDir: string): ProviderManifest {
   return manifest;
 }
 
-/** Load the bundle root MANIFEST.json (cached by mtime). Returns an empty
+/** Load the Terraform root MANIFEST.json (cached by mtime). Returns an empty
  *  shell when the file is absent so callers can degrade gracefully. */
-export function loadBundleRootManifest(bundleRoot: string): BundleRootManifest {
-  const manifestPath = path.join(bundleRoot, "MANIFEST.json");
+export function loadTerraformRootManifest(terraformRoot: string): TerraformRootManifest {
+  const manifestPath = path.join(terraformRoot, "MANIFEST.json");
+  const parentManifestPath = path.join(path.dirname(terraformRoot), "MANIFEST.json");
   let stat: fs.Stats;
   try {
     stat = fs.statSync(manifestPath);
   } catch {
-    return {};
+    return loadPackManifestVersionFallback(parentManifestPath);
   }
   const cached = ROOT_CACHE.get(manifestPath);
   if (cached && cached.mtimeMs === stat.mtimeMs) return cached.manifest;
@@ -74,15 +75,32 @@ export function loadBundleRootManifest(bundleRoot: string): BundleRootManifest {
     return {};
   }
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return {};
-  const manifest = raw as BundleRootManifest;
+  const manifest = {
+    ...loadPackManifestVersionFallback(parentManifestPath),
+    ...(raw as TerraformRootManifest),
+  };
   ROOT_CACHE.set(manifestPath, { mtimeMs: stat.mtimeMs, manifest });
   return manifest;
 }
 
-/** Resolve the canonical provider list from the bundle root MANIFEST.json.
+function loadPackManifestVersionFallback(manifestPath: string): TerraformRootManifest {
+  try {
+    const raw = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as {
+      registry_version?: string;
+      pack_version?: string;
+      version?: string;
+    };
+    const version = raw.registry_version ?? raw.pack_version ?? raw.version;
+    return version ? { registry_version: version, pack_version: version } : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Resolve the canonical provider list from the Terraform root MANIFEST.json.
  *  Closes F20 — the CLI no longer hard-codes 31 providers. */
-export function resolveCanonicalProviders(bundleRoot: string): string[] {
-  const root = loadBundleRootManifest(bundleRoot);
+export function resolveCanonicalProviders(terraformRoot: string): string[] {
+  const root = loadTerraformRootManifest(terraformRoot);
   if (Array.isArray(root.providers)) return [...root.providers];
   if (root.providers !== undefined && typeof root.providers === "object") {
     return Object.keys(root.providers).sort();
@@ -96,9 +114,9 @@ export function clearManifestCache(): void {
   ROOT_CACHE.clear();
 }
 
-/** Resolve the on-disk directory for a provider inside a bundle root. */
-export function providerDir(bundleRoot: string, provider: string): string {
-  return path.join(bundleRoot, provider);
+/** Resolve the on-disk directory for a provider inside a Terraform root. */
+export function providerDir(terraformRoot: string, provider: string): string {
+  return path.join(terraformRoot, provider);
 }
 
 /** Distinctive-token vocabulary for one provider. Prefers the explicit
@@ -109,7 +127,7 @@ export function providerDir(bundleRoot: string, provider: string): string {
 export function distinctiveTokensFor(manifest: ProviderManifest, provider: string): Set<string> {
   const out = new Set<string>();
 
-  // Explicit field wins when shipped by E1 / a future bundle build.
+  // Explicit field wins when shipped by E1 / a future Registry pack build.
   if (Array.isArray(manifest.distinctive_tokens)) {
     for (const t of manifest.distinctive_tokens) {
       if (typeof t === "string" && t.length >= 2) out.add(t.toLowerCase());

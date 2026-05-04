@@ -2,7 +2,7 @@
 // Honors a process-wide quiet mode (set via setQuiet(true) from `vegastack ... -q`).
 
 import kleur from "kleur";
-import { VegastackError, asVegastackError } from "./errors.js";
+import { VegaStackError, asVegaStackError } from "./errors.js";
 
 const isTTY = process.stderr.isTTY && !process.env.NO_COLOR;
 if (!isTTY) kleur.enabled = false;
@@ -48,14 +48,14 @@ export const log = {
 };
 
 /**
- * Render a thrown error to the user. In --json mode, emits the VegastackError's
+ * Render a thrown error to the user. In --json mode, emits the VegaStackError's
  * `toJSON()` shape on stdout. Otherwise prints a 3-line block on stderr:
  * problem → cause (if any) → hint.
  *
- * Returns the VegastackError's exitCode, which the caller passes to process.exit.
+ * Returns the VegaStackError's exitCode, which the caller passes to process.exit.
  */
 export function printError(e: unknown): number {
-  const ve = e instanceof VegastackError ? e : asVegastackError(e);
+  const ve = e instanceof VegaStackError ? e : asVegaStackError(e);
 
   if (JSON_MODE) {
     process.stdout.write(`${JSON.stringify(ve.toJSON(), null, 2)}\n`);

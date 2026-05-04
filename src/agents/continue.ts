@@ -3,8 +3,8 @@
 // Continue.dev renderer.
 //
 // Strategy: write a single YAML file at
-// `~/.continue/mcpServers/vegastack-tf.yaml` (or
-// `<cwd>/.continue/mcpServers/vegastack-tf.yaml` for project scope).
+// `~/.continue/mcpServers/vegastack.yaml` (or
+// `<cwd>/.continue/mcpServers/vegastack.yaml` for project scope).
 // Continue auto-discovers every YAML under that directory and merges the
 // `mcpServers` array (docs.continue.dev/customize/deep-dives/mcp, Apr 2026).
 //
@@ -37,17 +37,16 @@ function renderYaml(mcpUrl: string): string {
   return [
     "# Managed by @vegastack/cli — do not hand-edit.",
     "# Re-run `vegastack skills install --agent continue` to regenerate.",
-    "name: vegastack-tf",
+    "name: vegastack",
     "version: 0.1.0",
     "schema: v1",
     "mcpServers:",
-    "  - name: vegastack-tf",
+    "  - name: vegastack",
     `    url: ${mcpUrl}`,
     `    transport: ${transport}`,
     "    description: |",
-    "      Vegastack Terraform docs harness. Mirrors `vegastack tf` over MCP for",
-    "      Continue. Returns the same four-channel envelope (knowledge,",
-    "      recipes, files, concept_aliases_used) the CLI does.",
+    "      VegaStack Registry docs harness. Mirrors `vegastack ask` over MCP for",
+    "      Continue. Returns Registry-grounded citations from the local cache.",
     "",
   ].join("\n");
 }

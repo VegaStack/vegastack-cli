@@ -20,7 +20,7 @@ import {
 } from "../../../src/lib/discover/scoring.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "bundle-mini");
+const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "registry-mini");
 const AWS_DIR = path.join(FIXTURE_ROOT, "aws");
 const CF_DIR = path.join(FIXTURE_ROOT, "cloudflare");
 

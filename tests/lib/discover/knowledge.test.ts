@@ -1,4 +1,4 @@
-// Knowledge-card loader unit tests against the bundle-mini fixture.
+// Knowledge-card loader unit tests against the registry-mini fixture.
 
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -8,12 +8,12 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadKnowledge } from "../../../src/lib/discover/knowledge.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "bundle-mini");
+const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "registry-mini");
 
 describe("loadKnowledge — happy path", () => {
   it("parses frontmatter and returns cards matching a token trigger", () => {
     const cards = loadKnowledge({
-      bundleRoot: FIXTURE_ROOT,
+      terraformRoot: FIXTURE_ROOT,
       tokens: ["s3", "backend", "lock"],
       query: "s3 backend lock",
       provider: "aws",
@@ -29,7 +29,7 @@ describe("loadKnowledge — happy path", () => {
 
   it("phrase-trigger matches case-insensitively against the original query", () => {
     const cards = loadKnowledge({
-      bundleRoot: FIXTURE_ROOT,
+      terraformRoot: FIXTURE_ROOT,
       tokens: [],
       query: "Do I need dynamodb FOR terraform state lock",
       provider: "aws",
@@ -39,7 +39,7 @@ describe("loadKnowledge — happy path", () => {
 
   it("returns [] when no triggers match", () => {
     const cards = loadKnowledge({
-      bundleRoot: FIXTURE_ROOT,
+      terraformRoot: FIXTURE_ROOT,
       tokens: ["unrelated"],
       query: "completely different query",
       provider: "aws",
@@ -49,7 +49,7 @@ describe("loadKnowledge — happy path", () => {
 
   it("filters by provider", () => {
     const cards = loadKnowledge({
-      bundleRoot: FIXTURE_ROOT,
+      terraformRoot: FIXTURE_ROOT,
       tokens: ["s3", "backend", "lock"],
       query: "s3 backend lock",
       provider: "cloudflare",
@@ -60,7 +60,7 @@ describe("loadKnowledge — happy path", () => {
 
   it("returns deterministically sorted cards", () => {
     const cards = loadKnowledge({
-      bundleRoot: FIXTURE_ROOT,
+      terraformRoot: FIXTURE_ROOT,
       tokens: ["s3", "backend", "lock"],
       query: "s3 backend lock",
       provider: "aws",
@@ -78,20 +78,20 @@ describe("loadKnowledge — empty / missing dirs", () => {
   afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));
 
   it("missing knowledge/ dir → []", () => {
-    const cards = loadKnowledge({ bundleRoot: tmp, tokens: ["s3"], query: "s3" });
+    const cards = loadKnowledge({ terraformRoot: tmp, tokens: ["s3"], query: "s3" });
     expect(cards).toEqual([]);
   });
 
   it("empty knowledge/ dir → []", () => {
     fs.mkdirSync(path.join(tmp, "knowledge"));
-    const cards = loadKnowledge({ bundleRoot: tmp, tokens: ["s3"], query: "s3" });
+    const cards = loadKnowledge({ terraformRoot: tmp, tokens: ["s3"], query: "s3" });
     expect(cards).toEqual([]);
   });
 
   it("malformed frontmatter is skipped (no throw)", () => {
     fs.mkdirSync(path.join(tmp, "knowledge"));
     fs.writeFileSync(path.join(tmp, "knowledge", "bad.md"), "no frontmatter here");
-    const cards = loadKnowledge({ bundleRoot: tmp, tokens: [], query: "" });
+    const cards = loadKnowledge({ terraformRoot: tmp, tokens: [], query: "" });
     expect(cards).toEqual([]);
   });
 });

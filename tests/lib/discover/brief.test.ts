@@ -13,7 +13,7 @@ import { loadManifest } from "../../../src/lib/discover/manifest.js";
 import type { RankedFile } from "../../../src/lib/discover/merge.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "bundle-mini");
+const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "registry-mini");
 const AWS_DIR = path.join(FIXTURE_ROOT, "aws");
 
 function fakeRanked(file: string, score = 200): RankedFile {
@@ -127,8 +127,8 @@ describe("enrichFiles — brief mode (E1)", () => {
     const briefSize = JSON.stringify(briefFiles).length;
 
     // Brief must be strictly smaller than full — validates the stripping works.
-    // The bundle-mini fixture has small manifest entries; real-world savings are
-    // ~80%. The threshold of 75% is achievable with both mini and real bundles.
+    // The registry-mini fixture has small manifest entries; real-world savings are
+    // ~80%. The threshold of 75% is achievable with both mini and real Registry packs.
     expect(briefSize).toBeLessThan(fullSize);
     expect(briefSize).toBeLessThanOrEqual(fullSize * 0.75);
   });

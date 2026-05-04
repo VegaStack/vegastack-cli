@@ -1,6 +1,6 @@
-// Errors as types. Every error a command can produce is a VegastackError variant
+// Errors as types. Every error a command can produce is a VegaStackError variant
 // with a stable exit code and a human-readable hint(). Calling code throws a
-// VegastackError; the top-level handler in cli.ts catches it and renders.
+// VegaStackError; the top-level handler in cli.ts catches it and renders.
 //
 // Why discriminated union over class hierarchy:
 //   - `kind` is serializable for `--json` mode and tests.
@@ -9,10 +9,10 @@
 //   - The hint() table lives next to the variants, so adding a new error
 //     means adding both the data and the recovery message together.
 
-export type VegastackErrorKind =
-  | "BundleMissing"
-  | "BundleCorrupt"
-  | "BundleVersionMismatch"
+export type VegaStackErrorKind =
+  | "RegistryEntryMissing"
+  | "ArtifactCorrupt"
+  | "RegistryVersionMismatch"
   | "NetworkError"
   | "ChecksumMismatch"
   | "AgentInstallError"
@@ -23,10 +23,10 @@ export type VegastackErrorKind =
   | "Unknown";
 
 /** Stable exit-code mapping. Documented; do not reorder. */
-export const EXIT_CODES: Readonly<Record<VegastackErrorKind, number>> = Object.freeze({
-  BundleMissing: 4,
-  BundleCorrupt: 5,
-  BundleVersionMismatch: 6,
+export const EXIT_CODES: Readonly<Record<VegaStackErrorKind, number>> = Object.freeze({
+  RegistryEntryMissing: 4,
+  ArtifactCorrupt: 5,
+  RegistryVersionMismatch: 6,
   NetworkError: 7,
   ChecksumMismatch: 8,
   AgentInstallError: 9,
@@ -37,8 +37,8 @@ export const EXIT_CODES: Readonly<Record<VegastackErrorKind, number>> = Object.f
   Unknown: 1,
 });
 
-export interface VegastackErrorJson {
-  kind: VegastackErrorKind;
+export interface VegaStackErrorJson {
+  kind: VegaStackErrorKind;
   message: string;
   exitCode: number;
   hint: string;
@@ -47,18 +47,18 @@ export interface VegastackErrorJson {
 }
 
 /** Single concrete error type. We use a class so `instanceof` works at the boundary. */
-export class VegastackError extends Error {
-  readonly kind: VegastackErrorKind;
+export class VegaStackError extends Error {
+  readonly kind: VegaStackErrorKind;
   readonly exitCode: number;
   readonly context: Readonly<Record<string, unknown>>;
 
   constructor(
-    kind: VegastackErrorKind,
+    kind: VegaStackErrorKind,
     message: string,
     options?: { cause?: unknown; context?: Record<string, unknown> },
   ) {
     super(message);
-    this.name = "VegastackError";
+    this.name = "VegaStackError";
     this.kind = kind;
     this.exitCode = EXIT_CODES[kind];
     this.context = Object.freeze({ ...(options?.context ?? {}) });
@@ -73,8 +73,8 @@ export class VegastackError extends Error {
     return hintFor(this.kind, this.context);
   }
 
-  toJSON(): VegastackErrorJson {
-    const out: VegastackErrorJson = {
+  toJSON(): VegaStackErrorJson {
+    const out: VegaStackErrorJson = {
       kind: this.kind,
       message: this.message,
       exitCode: this.exitCode,
@@ -87,40 +87,40 @@ export class VegastackError extends Error {
   }
 }
 
-/** Wrap an unknown thrown value into a VegastackError. */
-export function asVegastackError(e: unknown): VegastackError {
-  if (e instanceof VegastackError) return e;
+/** Wrap an unknown thrown value into a VegaStackError. */
+export function asVegaStackError(e: unknown): VegaStackError {
+  if (e instanceof VegaStackError) return e;
   if (e instanceof Error) {
-    return new VegastackError("Unknown", e.message, { cause: e });
+    return new VegaStackError("Unknown", e.message, { cause: e });
   }
-  return new VegastackError("Unknown", String(e));
+  return new VegaStackError("Unknown", String(e));
 }
 
 // ── hint() table ──────────────────────────────────────────────────
 // Keep these short and actionable. Each one answers "what should the user do?"
 
-function hintFor(kind: VegastackErrorKind, ctx: Readonly<Record<string, unknown>>): string {
+function hintFor(kind: VegaStackErrorKind, ctx: Readonly<Record<string, unknown>>): string {
   switch (kind) {
-    case "BundleMissing":
-      return "Run `vegastack install` to download the docs bundle, or set VEGASTACK_BUNDLE_DIR to an existing bundle.";
-    case "BundleCorrupt":
-      return "The bundle on disk is invalid. Re-download with `vegastack refresh`. If the problem persists, file a bug with `vegastack doctor --json`.";
-    case "BundleVersionMismatch":
-      return `The installed bundle is not compatible with this CLI version (expected schema_version=${
+    case "RegistryEntryMissing":
+      return "Run `vegastack init` to select and download Registry entries for this project.";
+    case "ArtifactCorrupt":
+      return "The Registry pack on disk is invalid. Re-download with `vegastack registry update --force`. If the problem persists, file a bug with `vegastack doctor --json`.";
+    case "RegistryVersionMismatch":
+      return `The installed Registry pack is not compatible with this CLI version (expected schema_version=${
         typeof ctx.expected === "number" ? ctx.expected : "?"
-      }, got ${typeof ctx.actual === "number" ? ctx.actual : "?"}). Run \`vegastack refresh\` to pull a matching bundle.`;
+      }, got ${typeof ctx.actual === "number" ? ctx.actual : "?"}). Run \`vegastack registry update --force\` to pull a matching Registry pack.`;
     case "NetworkError":
-      return "Check your network connection. If you're behind a corporate proxy, set HTTPS_PROXY (and NO_PROXY for excluded hosts), or use `VEGASTACK_BUNDLE_URL=file:///path/to/bundle.tar.gz` to install offline.";
+      return "Check your network connection and confirm the VegaStack Registry is reachable.";
     case "ChecksumMismatch":
-      return "The downloaded bundle did not match its expected SHA256. This means a corrupt download or a tampered artifact — do NOT trust the bundle. Retry with `vegastack refresh`; if it persists, report security@vegastack.com.";
+      return "The downloaded registry artifact did not match its expected SHA256. This means a corrupt download or a tampered artifact. Retry with `vegastack registry update --force`; if it persists, report team@vegastack.com.";
     case "AgentInstallError":
       return "The destination already exists or is not writable. Re-run with --force to overwrite, or pick a different --scope.";
     case "ValidationError":
       return "Check the input you passed. CLI args are validated for path traversal and control characters.";
     case "DiscoverError":
-      return "The discovery harness exited non-zero. Run `vegastack doctor` to verify the bundle, then re-run with --raw if the issue persists.";
+      return "The discovery harness exited non-zero. Run `vegastack doctor` to verify the Registry pack, then re-run with --raw if the issue persists.";
     case "PythonMissing":
-      return "python3 (>= 3.9) was not found on PATH. The native TS discoverer doesn't need it; only the legacy --legacy-python flag (and bundle-build pipeline) do.";
+      return "python3 is not required for the CLI. If you see this, a development-only script is being run in the wrong environment.";
     case "Unsupported":
       return "This environment is not supported. See the README's compatibility matrix.";
     case "Unknown":

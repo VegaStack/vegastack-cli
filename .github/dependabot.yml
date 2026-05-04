@@ -15,18 +15,18 @@ updates:
       prefix: "chore(deps)"
       include: "scope"
     groups:
-      # Bundle types-only patch bumps together to reduce noise.
+      # Registry pack types-only patch bumps together to reduce noise.
       types:
         patterns:
           - "@types/*"
         update-types: ["patch", "minor"]
-      # Bundle eslint + plugins together.
+      # Registry pack eslint + plugins together.
       eslint:
         patterns:
           - "eslint"
           - "@eslint/*"
           - "@typescript-eslint/*"
-      # Bundle test-tooling together.
+      # Registry pack test-tooling together.
       test-tooling:
         patterns:
           - "vitest"

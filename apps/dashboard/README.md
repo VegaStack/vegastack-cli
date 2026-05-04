@@ -53,8 +53,8 @@ wrangler kv namespace create REPORTS_CACHE
 wrangler kv namespace create REPORTS_CACHE --preview
 # Paste the returned IDs into wrangler.toml under [[kv_namespaces]].
 
-# E4 owns the R2 bucket — reuse it; do not create your own.
-# wrangler.toml already binds vegastack-agent-kb.
+# Reuse the VegaStack Registry bucket; do not create a dashboard-specific bucket.
+# wrangler.toml already binds vegastack-cli-registry as REGISTRY.
 
 # Ship
 npm run deploy
@@ -63,27 +63,27 @@ npm run deploy
 # in wrangler.toml and run `wrangler deploy` again).
 ```
 
-## Pointing at a different bundle bucket
+## Pointing at a different Registry pack bucket
 
 For a staging dashboard, edit `wrangler.toml`:
 
 ```toml
 [[r2_buckets]]
-binding = "BUNDLES"
-bucket_name = "bundles-vegastack-staging"
+binding = "REGISTRY"
+bucket_name = "vegastack-cli-registry"
 ```
 
-The dashboard reads reports from `evals/reports/<YYYY-MM-DD>.json` in
+The dashboard reads reports from `cli/evals/reports/<YYYY-MM-DD>.json` in
 the bound bucket. The path prefix is in `src/lib/r2.ts` if it ever
 needs to change.
 
-## Cross-team contracts
+## Data contracts
 
-| Team | What we expect |
+| Producer | What the dashboard expects |
 |---|---|
-| **E4** | R2 bucket `vegastack-agent-kb` with public-read on `evals/reports/*`. |
-| **E6** | Eval reports in JSON matching `src/lib/parse-report.ts#EvalReport`. Index at `evals/reports/INDEX.json`. |
-| **E7** | (Optional) consumes `/api/latest.json` for an MCP `evals.status` tool. |
+| Registry publisher | R2 bucket `vegastack-cli-registry` with public-read on `cli/evals/reports/*`. |
+| Eval runner | JSON matching `src/lib/parse-report.ts#EvalReport`, plus an index at `cli/evals/reports/INDEX.json`. |
+| Downstream tools | `/api/latest.json` exposes the latest public report for badges, checks, and MCP health views. |
 
 ## Updating the design system
 

@@ -24,12 +24,12 @@ export type {
 
 // ─── MCP-server-internal types (on-disk per-provider MANIFEST.json) ──────────
 // These are not part of the shared discover-types contract because they
-// describe the raw bundle layout read by r2-bundle.ts, not the API envelope.
+// describe the raw Registry pack layout read by r2-registry.ts, not the API envelope.
 
 export interface ProviderManifest {
   manifest_schema_version?: number;
   provider?: string;
-  bundle_version?: string;
+  registry_version?: string;
   upstream_sha?: string;
   synced_at?: string;
   resources: Record<string, import("../../../../docs/contracts/discover-types").ManifestResourceEntry>;
@@ -49,9 +49,9 @@ export interface ProviderManifest {
   generic_args_downweight?: Record<string, number>;
 }
 
-export interface BundleRootManifest {
+export interface TerraformRootManifest {
   manifest_schema_version?: number;
-  bundle_version?: string;
+  registry_version?: string;
   providers?: string[] | Record<string, unknown>;
   generated_at?: string;
 }

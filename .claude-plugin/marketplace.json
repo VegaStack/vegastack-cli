@@ -1,20 +1,20 @@
 {
   "name": "vegastack-cli",
-  "description": "Local, deterministic knowledge harness for coding agents — Terraform docs (31 providers) plus future runbooks and devops/cloudops guides",
+  "description": "Local-first VegaStack Registry knowledge harness for coding agents",
   "owner": {
-    "name": "Vegastack Engineering",
-    "email": "engg@vegastack.com",
+    "name": "VegaStack Engineering",
+    "email": "team@vegastack.com",
     "url": "https://vegastack.com"
   },
   "plugins": [
     {
       "name": "vegastack-cli",
       "source": "./",
-      "description": "Terraform docs harness for 31 providers (AWS, Azure, GCP, Cloudflare, Kubernetes, Helm, Vault, DigitalOcean, GitHub, GitLab, Vercel, Netlify, Datadog, Grafana, Splunk, PagerDuty, Okta, Auth0, CrowdStrike, 1Password, MongoDB Atlas, Snowflake, Redis Cloud, ClickHouse, Pinecone, Ansible, and standard utility providers). Provides accurate resource names, argument schemas, import syntax, deprecation flags, HCL examples, recent-change knowledge cards, cross-provider recipes, and concept-alias resolution — without web search, MCPs, or model-knowledge gaps.",
-      "version": "0.1.9",
+      "description": "VegaStack Registry harness for project-selected local knowledge. Supports Terraform, Kubernetes, Helm, Docker, GitHub Actions, Supabase, AWS CLI, Jenkins, and future operations entries through `vegastack ask`.",
+      "version": "0.1.11-next.0",
       "author": {
-        "name": "Vegastack Engineering",
-        "email": "engg@vegastack.com",
+        "name": "VegaStack Engineering",
+        "email": "team@vegastack.com",
         "url": "https://vegastack.com"
       },
       "category": "development",
@@ -22,13 +22,15 @@
         "terraform",
         "hcl",
         "iac",
+        "devops",
+        "ci-cd",
         "aws",
-        "azure",
-        "gcp",
-        "cloudflare",
         "kubernetes",
         "helm",
-        "vault",
+        "docker",
+        "github-actions",
+        "jenkins",
+        "supabase",
         "knowledge-harness",
         "agent-skills"
       ],

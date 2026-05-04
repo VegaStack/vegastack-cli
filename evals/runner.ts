@@ -153,7 +153,7 @@ function printHelp(): void {
 // ─── per-prompt scoring ────────────────────────────────────────────────
 
 interface ScoringContext {
-  knowledge: KnowledgeCard[]; // populated by `vegastack tf` envelope when available; empty for baseline
+  knowledge: KnowledgeCard[]; // populated by `vegastack ask --entry terraform --tf-provider <provider>` envelope when available; empty for baseline
   recipes: RecipeMatch[];
   manifestByResource: Map<string, ManifestResourceEntry>;
 }
@@ -452,8 +452,8 @@ function buildReport(input: {
   return {
     schema_version: 1,
     date: new Date().toISOString().slice(0, 10),
-    bundle_version: process.env.VEGASTACK_BUNDLE_VERSION ?? "unknown",
-    cli_version: process.env.npm_package_version ?? "0.1.0",
+    registry_version: process.env.VEGASTACK_REGISTRY_VERSION ?? "unknown",
+    cli_version: process.env.npm_package_version ?? "0.1.11-next.0",
     model,
     prompt_count: evals.length,
     lift: summary.lift_pct,

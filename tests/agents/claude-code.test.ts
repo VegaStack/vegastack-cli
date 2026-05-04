@@ -115,7 +115,7 @@ describe("claude-code installer", () => {
     const mcp = JSON.parse(fs.readFileSync(mcpJsonPath, "utf8")) as {
       mcpServers: Record<string, { type?: string; url: string }>;
     };
-    const server = mcp.mcpServers["vegastack-tf"];
+    const server = mcp.mcpServers.vegastack;
     expect(server).toBeDefined();
     expect(server!.url).toBe("https://mcp.vegastack.com/mcp");
     expect(server!.url).not.toContain("/sse");

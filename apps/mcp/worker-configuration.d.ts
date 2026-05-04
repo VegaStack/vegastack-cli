@@ -8,14 +8,14 @@ declare global {
   interface Env {
     /** McpAgent durable object namespace (one DO per MCP session). */
     MCP_OBJECT: DurableObjectNamespace;
-    /** R2 bucket holding the published bundle (E4 owns publishing). */
-    BUNDLE: R2Bucket;
+    /** R2 bucket holding the published VegaStack Registry. */
+    REGISTRY: R2Bucket;
     /** Optional warm cache for manifest blobs. May be undefined locally. */
     MCP_CACHE?: KVNamespace;
-    /** Public CDN base URL for the bundle (e.g. https://bundles.vegastack.com). */
-    BUNDLE_PUBLIC_BASE_URL: string;
-    /** R2 key for the root MANIFEST.json (default: "bundle/MANIFEST.json"). */
-    BUNDLE_MANIFEST_KEY: string;
+    /** Public CDN base URL for the Registry (e.g. https://cli-registry.vegastack.com). */
+    REGISTRY_PUBLIC_BASE_URL: string;
+    /** R2 key for the Terraform pack MANIFEST.json. */
+    REGISTRY_MANIFEST_KEY: string;
     /** Cache TTL in seconds (string, parsed at boot). */
     CACHE_TTL_SECONDS: string;
     /** Log level: "debug" | "info" | "warn" | "error". */

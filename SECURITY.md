@@ -14,44 +14,30 @@ We support the latest published `0.x` minor on npm. Patch releases land on the m
 `@vegastack/cli` is a local-only CLI. It does **not**:
 
 - Send telemetry. The CLI never makes outbound network calls at query time.
-- Take credentials. The bundle is static documentation; there is no auth flow.
-- Execute remote code. The only network call is the one-time postinstall download of the docs bundle (or a `vegastack install` / `vegastack refresh` invocation).
+- Take credentials. The Registry is static documentation and indexes; there is no auth flow.
+- Execute remote code. Registry installs download text artifacts and JSON indexes only.
 
 What the CLI **does** that has a security surface:
 
-1. **Bundle download** during postinstall — fetches `vegastack-bundle-vX.Y.Z.tar.gz` from GitHub Releases over HTTPS, with a sidecar `.sha256` for integrity.
-2. **Tarball extraction** to `~/.config/vegastack/bundle/`.
+1. **Registry artifact download** — fetches `REGISTRY.json`, `ARTIFACTS.json`, and listed text artifacts from `https://cli-registry.vegastack.com/cli`.
+2. **Filesystem writes** to the local Registry cache under the user's home directory.
 3. **Filesystem writes** by `vegastack skills install` — scoped to known agent directories (`~/.claude/plugins/`, `~/.agents/skills/`, `<cwd>/.cursor/rules/`, `<cwd>/gemini-extension.json`, `<cwd>/CONTEXT.md`).
 4. **Symlink creation** (Claude Code installer) — falls back to a recursive copy on Windows non-admin.
-5. **Subprocess invocation** of `python3` (v0.1 only — v0.2 drops this), `tar`, `du`, `jq`, `rg` from the user's `PATH`.
+5. **Subprocess invocation** of managed search/scanning tools such as ripgrep and Gitleaks.
 
 ## Hardening summary (v0.1.0+)
 
 The implementation goes beyond a typical npm postinstall script. Every item below is enforced in code and exercised by automated tests.
 
-### Bundle download
+### Registry download
 
-- **HTTPS-only.** Non-`https://` URLs are refused (the only exception is `file://` for offline / air-gapped installs).
-- **Manual redirect handling.** Each redirect hop is inspected; redirects to non-`https://` schemes (e.g., `file://`, `gopher://`) are rejected.
-- **Bounded fetch.** Per-attempt timeout (default 60s, configurable via `VEGASTACK_BUNDLE_TIMEOUT_MS`); 3 retries with exponential backoff capped at 8s.
-- **Streaming download.** The tarball is hashed and written in chunks; we never load the whole file into memory. Streams are aborted as soon as `MAX_BUNDLE_BYTES` (500 MB) is exceeded.
-- **Size sanity bounds.** Tarball must be `≥ 1 KB` (rejects HTML error pages) and `≤ 500 MB` (rejects bombs).
-- **Constant-time SHA256 compare.** Verification uses `crypto.timingSafeEqual` against a hex-validated `.sha256` sidecar. The sidecar itself is capped at 1 KB so a malicious server can't tunnel data through it.
-- **Proxy support.** `HTTPS_PROXY` / `HTTP_PROXY` / `NO_PROXY` honored via Node's bundled `undici.ProxyAgent`. Proxy URL credentials are redacted from logs.
-
-### Tarball extraction
-
-- **Gzip magic-bytes check** before invoking `tar`.
-- **Two-phase extraction.** First: `tar tzf` (LIST), validate every entry path against a strict allowlist (no absolute paths, no `..`, no drive letters, no UNC). Second: `tar xzf -C dest --no-same-owner` (EXTRACT). Any path-traversal attempt aborts before extraction begins; the destination is left untouched.
-- **Symlink/hardlink target validation.** Every link's target must resolve inside the destination dir. Absolute-target links and dotdot-escapes are refused.
-- **Refuses device files.** Character/block/FIFO/socket entries (which have no place in our content) are rejected up-front.
-- **Robust parser.** GNU tar and BSD tar produce different verbose-listing formats; we use `tar tzf` (paths) plus `tar tvzf` (types) and align by index, so a malformed line never silently slips through.
+- **Checksum verified.** `ARTIFACTS.json` is verified against the root Registry catalog when a digest is published. Every listed file is verified against its SHA256 and byte size before install.
+- **Path-confined.** Artifact paths must be relative, cannot contain backslashes, cannot be absolute, and cannot contain `..`.
+- **Atomic cache swap.** Downloads are staged into a temporary directory and atomically promoted only after all files verify.
 
 ### Filesystem operations
 
-- **Atomic version write.** `.version` is written to `.version.tmp-<rand>` and renamed into place — no partial-state on a crash mid-write.
-- **Atomic bundle swap.** Existing bundle is renamed aside before extraction; only deleted after the new extraction succeeds.
-- **Bundle-dir lock.** `*.lock` file with `O_EXCL` semantics prevents two `npm i` runs from corrupting each other. Stale locks (>10 min old) are auto-reclaimed.
+- **Atomic Registry swap.** Existing cached packs are renamed aside before promotion; the old copy is restored if promotion fails.
 - **Lock ownership tracking.** A process never deletes a lock it didn't create.
 - **Backup on overwrite.** Every `--force` write to a user-edited file (`AGENTS.md`, `CONTEXT.md`, `.cursor/rules/*.mdc`) renames the existing copy to `*.bak-<timestamp>-<random>` first. Random suffix prevents collisions when multiple installers run within the same millisecond.
 - **Path validation.** Any path crossing the user→library boundary goes through `validateSafeFilePath` / `validateSafeOutputDir` which:
@@ -62,25 +48,25 @@ The implementation goes beyond a typical npm postinstall script. Every item belo
 
 ### Subprocess invocation
 
-- **`process.execPath` for Node spawns.** `vegastack install` and `vegastack refresh` re-launch `npm/install.js` via `process.execPath`, not the bare `node` from `PATH` — defends against a malicious `node` shim earlier on the user's PATH.
-- **Allowlisted env to subprocesses.** The Python harness receives only `PATH`, `HOME`, `USER`, `LANG`/`LC_*`, `TZ`, `TMPDIR`, `SystemRoot`, `ComSpec`, `PATHEXT`, plus our own `VEGASTACK_*` vars. `GITHUB_TOKEN`, `AWS_*`, `NPM_TOKEN`, etc. are not exposed.
-- **Signal handlers.** `SIGINT`/`SIGTERM`/`SIGHUP` clean up tmp dirs and release the lock before exiting.
-- **Output redaction.** Every stderr line in `npm/install.js` runs through `redactUserPaths`, which strips `$HOME` from paths and ANSI escape sequences before logging. Error stack traces also flow through this filter.
+- **No implicit Registry install in npm postinstall.** `npm/install.js` only prints guidance; Registry data is installed explicitly through `vegastack init` and refreshed with `vegastack registry update`.
+- **Managed tool verification.** Managed binaries are downloaded from their official release channel, verified by SHA256 where the upstream publishes checksums, and stored under `~/.config/vegastack/tools/`.
+- **Argument arrays, not shell strings.** Search and scanner subprocesses are invoked without shell interpolation.
+- **Signal handlers.** Long-running install/update flows clean up tmp dirs before exiting.
 
 ### Error handling
 
-- **Discriminated `VegastackError` type** with stable exit codes (1–12). Each variant has a `hint()` so users see _problem → cause → fix_.
+- **Discriminated `VegaStackError` type** with stable exit codes (1–12). Each variant has a `hint()` so users see _problem → cause → fix_.
 - **No silent catch-alls.** Every `try/catch` either rethrows or wraps into a typed error.
-- **Postinstall never fails npm install.** Failures exit 0 with a clear recovery instruction, so a transient network issue doesn't block the whole install. Operators who need fail-closed behavior can use `VEGASTACK_SKIP_POSTINSTALL=1` plus a follow-up `vegastack install` step under their own audit.
+- **Postinstall is no-op.** Registry installation happens explicitly through `vegastack init`.
 
 ### Supply chain
 
-- **Production deps:** 3 (`commander`, `kleur`, `prompts`). No native modules.
+- **Production deps are intentionally small and pure JavaScript.** Runtime dependencies are reviewed before release; avoid adding new runtime dependencies without a security and maintenance reason.
 - **`npm audit --audit-level=moderate --omit=dev`** runs in CI on every push, every PR, and weekly via cron.
 - **OSV-Scanner** runs in CI against `package-lock.json`.
 - **CodeQL** static analysis runs on every PR.
 - **Third-party GitHub Actions are pinned to commit SHAs** (with `# vX.Y.Z` comments so Dependabot can update them). First-party `actions/*` use `@v4` per GitHub's policy.
-- **`provenance: true`** in `npm publish` (publishes SLSA build provenance via npm's attested-publish flow).
+- **npm trusted publishing** is configured for GitHub Actions. Public releases publish with OIDC provenance and no long-lived npm token.
 - **Dependabot** watches both npm and GitHub Actions, with grouped updates to keep PR noise low.
 
 ## Reporting a vulnerability
@@ -99,11 +85,10 @@ We will acknowledge receipt within **2 business days** and aim to issue a fix or
 
 If you operate this CLI in a security-sensitive environment, consider:
 
-- **Verify the bundle SHA256 yourself** before relying on it. Each release on GitHub publishes both `vegastack-bundle-vX.Y.Z.tar.gz` and a `…tar.gz.sha256` sidecar.
-- **Pin the npm version** (e.g. `npm i -g @vegastack/cli@0.1.0`) and consider `npm ci --ignore-scripts` to skip the postinstall, then run `vegastack install` later under your own audit.
+- **Verify Registry digests yourself** before relying on mirrored content. `ARTIFACTS.json` records every file path, byte size, and SHA256.
+- **Pin the npm version** (for example, `npm i -g @vegastack/cli@0.1.11-next.0` during prerelease testing) and consider `npm ci --ignore-scripts` to skip package lifecycle scripts; then run `vegastack init` inside each project under your own audit.
 - **Restrict the CLI's filesystem writes** by running `vegastack skills install` only inside project directories you control.
-- **Set `VEGASTACK_BUNDLE_URL=file:///abs/path`** in air-gapped environments to avoid the GitHub Releases fetch entirely.
-- **For internal redistribution**, host the tarball + `.sha256` sidecar on an HTTPS-only internal mirror. The CLI's redirect-scheme check ensures even a misconfigured redirector can't downgrade the channel.
+- **Use `VEGASTACK_REGISTRY_DIR=/abs/path/to/cli/packs`** in air-gapped environments to point the CLI at a pre-synced local Registry tree.
 
 ## Acknowledgements
 

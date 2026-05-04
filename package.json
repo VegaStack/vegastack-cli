@@ -1,11 +1,11 @@
 {
   "name": "@vegastack/cli",
-  "version": "0.1.9",
-  "description": "vegastack — a deterministic, offline knowledge harness for coding agents (Claude Code, Codex, Cursor, Gemini). Ships 31 Terraform providers' upstream docs + manifests + recipes + knowledge cards as one installable CLI.",
+  "version": "0.1.11-next.0",
+  "description": "vegastack — a deterministic, offline knowledge harness for coding agents (Claude Code, Codex, Cursor, Gemini) with project-selected local registry entries for infrastructure, cloudops, CI/CD, and Terraform.",
   "license": "MIT",
   "author": {
-    "name": "Vegastack Inc.",
-    "email": "cli@vegastack.com",
+    "name": "VegaStack Inc.",
+    "email": "team@vegastack.com",
     "url": "https://vegastack.com"
   },
   "homepage": "https://github.com/VegaStack/vegastack-cli",
@@ -46,8 +46,6 @@
     "npm/",
     "dist/",
     "skills/",
-    "commands/",
-    "hooks/",
     "AGENTS.md",
     "CLAUDE.md",
     "CONTEXT.md",
@@ -63,6 +61,7 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
+    "prebuild": "npm run clean",
     "build": "tsc -p tsconfig.build.json",
     "watch": "tsc -p tsconfig.build.json --watch",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
@@ -73,13 +72,15 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "version-sync": "changeset version",
-    "tag-release": "node scripts/tag-release.js",
-    "prepack": "npm run build",
+    "prerouter": "npm run build",
     "postinstall": "node npm/install.js || true",
     "generate-skills": "tsx scripts/generate-skills.ts",
     "generate-skills:check": "npm run generate-skills && git diff --quiet -- skills/recipes skills/personas recipes/INDEX.json personas/INDEX.json",
-    "generate-skill": "tsx scripts/generate-skill-from-bundle.ts",
-    "generate-skill:check": "tsx scripts/generate-skill-from-bundle.ts --check"
+    "generate-skill": "tsx scripts/generate-skill-from-registry.ts",
+    "generate-skill:check": "tsx scripts/generate-skill-from-registry.ts --check",
+    "prepack": "npm run build && npm run generate-skill:check",
+    "managed-tools:update": "tsx scripts/update-managed-tools-manifest.ts && prettier --write src/lib/managed-tools-manifest.ts",
+    "managed-tools:smoke": "tsx scripts/smoke-managed-tools.ts"
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
@@ -88,7 +89,8 @@
     "js-yaml": "^4.1.1",
     "kleur": "^4.1.5",
     "prompts": "^2.4.2",
-    "proper-lockfile": "^4.1.2"
+    "proper-lockfile": "^4.1.2",
+    "sigstore": "^3.1.0"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.90.0",
@@ -110,7 +112,8 @@
     "vitest": "^3.2.4"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
-    "access": "restricted"
+    "registry": "https://registry.npmjs.org",
+    "access": "public",
+    "provenance": true
   }
 }

@@ -4,9 +4,9 @@
 // pipelines via Promise.all and unions the results into a single envelope.
 //
 // Tests use:
-//   • the on-disk `tests/fixtures/bundle-mini` for the 2-provider case
+//   • the on-disk `tests/fixtures/registry-mini` for the 2-provider case
 //     (aws + cloudflare), AND
-//   • a synthesized N-provider bundle (4 providers, > 4 providers) built
+//   • a synthesized N-provider Registry pack (4 providers, > 4 providers) built
 //     in beforeEach to verify the cap behavior.
 
 import * as fs from "node:fs";
@@ -20,25 +20,25 @@ import type { DiscoverFile } from "../../../src/lib/discover/types.js";
 import { clearManifestCache } from "../../../src/lib/discover/manifest.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const MINI_FIXTURE = path.resolve(__dirname, "..", "..", "fixtures", "bundle-mini");
+const MINI_FIXTURE = path.resolve(__dirname, "..", "..", "fixtures", "registry-mini");
 
 // ─── helpers ─────────────────────────────────────────────────────────────
 
 interface SyntheticBundleSpec {
-  /** Providers in the bundle. Each gets a tiny manifest with one resource
+  /** Providers in the Registry pack. Each gets a tiny manifest with one resource
    *  whose name follows `<provider>_widget`. */
   providers: string[];
   /** Optional knowledge cards keyed by id; provider list defaults to ["*"]. */
   knowledge?: Record<string, { triggers: { tokens?: string[]; phrase?: string }[] }>;
 }
 
-/** Build a temp bundle with N providers, each shipping a manifest that
+/** Build a temp Registry pack with N providers, each shipping a manifest that
  *  has a single resource and a single canonical name match. */
 function makeBundle(spec: SyntheticBundleSpec): string {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-merge-"));
   fs.writeFileSync(
     path.join(tmp, "MANIFEST.json"),
-    JSON.stringify({ bundle_version: "test", providers: spec.providers }),
+    JSON.stringify({ registry_version: "test", providers: spec.providers }),
   );
   for (const p of spec.providers) {
     const dir = path.join(tmp, p);
@@ -48,7 +48,7 @@ function makeBundle(spec: SyntheticBundleSpec): string {
       JSON.stringify({
         manifest_schema_version: 1,
         provider: p,
-        bundle_version: "test",
+        registry_version: "test",
         resources: {
           [`${p}_widget`]: {
             type: "resource",
@@ -226,7 +226,7 @@ function fakeFile(
   score: number,
 ): DiscoverFile {
   return {
-    path: `/bundle/${providerName}/r/resource_${index}.html.markdown`,
+    path: `/Registry pack/${providerName}/r/resource_${index}.html.markdown`,
     score,
     score_norm: scoreNorm,
     tier: "manifest",
@@ -262,7 +262,7 @@ function fakeEnvelope(provider: string, files: DiscoverFile[]): DiscoverOkEnvelo
     tokens: ["test"],
     tiers_used: ["manifest"],
     schema_version: 1,
-    bundle_version: "test",
+    registry_version: "test",
     files,
     knowledge: [],
     recipes: [],
@@ -310,7 +310,7 @@ describe("discover — auto-merge: per-provider quota (R1 fix)", () => {
     const minor1Files = Array.from({ length: 10 }, (_, i) => fakeFile("minor1", i, 75, 99 - i * 3));
     const minor2Files = Array.from({ length: 10 }, (_, i) => fakeFile("minor2", i, 75, 98 - i * 3));
 
-    const opts: MergeOpts = { query: "test query", bundleVersion: "test", max: MAX };
+    const opts: MergeOpts = { query: "test query", registryVersion: "test", max: MAX };
 
     const merged = mergeOkEnvelopes(
       [
@@ -327,7 +327,7 @@ describe("discover — auto-merge: per-provider quota (R1 fix)", () => {
     // Count files per provider.
     const counts: Record<string, number> = {};
     for (const f of merged.files) {
-      // path is /bundle/<provider>/r/resource_N.html.markdown
+      // path is /Registry pack/<provider>/r/resource_N.html.markdown
       const seg = f.path.split("/")[2]; // "dominant" | "minor1" | "minor2"
       if (seg) counts[seg] = (counts[seg] ?? 0) + 1;
     }

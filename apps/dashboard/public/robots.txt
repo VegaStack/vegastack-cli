@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://evals.vegastack.com/sitemap-index.xml
+Sitemap: https://cli-evals.vegastack.com/sitemap-index.xml

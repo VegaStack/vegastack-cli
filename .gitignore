@@ -4,9 +4,9 @@ dist/
 *.tsbuildinfo
 .DS_Store
 
-# Bundle staged for local dev — never commit, always download
-references/terraform-providers/
-npm/bundle/
+# Registry content staged for local dev — never commit generated corpus data
+references/registry/
+npm/registry/
 npm/.version
 
 # Build artifacts
@@ -23,10 +23,12 @@ npm/.version
 # Editor state
 .vscode/
 .idea/
+.claude/claude-code-chat-images/
 
 # Test workspace
 tests/.workspace/
 tests/.cache/
+exports/
 
 # Changeset draft state
 .changeset/_*.md

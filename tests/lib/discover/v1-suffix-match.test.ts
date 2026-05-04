@@ -49,7 +49,7 @@ body
     writeCard("k8s-dep-v1", "  - tokens: [kubernetes_deployment_v1]");
     const query = "Migrate to kubernetes_deployment_v1";
     const tokens = tokenize(query);
-    const cards = loadKnowledge({ bundleRoot: tmp, tokens, query });
+    const cards = loadKnowledge({ terraformRoot: tmp, tokens, query });
     expect(cards.find((c) => c.id === "k8s-dep-v1")).toBeDefined();
   });
 
@@ -60,7 +60,7 @@ body
     const query = "migrate to use v1";
     const tokens = tokenize(query);
     expect(tokens).toContain("v1");
-    const cards = loadKnowledge({ bundleRoot: tmp, tokens, query });
+    const cards = loadKnowledge({ terraformRoot: tmp, tokens, query });
     expect(cards.find((c) => c.id === "v1-bare")).toBeDefined();
   });
 
@@ -70,7 +70,7 @@ body
     const tokens = tokenize(query);
     expect(tokens).toContain("v2");
     expect(tokens).not.toContain("v1");
-    const cards = loadKnowledge({ bundleRoot: tmp, tokens, query });
+    const cards = loadKnowledge({ terraformRoot: tmp, tokens, query });
     // The card MUST NOT fire — if the digit guard is reverted, both v1 and v2
     // would stem to "v" and this assertion would fail with the card present.
     expect(cards.find((c) => c.id === "v1-bare")).toBeUndefined();
@@ -83,7 +83,7 @@ body
     // "v" and fail to match a query token of "v1".
     writeCard("v1-bare", "  - tokens: [v1]");
     const cards = loadKnowledge({
-      bundleRoot: tmp,
+      terraformRoot: tmp,
       tokens: ["v1"],
       query: "v1",
     });

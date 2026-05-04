@@ -1,0 +1,14 @@
+# Mini-Registry pack aws aliases for tests.
+- phrase: "static website"
+  alias: s3_static_site
+  resources:
+    - aws_s3_bucket
+    - aws_s3_bucket_website_configuration
+    - aws_s3_bucket_public_access_block
+
+- phrase: "dev cluster"
+  alias: eks_dev_cluster
+  resources:
+    - aws_eks_cluster
+    - aws_eks_node_group
+    - aws_iam_role

@@ -12,13 +12,13 @@ compatibility_date = "2025-09-23"
 compatibility_flags = ["nodejs_compat"]
 main = "./node_modules/@astrojs/cloudflare/dist/entrypoints/server.js"
 
-# R2 binding to E4's bundle bucket. Eval reports live at:
-#   bundles.vegastack.com/evals/reports/<YYYY-MM-DD>.json
+# R2 binding to the VegaStack Registry bucket. Eval reports live at:
+#   cli-registry.vegastack.com/cli/evals/reports/<YYYY-MM-DD>.json
 # Reads are cached in KV with a 1h TTL (see src/lib/r2.ts).
 [[r2_buckets]]
-binding = "BUNDLES"
-bucket_name = "vegastack-agent-kb"
-preview_bucket_name = "vegastack-agent-kb-preview"
+binding = "REGISTRY"
+bucket_name = "vegastack-cli-registry"
+preview_bucket_name = "vegastack-cli-registry"
 
 # KV namespace caches R2 fetches and the rolling 30-day report index.
 # Create with:

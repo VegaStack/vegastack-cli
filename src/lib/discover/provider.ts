@@ -64,7 +64,7 @@ function escapeRegExp(s: string): string {
 }
 
 interface DetectOptions {
-  /** Canonical provider list, resolved at runtime from bundle/MANIFEST.json.
+  /** Canonical provider list, resolved at runtime from Registry MANIFEST.json.
    *  When omitted, an empty list is used (only PROVIDER_SUBSTRING_PHRASES +
    *  service aliases produce hits — useful for unit tests). */
   knownProviders?: readonly string[];
@@ -103,7 +103,7 @@ export function detectProvider(query: string, opts: DetectOptions = {}): Provide
     if (rx.test(q)) bump(provider, PROVIDER_CONFIDENCE.substring, "substring");
   }
 
-  // Stage 3: SERVICE_ALIASES (default + per-bundle override).
+  // Stage 3: SERVICE_ALIASES (default + per-Registry pack override).
   for (const [alias, provider] of aliasTable) {
     const rx = new RegExp(`\\b${escapeRegExp(alias)}\\b`);
     if (rx.test(q)) bump(provider, PROVIDER_CONFIDENCE.alias, "alias");

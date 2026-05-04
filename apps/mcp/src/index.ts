@@ -2,8 +2,8 @@
 //
 // Routes:
 //   GET  /            — landing page (HTML pointer to the MCP endpoints)
-//   GET  /health      — liveness + bundle reachability check
-//   GET  /version     — server + bundle version JSON
+//   GET  /health      — liveness + Registry pack reachability check
+//   GET  /version     — server + Registry pack version JSON
 //   GET  /tools       — non-MCP convenience listing of tools (debug)
 //   *    /mcp         — MCP StreamableHTTP transport (modern clients)
 //   *    /sse         — MCP SSE transport (legacy clients: Claude Desktop, mcp-remote)
@@ -21,53 +21,53 @@
 
 import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { listProviders, readRootManifest } from "./lib/r2-bundle.js";
+import { listProviders, readRootManifest } from "./lib/r2-registry.js";
 
 import {
-  handleTfDiscover,
-  tfDiscoverDescription,
-  tfDiscoverSchema,
-} from "./tools/tf_discover.js";
+  handleTerraformDiscover,
+  terraformDiscoverDescription,
+  terraformDiscoverSchema,
+} from "./tools/terraform_discover.js";
 import {
-  handleTfGetKnowledgeCard,
-  tfGetKnowledgeCardDescription,
-  tfGetKnowledgeCardSchema,
-} from "./tools/tf_get_knowledge_card.js";
+  handleRegistryGetKnowledgeCard,
+  registryGetKnowledgeCardDescription,
+  registryGetKnowledgeCardSchema,
+} from "./tools/registry_get_knowledge_card.js";
 import {
-  handleTfGetManifest,
-  tfGetManifestDescription,
-  tfGetManifestSchema,
-} from "./tools/tf_get_manifest.js";
+  handleTerraformGetManifest,
+  terraformGetManifestDescription,
+  terraformGetManifestSchema,
+} from "./tools/terraform_get_manifest.js";
 import {
-  handleTfGetRecipe,
-  tfGetRecipeDescription,
-  tfGetRecipeSchema,
-} from "./tools/tf_get_recipe.js";
+  handleRegistryGetRecipe,
+  registryGetRecipeDescription,
+  registryGetRecipeSchema,
+} from "./tools/registry_get_recipe.js";
 import {
-  handleTfListProviders,
-  tfListProvidersDescription,
-  tfListProvidersSchema,
-} from "./tools/tf_list_providers.js";
+  handleTerraformListProviders,
+  terraformListProvidersDescription,
+  terraformListProvidersSchema,
+} from "./tools/terraform_list_providers.js";
 
 // ─── McpAgent (Durable Object) ────────────────────────────────────────────
 
-export class VegastackMcp extends McpAgent<Env> {
+export class VegaStackMcp extends McpAgent<Env> {
   server = new McpServer({
     name: "vegastack-mcp",
-    version: "0.1.0",
+    version: "0.1.11-next.0",
   });
 
   override async init(): Promise<void> {
     const env = this.env;
 
     this.server.tool(
-      "tf_discover",
-      tfDiscoverDescription,
-      tfDiscoverSchema,
+      "terraform_discover",
+      terraformDiscoverDescription,
+      terraformDiscoverSchema,
       async (args) => {
         const t0 = Date.now();
-        const result = await handleTfDiscover(env, args);
-        log(env, "info", "tf_discover", {
+        const result = await handleTerraformDiscover(env, args);
+        log(env, "info", "terraform_discover", {
           query: args.query,
           provider: args.provider ?? null,
           latency_ms: Date.now() - t0,
@@ -79,13 +79,13 @@ export class VegastackMcp extends McpAgent<Env> {
     );
 
     this.server.tool(
-      "tf_get_manifest",
-      tfGetManifestDescription,
-      tfGetManifestSchema,
+      "terraform_get_manifest",
+      terraformGetManifestDescription,
+      terraformGetManifestSchema,
       async (args) => {
         const t0 = Date.now();
-        const result = await handleTfGetManifest(env, args);
-        log(env, "info", "tf_get_manifest", {
+        const result = await handleTerraformGetManifest(env, args);
+        log(env, "info", "terraform_get_manifest", {
           provider: args.provider,
           resource: args.resource ?? null,
           latency_ms: Date.now() - t0,
@@ -95,25 +95,25 @@ export class VegastackMcp extends McpAgent<Env> {
     );
 
     this.server.tool(
-      "tf_list_providers",
-      tfListProvidersDescription,
-      tfListProvidersSchema,
+      "terraform_list_providers",
+      terraformListProvidersDescription,
+      terraformListProvidersSchema,
       async () => {
         const t0 = Date.now();
-        const result = await handleTfListProviders(env);
-        log(env, "info", "tf_list_providers", { latency_ms: Date.now() - t0 });
+        const result = await handleTerraformListProviders(env);
+        log(env, "info", "terraform_list_providers", { latency_ms: Date.now() - t0 });
         return result;
       },
     );
 
     this.server.tool(
-      "tf_get_knowledge_card",
-      tfGetKnowledgeCardDescription,
-      tfGetKnowledgeCardSchema,
+      "registry_get_knowledge_card",
+      registryGetKnowledgeCardDescription,
+      registryGetKnowledgeCardSchema,
       async (args) => {
         const t0 = Date.now();
-        const result = await handleTfGetKnowledgeCard(env, args);
-        log(env, "info", "tf_get_knowledge_card", {
+        const result = await handleRegistryGetKnowledgeCard(env, args);
+        log(env, "info", "registry_get_knowledge_card", {
           id: args.id,
           latency_ms: Date.now() - t0,
         });
@@ -122,13 +122,13 @@ export class VegastackMcp extends McpAgent<Env> {
     );
 
     this.server.tool(
-      "tf_get_recipe",
-      tfGetRecipeDescription,
-      tfGetRecipeSchema,
+      "registry_get_recipe",
+      registryGetRecipeDescription,
+      registryGetRecipeSchema,
       async (args) => {
         const t0 = Date.now();
-        const result = await handleTfGetRecipe(env, args);
-        log(env, "info", "tf_get_recipe", { id: args.id, latency_ms: Date.now() - t0 });
+        const result = await handleRegistryGetRecipe(env, args);
+        log(env, "info", "registry_get_recipe", { id: args.id, latency_ms: Date.now() - t0 });
         return result;
       },
     );
@@ -163,16 +163,16 @@ export default {
       return json(body, body.ok ? 200 : 503);
     }
     if (url.pathname === "/version") {
-      let bundle = "unknown";
+      let registryVersion = "unknown";
       try {
-        bundle = (await readRootManifest(env)).bundle_version ?? "unknown";
+        registryVersion = (await readRootManifest(env)).registry_version ?? "unknown";
       } catch {
-        // ignore — version still useful even if bundle unreachable
+        // ignore — version still useful even if Registry pack unreachable
       }
       return json({
         name: "vegastack-mcp",
-        version: "0.1.0",
-        bundle_version: bundle,
+        version: "0.1.11-next.0",
+        registry_version: registryVersion,
         schema_version: 1,
       });
     }
@@ -185,12 +185,12 @@ export default {
     // McpAgent.serveSSE(path) are static helpers that build a Worker handler
     // wired to this class's Durable Object namespace.
     if (url.pathname === "/mcp" || url.pathname.startsWith("/mcp/")) {
-      const handler = VegastackMcp.serve("/mcp") as unknown as McpHandler;
+      const handler = VegaStackMcp.serve("/mcp") as unknown as McpHandler;
       const resp = await handler.fetch(request, env, ctx);
       return withCors(resp);
     }
     if (url.pathname === "/sse" || url.pathname.startsWith("/sse/")) {
-      const handler = VegastackMcp.serveSSE("/sse") as unknown as McpHandler;
+      const handler = VegaStackMcp.serveSSE("/sse") as unknown as McpHandler;
       const resp = await handler.fetch(request, env, ctx);
       return withCors(resp);
     }
@@ -206,29 +206,29 @@ interface McpHandler {
 }
 
 const TOOL_NAMES = [
-  "tf_discover",
-  "tf_get_manifest",
-  "tf_list_providers",
-  "tf_get_knowledge_card",
-  "tf_get_recipe",
+  "terraform_discover",
+  "terraform_get_manifest",
+  "terraform_list_providers",
+  "registry_get_knowledge_card",
+  "registry_get_recipe",
 ];
 
-async function healthBody(env: Env): Promise<{ ok: boolean; bundle_reachable: boolean; provider_count: number; bundle_version: string }> {
+async function healthBody(env: Env): Promise<{ ok: boolean; registry_reachable: boolean; provider_count: number; registry_version: string }> {
   try {
     const root = await readRootManifest(env);
     const providers = await listProviders(env);
     return {
       ok: true,
-      bundle_reachable: true,
+      registry_reachable: true,
       provider_count: providers.length,
-      bundle_version: root.bundle_version ?? "unknown",
+      registry_version: root.registry_version ?? "unknown",
     };
   } catch {
     return {
       ok: false,
-      bundle_reachable: false,
+      registry_reachable: false,
       provider_count: 0,
-      bundle_version: "unknown",
+      registry_version: "unknown",
     };
   }
 }
@@ -282,22 +282,22 @@ const LANDING_HTML = `<!doctype html>
 </head>
 <body>
 <h1>vegastack-mcp</h1>
-<p class="muted">Remote Model Context Protocol server for the <code>vegastack tf</code> Terraform discovery harness.</p>
+<p class="muted">Remote Model Context Protocol server for the <code>vegastack ask --entry terraform --tf-provider <provider></code> Terraform discovery harness.</p>
 <h2>Endpoints</h2>
 <ul>
   <li><code>POST /mcp</code> — StreamableHTTP transport (modern clients)</li>
   <li><code>GET&nbsp;/sse</code> — SSE transport (legacy clients: Claude Desktop, mcp-remote)</li>
-  <li><code>GET&nbsp;/health</code> — liveness + bundle check</li>
-  <li><code>GET&nbsp;/version</code> — server + bundle version</li>
+  <li><code>GET&nbsp;/health</code> — liveness + Registry pack check</li>
+  <li><code>GET&nbsp;/version</code> — server + Registry pack version</li>
   <li><code>GET&nbsp;/tools</code> — list of MCP tools</li>
 </ul>
 <h2>Tools</h2>
 <ul>
-  <li><code>tf_discover</code> — natural-language discovery</li>
-  <li><code>tf_get_manifest</code> — full or per-resource manifest</li>
-  <li><code>tf_list_providers</code> — list all bundled providers</li>
-  <li><code>tf_get_knowledge_card</code> — fetch a curated knowledge card by id</li>
-  <li><code>tf_get_recipe</code> — fetch a curated recipe by id</li>
+  <li><code>terraform_discover</code> — natural-language discovery</li>
+  <li><code>terraform_get_manifest</code> — full or per-resource manifest</li>
+  <li><code>terraform_list_providers</code> — list all Registry-provided providers</li>
+  <li><code>registry_get_knowledge_card</code> — fetch a curated knowledge card by id</li>
+  <li><code>registry_get_recipe</code> — fetch a curated recipe by id</li>
 </ul>
 <p>See the <a href="https://github.com/vegastack/vegastack-cli/tree/main/apps/mcp">README</a> for client setup.</p>
 </body>

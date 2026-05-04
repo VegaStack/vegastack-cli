@@ -15,9 +15,9 @@ tsconfig*.json
 .prettierrc*
 vitest.config*
 
-# Bundle (downloaded at install time, never published)
-references/terraform-providers/
-npm/bundle/
+# Registry corpus/cache data (downloaded by `vegastack init`, never published)
+references/registry/
+npm/registry/
 npm/.version
 
 # Repo housekeeping

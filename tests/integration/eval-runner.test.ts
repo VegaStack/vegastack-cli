@@ -202,7 +202,7 @@ describe("end-to-end runner via --mock", () => {
     const report = JSON.parse(await readFile(outPath, "utf8")) as {
       schema_version: 1;
       date: string;
-      bundle_version: string;
+      registry_version: string;
       cli_version: string;
       model: string;
       prompt_count: number;

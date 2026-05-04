@@ -13,7 +13,7 @@ import { loadKnowledge } from "../../../src/lib/discover/knowledge.js";
 import { stem, tokenize } from "../../../src/lib/discover/tokenize.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "bundle-mini");
+const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "registry-mini");
 
 describe("stem — suffix stripping", () => {
   it("strips -ing", () => {
@@ -130,7 +130,7 @@ describe("D1 specific: 'S3 backend state locking DynamoDB' fires aws-s3-native-s
   it("trigger tokens [s3, backend, lock] match query tokens with stem applied", () => {
     const tokens = tokenize("S3 backend state locking DynamoDB");
     const cards = loadKnowledge({
-      bundleRoot: FIXTURE_ROOT,
+      terraformRoot: FIXTURE_ROOT,
       tokens,
       query: "S3 backend state locking DynamoDB",
       provider: "aws",
@@ -167,7 +167,7 @@ body
     );
     const tokens = tokenize("Atlas clusters need tuning");
     const cards = loadKnowledge({
-      bundleRoot: tmp,
+      terraformRoot: tmp,
       tokens,
       query: "Atlas clusters need tuning",
     });
@@ -192,7 +192,7 @@ body
 `,
     );
     const cards = loadKnowledge({
-      bundleRoot: tmp,
+      terraformRoot: tmp,
       tokens: ["state", "lock"],
       query: "terraform state lock",
     });

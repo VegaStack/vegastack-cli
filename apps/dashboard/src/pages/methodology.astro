@@ -42,14 +42,14 @@ lift = (with_skill_pass_rate - baseline_pass_rate)
       <ol class="mt-4 flex flex-col gap-4 text-muted leading-relaxed">
         <li>
           <span class="text-[color:var(--fg-default)] font-medium">Baseline.</span>
-          Claude Sonnet 4.7 sees only the prompt — no <code class="mono text-sm">vegastack tf</code>
+          Claude Sonnet 4.7 sees only the prompt — no <code class="mono text-sm">vegastack ask --entry terraform --tf-provider <provider></code>
           tool, no skill files, no Terraform-specific context.
         </li>
         <li>
           <span class="text-[color:var(--fg-default)] font-medium">With skill.</span>
           The same model + same prompt + the vegastack-cli skill mounted
           in the harness. The model decides when to call the
-          <code class="mono text-sm">vegastack tf</code> bash tool, reads the
+          <code class="mono text-sm">vegastack ask --entry terraform --tf-provider <provider></code> bash tool, reads the
           four-channel envelope, and writes its answer.
         </li>
         <li>

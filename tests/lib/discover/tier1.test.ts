@@ -1,4 +1,4 @@
-// Per-stage Tier-1 unit tests against the bundle-mini fixture.
+// Per-stage Tier-1 unit tests against the registry-mini fixture.
 
 import { fileURLToPath } from "node:url";
 import * as path from "node:path";
@@ -7,7 +7,7 @@ import { loadManifest } from "../../../src/lib/discover/manifest.js";
 import { tier1 } from "../../../src/lib/discover/tier1.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "bundle-mini");
+const FIXTURE_ROOT = path.resolve(__dirname, "..", "..", "fixtures", "registry-mini");
 const AWS_DIR = path.join(FIXTURE_ROOT, "aws");
 const CF_DIR = path.join(FIXTURE_ROOT, "cloudflare");
 

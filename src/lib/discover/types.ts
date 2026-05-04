@@ -1,5 +1,5 @@
 // Canonical TypeScript contract for the v0.1 discover envelope.
-// This file is THE SOURCE OF TRUTH for the response shape produced by `vegastack tf` and consumed by:
+// This file is THE SOURCE OF TRUTH for the Terraform Registry discovery response consumed by:
 //   - the SKILL.md (E5)
 //   - the eval runner (E6)
 //   - the MCP server (E7)
@@ -19,7 +19,7 @@ export interface DiscoverOk {
   tokens: string[];
   tiers_used: ("manifest" | "grep" | "alias" | "knowledge" | "recipe")[];
   schema_version: 1; // v0.1 — restart numbering, was Python's 4
-  bundle_version: string; // CalVer e.g. "2026.04.28" — from bundle/MANIFEST.json
+  registry_version: string; // CalVer e.g. "2026.04.28" — from Registry MANIFEST.json
   files: DiscoverFile[];
   knowledge: KnowledgeCard[]; // populated by loadKnowledge() — closes F3, F4
   recipes: RecipeMatch[]; // populated by loadRecipes() — closes F3, F4
@@ -28,7 +28,7 @@ export interface DiscoverOk {
   count: number; // = files.length
   intents?: IntentGroup[]; // unchanged; omitted when empty
   timings?: DiscoverTimings; // when --debug
-  warnings?: string[]; // soft-fail surfaces (e.g. "stale bundle (>14 days)")
+  warnings?: string[]; // soft-fail surfaces (e.g. "stale Registry pack (>14 days)")
   /** When the discoverer auto-merged an ambiguous envelope (≤4 candidate
    *  providers), this is the sorted list of providers whose pipelines were
    *  fanned out and unioned. `provider` becomes the comma-joined list and
@@ -53,13 +53,13 @@ export interface DiscoverAmbiguous {
 export interface DiscoverError {
   query: string;
   error: string; // human-readable
-  code: string; // machine-readable: BundleMissing | ProviderUnknown | etc.
+  code: string; // machine-readable: RegistryEntryMissing | ProviderUnknown | etc.
 }
 
 // ─── files[] ────────────────────────────────────────────────────────────
 
 export interface DiscoverFile {
-  path: string; // absolute path under bundle/<provider>/
+  path: string; // absolute path under the installed Terraform pack provider dir
   score: number; // raw, kept for --debug; do NOT depend on this
   score_norm: number; // 0..100, per-provider normalized — closes F7
   tier: "manifest" | "grep" | "manifest+grep";
@@ -220,7 +220,7 @@ export interface DiscoverArgs {
   query: string;
   provider?: string;
   max?: number;
-  /** Bundle root containing the per-provider MANIFEST.json files. */
+  /** Registry pack root containing the per-provider MANIFEST.json files. */
   root: string;
   /** When true, attach manifest_entry + example_usage inline. Default true. */
   enrich?: boolean;
@@ -258,7 +258,7 @@ export interface ManifestGuide {
 export interface ProviderManifest {
   manifest_schema_version?: number;
   provider?: string;
-  bundle_version?: string;
+  registry_version?: string;
   upstream_sha?: string;
   synced_at?: string;
   resources: Record<string, ManifestResourceEntry>;
@@ -291,11 +291,12 @@ export interface ProviderManifest {
   distinctive_tokens?: string[];
 }
 
-/** Root MANIFEST.json (one per bundle). */
-export interface BundleRootManifest {
+/** Root MANIFEST.json (one per Registry pack). */
+export interface TerraformRootManifest {
   manifest_schema_version?: number;
-  bundle_version?: string;
-  /** Canonical list of providers shipped in this bundle. */
+  registry_version?: string;
+  pack_version?: string;
+  /** Canonical list of providers shipped in this Terraform Registry pack. */
   providers?: string[] | Record<string, unknown>;
   generated_at?: string;
   format_version?: number;
