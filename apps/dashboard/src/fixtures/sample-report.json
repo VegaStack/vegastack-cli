@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-04-28",
   "registry_version": "2026.04.28",
-  "cli_version": "0.1.11-next.1",
+  "cli_version": "0.1.11",
   "model": "claude-sonnet-4-7",
   "prompt_count": 50,
   "lift": 0.47,

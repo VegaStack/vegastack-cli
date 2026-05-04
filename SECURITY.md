@@ -86,7 +86,7 @@ We will acknowledge receipt within **2 business days** and aim to issue a fix or
 If you operate this CLI in a security-sensitive environment, consider:
 
 - **Verify Registry digests yourself** before relying on mirrored content. `ARTIFACTS.json` records every file path, byte size, and SHA256.
-- **Pin the npm version** (for example, `npm i -g @vegastack/cli@0.1.11-next.1` during prerelease testing) and consider `npm ci --ignore-scripts` to skip package lifecycle scripts; then run `vegastack init` inside each project under your own audit.
+- **Pin the npm version** (for example, `npm i -g @vegastack/cli@0.1.11` during prerelease testing) and consider `npm ci --ignore-scripts` to skip package lifecycle scripts; then run `vegastack init` inside each project under your own audit.
 - **Restrict the CLI's filesystem writes** by running `vegastack skills install` only inside project directories you control.
 - **Use `VEGASTACK_REGISTRY_DIR=/abs/path/to/cli/packs`** in air-gapped environments to point the CLI at a pre-synced local Registry tree.
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.11] - 2026-05-05
+
+Stable release of the Registry-backed VegaStack CLI. This promotes the verified `0.1.11-next.1` build to the production `latest` channel.
+
+### Fixed
+
+- Kept `vegastack init --dry-run --json` machine-readable by avoiding interactive prompts and terminal control sequences.
+- Kept `vegastack init --json` non-interactive unless `--yes` or `--dry-run` is supplied.
+
 ## [0.1.11-next.1] - 2026-05-05
 
 ### Fixed

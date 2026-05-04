@@ -117,7 +117,7 @@ export interface EvalReport {
   schema_version: 1;
   date: string; // YYYY-MM-DD
   registry_version: string; // CalVer e.g. "2026.04.28"
-  cli_version: string; // semver e.g. "0.1.11-next.1"
+  cli_version: string; // semver e.g. "0.1.11"
   model: string; // e.g. "claude-sonnet-4-7"
   prompt_count: number;
   /** Headline: fraction of remaining error closed. -1..1. */
