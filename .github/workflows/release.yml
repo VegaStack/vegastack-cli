@@ -142,4 +142,5 @@ jobs:
           name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
           body_path: /tmp/notes.md
           generate_release_notes: true
+          prerelease: ${{ contains(github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name, '-') }}
           fail_on_unmatched_files: false
