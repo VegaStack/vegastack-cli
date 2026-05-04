@@ -106,7 +106,10 @@ jobs:
       - name: Publish to npm via OIDC trusted publishing
         env:
           NPM_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.npm_tag || (contains(github.ref_name, '-') && 'next' || 'latest') }}
-        run: npm publish "${{ steps.pack.outputs.tarball }}" --access public --tag "$NPM_TAG"
+        run: |
+          unset NODE_AUTH_TOKEN
+          npm config delete //registry.npmjs.org/:_authToken || true
+          npm publish "${{ steps.pack.outputs.tarball }}" --access public --tag "$NPM_TAG"
 
   github-release:
     name: GitHub release notes
