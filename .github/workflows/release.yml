@@ -4,6 +4,9 @@ name: Release
 # SLSA build provenance attestations for the npm package tarball.
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       tag:
@@ -34,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
       # setup-node@v6 is the current major as of April 2026 (supports
       # automatic dependency caching from packageManager field).
@@ -61,8 +64,8 @@ jobs:
 
       - name: Verify version matches tag
         env:
-          TAG: ${{ inputs.tag }}
-          NPM_TAG: ${{ inputs.npm_tag }}
+          TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          NPM_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.npm_tag || (contains(github.ref_name, '-') && 'next' || 'latest') }}
         run: |
           PKG_VER=$(node -p "require('./package.json').version")
           TAG_VER="${TAG#v}"
@@ -101,7 +104,9 @@ jobs:
       # and publishes provenance automatically. Package must be configured
       # with a trusted publisher entry on npmjs.com first (one-time setup).
       - name: Publish to npm via OIDC trusted publishing
-        run: npm publish "${{ steps.pack.outputs.tarball }}" --access public --tag "${{ inputs.npm_tag }}"
+        env:
+          NPM_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.npm_tag || (contains(github.ref_name, '-') && 'next' || 'latest') }}
+        run: npm publish "${{ steps.pack.outputs.tarball }}" --access public --tag "$NPM_TAG"
 
   github-release:
     name: GitHub release notes
