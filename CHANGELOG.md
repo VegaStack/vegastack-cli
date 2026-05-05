@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.13-next.0] - 2026-05-05
+
+Opens the next develop prerelease channel after stable `0.1.12`.
+
+### Changed
+
+- Bumped develop prerelease metadata to `0.1.13-next.0` after promoting the lowercase GitHub org compatibility patch to stable.
+
 ## [0.1.12] - 2026-05-05
 
 Stable patch for the GitHub organization rename from `VegaStack` to `vegastack`.
