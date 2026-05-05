@@ -1,6 +1,6 @@
 # Registry Format Examples
 
-Current Registry content is produced by `VegaStack/vegastack-cli-registry` and
+Current Registry content is produced by `vegastack/vegastack-cli-registry` and
 installed by `vegastack init` into the user's VegaStack cache. The CLI treats
 exact local files plus generated manifests and indexes as source of truth.
 

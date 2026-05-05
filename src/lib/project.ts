@@ -60,7 +60,7 @@ export const PACKS: readonly PackDefinition[] = Object.freeze([
     status: "available",
     description: "Terraform provider docs, resource manifests, recipes, and knowledge cards.",
     detects: ["*.tf", "*.tfvars", ".terraform.lock.hcl"],
-    source: "https://github.com/VegaStack/vegastack-cli-registry",
+    source: "https://github.com/vegastack/vegastack-cli-registry",
   },
   {
     name: "github-actions",

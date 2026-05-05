@@ -109,7 +109,7 @@ Changesets owns versioning. GitHub Actions publishes to public npm with trusted 
 - `develop` prereleases publish as `@vegastack/cli@next`.
 - `main` production releases publish as `@vegastack/cli@latest`.
 
-For bugs and feature requests, open an issue at https://github.com/VegaStack/vegastack-cli/issues.
+For bugs and feature requests, open an issue at https://github.com/vegastack/vegastack-cli/issues.
 For security issues, follow [SECURITY.md](SECURITY.md).
 
 ## License

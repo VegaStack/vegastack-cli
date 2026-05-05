@@ -114,7 +114,7 @@ Exit codes:
   11  managed tool missing
   12  unsupported environment
 
-Report bugs at https://github.com/VegaStack/vegastack-cli/issues.
+Report bugs at https://github.com/vegastack/vegastack-cli/issues.
 `,
   );
 

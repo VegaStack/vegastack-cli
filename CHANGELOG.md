@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.12] - 2026-05-05
+
+Stable patch for the GitHub organization rename from `VegaStack` to `vegastack`.
+
+### Changed
+
+- Updated public GitHub repository links to `github.com/vegastack`.
+- Updated package repository, bugs, and homepage metadata to the lowercase GitHub organization.
+- Allowed Registry Sigstore verification to trust both the previous `VegaStack` workflow identity and the new `vegastack` workflow identity during the rename transition.
+
 ## [0.1.12-next.0] - 2026-05-05
 
 Opens the next develop prerelease channel after stable `0.1.11`.

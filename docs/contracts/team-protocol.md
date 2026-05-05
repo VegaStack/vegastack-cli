@@ -2,7 +2,7 @@
 
 This repo owns the npm CLI, agent skill installers, local Registry cache
 handling, and deterministic search UX. Registry content generation lives in
-`VegaStack/vegastack-cli-registry`.
+`vegastack/vegastack-cli-registry`.
 
 Maintainer rules:
 

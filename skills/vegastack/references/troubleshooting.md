@@ -114,5 +114,5 @@ If `vegastack ask` suddenly takes >1 s warm:
 ## Repository links
 
 - CLI source / issues: <https://github.com/vegastack/vegastack-cli>
-- Registry source (packs, docs, indexes, aliases, dependencies, knowledge): <https://github.com/VegaStack/vegastack-cli-registry>
+- Registry source (packs, docs, indexes, aliases, dependencies, knowledge): <https://github.com/vegastack/vegastack-cli-registry>
 - Eval dashboard: <https://cli-evals.vegastack.com>

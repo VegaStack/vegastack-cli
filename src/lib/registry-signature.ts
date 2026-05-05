@@ -4,7 +4,7 @@ import { VegaStackError } from "./errors.js";
 
 const REGISTRY_ISSUER = "https://token.actions.githubusercontent.com";
 const REGISTRY_IDENTITY_RE =
-  "^https://github\\.com/VegaStack/vegastack-cli-registry/\\.github/workflows/sync_registry\\.yml@refs/(heads/main|tags/v.+)$";
+  "^https://github\\.com/(VegaStack|vegastack)/vegastack-cli-registry/\\.github/workflows/sync_registry\\.yml@refs/(heads/main|tags/v.+)$";
 
 export async function verifyRegistryCatalogSignature(args: {
   catalogBytes: Buffer;

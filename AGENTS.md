@@ -61,5 +61,5 @@ VEGASTACK_REGISTRY_DIR=/Users/mk/projects/vegastack-cli-registry/cli/packs \
 - stdout is for JSON/data; stderr is for human status.
 - Keep public command names predictable: `ask`, `search`, `init`, `registry update`, `doctor`.
 - Do not add compatibility shims for removed command names.
-- Public docs should send bugs and feature requests to https://github.com/VegaStack/vegastack-cli/issues.
+- Public docs should send bugs and feature requests to https://github.com/vegastack/vegastack-cli/issues.
 - Use `team@vegastack.com` only for package metadata that requires an email field.

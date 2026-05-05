@@ -6,7 +6,7 @@ contributions tightly scoped and well-tested.
 ## Quick start
 
 ```bash
-git clone https://github.com/VegaStack/vegastack-cli.git
+git clone https://github.com/vegastack/vegastack-cli.git
 cd vegastack-cli
 nvm use            # picks up .nvmrc → Node 20
 npm ci
@@ -100,7 +100,7 @@ new code; the global floor is 70%.
 
 ## Reporting bugs / requesting features
 
-Open an issue at https://github.com/VegaStack/vegastack-cli/issues.
+Open an issue at https://github.com/vegastack/vegastack-cli/issues.
 For security issues, follow the process in [SECURITY.md](SECURITY.md).
 
 ## Licensing

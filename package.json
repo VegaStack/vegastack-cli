@@ -1,6 +1,6 @@
 {
   "name": "@vegastack/cli",
-  "version": "0.1.12-next.0",
+  "version": "0.1.12",
   "description": "vegastack — a deterministic, offline knowledge harness for coding agents (Claude Code, Codex, Cursor, Gemini) with project-selected local registry entries for infrastructure, cloudops, CI/CD, and Terraform.",
   "license": "MIT",
   "author": {
@@ -8,13 +8,13 @@
     "email": "team@vegastack.com",
     "url": "https://vegastack.com"
   },
-  "homepage": "https://github.com/VegaStack/vegastack-cli",
+  "homepage": "https://github.com/vegastack/vegastack-cli",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/VegaStack/vegastack-cli.git"
+    "url": "git+https://github.com/vegastack/vegastack-cli.git"
   },
   "bugs": {
-    "url": "https://github.com/VegaStack/vegastack-cli/issues"
+    "url": "https://github.com/vegastack/vegastack-cli/issues"
   },
   "keywords": [
     "terraform",
