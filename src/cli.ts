@@ -6,26 +6,27 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ALL_RENDERER_NAMES } from "./agents/index.js";
-import { runAsk } from "./commands/ask.js";
-import { runDetect } from "./commands/detect.js";
-import { runDoctor } from "./commands/doctor.js";
-import { runGenerate } from "./commands/generate.js";
-import { runInit } from "./commands/init.js";
-import { runPreview } from "./commands/preview.js";
-import { runRefresh } from "./commands/refresh.js";
-import { runRegistryList, runRegistryStatus, runRegistryUpdate } from "./commands/registry.js";
-import {
-  installScanPreCommitHook,
-  removeScanPreCommitHook,
-  runScan,
-  runScanDoctor,
-  runScanEnable,
-  runScanUpdateDb,
-} from "./commands/scan.js";
-import { runSearch } from "./commands/search.js";
-import { runSkills, runSkillsReconcile } from "./commands/skills.js";
-import { runSetup } from "./commands/setup.js";
-import { runUpdate } from "./commands/update.js";
+// Command modules are loaded lazily inside each `.action()` handler so that
+// `vegastack --help` (and any other path that doesn't actually invoke a
+// command) never pays the parse/link cost of `commands/init.ts`,
+// `commands/scan.ts` (~1100 LOC + spawnSync + scan-tools/scan-config),
+// `commands/preview.ts` (cloudflared), `commands/update.ts` (npm view), etc.
+// The `dynamicImport*` helpers below are the single point where the lazy
+// loading happens and exist to keep type signatures explicit.
+// Audit performance/F-002 in audit-1778150875.
+const dynamicImportAsk = () => import("./commands/ask.js");
+const dynamicImportDetect = () => import("./commands/detect.js");
+const dynamicImportDoctor = () => import("./commands/doctor.js");
+const dynamicImportGenerate = () => import("./commands/generate.js");
+const dynamicImportInit = () => import("./commands/init.js");
+const dynamicImportPreview = () => import("./commands/preview.js");
+const dynamicImportRefresh = () => import("./commands/refresh.js");
+const dynamicImportRegistry = () => import("./commands/registry.js");
+const dynamicImportScan = () => import("./commands/scan.js");
+const dynamicImportSearch = () => import("./commands/search.js");
+const dynamicImportSkills = () => import("./commands/skills.js");
+const dynamicImportSetup = () => import("./commands/setup.js");
+const dynamicImportUpdate = () => import("./commands/update.js");
 import { VegaStackError } from "./lib/errors.js";
 import { printError, setJsonMode, setQuiet } from "./lib/log.js";
 import { globalConfigPath } from "./lib/paths.js";
@@ -177,6 +178,7 @@ program
   .option("--json", "emit machine-readable JSON", false)
   .hook("preAction", applyGlobalFlags)
   .action(async (opts: { yes: boolean; dryRun: boolean; json: boolean }) => {
+    const { runSetup } = await dynamicImportSetup();
     process.exit(await runSetup({ yes: opts.yes, dryRun: opts.dryRun, json: opts.json }));
   });
 
@@ -187,6 +189,7 @@ program
   .option("--json", "emit machine-readable JSON", false)
   .hook("preAction", applyGlobalFlags)
   .action(async (opts: { json: boolean }) => {
+    const { runDetect } = await dynamicImportDetect();
     process.exit(await runDetect({ json: opts.json }));
   });
 
@@ -199,6 +202,7 @@ program
   .option("--json", "emit machine-readable JSON", false)
   .hook("preAction", applyGlobalFlags)
   .action(async (opts: { yes: boolean; dryRun: boolean; json: boolean }) => {
+    const { runRefresh } = await dynamicImportRefresh();
     process.exit(await runRefresh({ yes: opts.yes, dryRun: opts.dryRun, json: opts.json }));
   });
 
@@ -210,6 +214,7 @@ program
   .option("--json", "emit machine-readable JSON", false)
   .hook("preAction", applyProjectCommandPrelude)
   .action(async (intent: string[], opts: { dryRun: boolean; json: boolean }) => {
+    const { runGenerate } = await dynamicImportGenerate();
     process.exit(await runGenerate(intent, { dryRun: opts.dryRun, json: opts.json }));
   });
 
@@ -277,6 +282,7 @@ program
       if (opts.entry !== undefined) qOpts.entries = opts.entry;
       if (opts.tfProvider !== undefined) qOpts.tfProvider = opts.tfProvider;
       if (opts.max !== undefined) qOpts.max = opts.max;
+      const { runAsk } = await dynamicImportAsk();
       process.exit(await runAsk(queryWords.join(" "), qOpts));
     },
   );
@@ -333,6 +339,7 @@ program
       };
       if (opts.entry !== undefined) searchOpts.entries = opts.entry;
       if (opts.max !== undefined) searchOpts.max = opts.max;
+      const { runSearch } = await dynamicImportSearch();
       process.exit(await runSearch(queryWords.join(" "), searchOpts));
     },
   );
@@ -362,6 +369,7 @@ program
       tunnels: boolean;
       skills: boolean;
     }) => {
+      const { runInit } = await dynamicImportInit();
       process.exit(
         await runInit({
           yes: opts.yes,
@@ -419,6 +427,7 @@ Cloudflare notice:
       json: boolean;
       shell: boolean;
     }) => {
+      const { runPreview } = await dynamicImportPreview();
       process.exit(
         await runPreview({
           command: opts.command,
@@ -444,6 +453,7 @@ program
   .option("--verify-registry", "validate installed registry manifests", false)
   .hook("preAction", applyGlobalFlags)
   .action(async (opts: { json: boolean; verifyRegistry?: boolean }) => {
+    const { runDoctor } = await dynamicImportDoctor();
     process.exit(
       await runDoctor({
         json: opts.json,
@@ -461,6 +471,7 @@ registryCmd
   .option("--json", "emit machine-readable JSON", false)
   .hook("preAction", applyGlobalFlags)
   .action(async (opts: { json: boolean }) => {
+    const { runRegistryList } = await dynamicImportRegistry();
     process.exit(await runRegistryList({ json: opts.json }));
   });
 
@@ -488,6 +499,7 @@ registryCmd
         json: opts.json,
       };
       if (entry !== undefined) updateOpts.entry = entry;
+      const { runRegistryUpdate } = await dynamicImportRegistry();
       process.exit(await runRegistryUpdate(updateOpts));
     },
   );
@@ -498,6 +510,7 @@ registryCmd
   .option("--json", "emit machine-readable JSON", false)
   .hook("preAction", applyGlobalFlags)
   .action(async (opts: { json: boolean }) => {
+    const { runRegistryStatus } = await dynamicImportRegistry();
     process.exit(await runRegistryStatus({ json: opts.json }));
   });
 
@@ -567,6 +580,7 @@ Disclosure:
       };
       if (opts.severity !== undefined) scanOpts.severity = opts.severity;
       if (opts.output !== undefined) scanOpts.output = opts.output;
+      const { runScan } = await dynamicImportScan();
       process.exit(await runScan(scanOpts));
     },
   );
@@ -585,6 +599,7 @@ scanCmd
       cmd: Command,
     ) => {
       const json = Boolean(opts.json || cmd.optsWithGlobals<{ json?: boolean }>().json);
+      const { runScanEnable } = await dynamicImportScan();
       process.exit(
         await runScanEnable({
           install: opts.install,
@@ -602,6 +617,7 @@ scanCmd
   .option("--json", "emit machine-readable JSON", false)
   .hook("preAction", applyProjectCommandPrelude)
   .action(async (opts: { json: boolean }, cmd: Command) => {
+    const { runScanDoctor } = await dynamicImportScan();
     process.exit(
       await runScanDoctor({
         json: Boolean(opts.json || cmd.optsWithGlobals<{ json?: boolean }>().json),
@@ -618,6 +634,7 @@ scanCmd
   .hook("preAction", applyProjectCommandPrelude)
   .action(
     async (opts: { offline: boolean; installTools: boolean; json: boolean }, cmd: Command) => {
+      const { runScanUpdateDb } = await dynamicImportScan();
       process.exit(
         await runScanUpdateDb({
           offline: opts.offline,
@@ -635,7 +652,8 @@ scanHookCmd
   .description("install the local pre-commit hook")
   .option("--force", "append/replace VegaStack hook block in an existing hook", false)
   .hook("preAction", applyGlobalFlags)
-  .action((opts: { force: boolean }) => {
+  .action(async (opts: { force: boolean }) => {
+    const { installScanPreCommitHook } = await dynamicImportScan();
     process.exit(installScanPreCommitHook(process.cwd(), opts.force) ? 0 : 1);
   });
 
@@ -643,7 +661,8 @@ scanHookCmd
   .command("remove")
   .description("remove the VegaStack-managed pre-commit hook block")
   .hook("preAction", applyGlobalFlags)
-  .action(() => {
+  .action(async () => {
+    const { removeScanPreCommitHook } = await dynamicImportScan();
     process.exit(removeScanPreCommitHook(process.cwd()) ? 0 : 1);
   });
 
@@ -675,6 +694,7 @@ program
       yes: boolean;
       json: boolean;
     }) => {
+      const { runUpdate } = await dynamicImportUpdate();
       process.exit(
         await runUpdate({
           check: opts.check,
@@ -728,6 +748,7 @@ skillsCmd
       dryRun: boolean;
       json: boolean;
     }) => {
+      const { runSkills } = await dynamicImportSkills();
       process.exit(
         await runSkills("install", {
           agents: opts.agent,
@@ -755,6 +776,7 @@ skillsCmd
       dryRun: boolean;
       json: boolean;
     }) => {
+      const { runSkills } = await dynamicImportSkills();
       process.exit(
         await runSkills("uninstall", {
           agents: opts.agent,
@@ -775,6 +797,7 @@ skillsCmd
   .option("--json", "emit machine-readable JSON", false)
   .hook("preAction", applyGlobalFlags)
   .action(async (opts: { agent: string[]; scope: "global" | "project"; json: boolean }) => {
+    const { runSkills } = await dynamicImportSkills();
     process.exit(
       await runSkills("status", {
         agents: opts.agent,
@@ -801,6 +824,7 @@ skillsCmd
       dryRun: boolean;
       json: boolean;
     }) => {
+      const { runSkillsReconcile } = await dynamicImportSkills();
       process.exit(
         await runSkillsReconcile({
           scope: opts.scope,

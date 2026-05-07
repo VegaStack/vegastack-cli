@@ -41,4 +41,22 @@ describe("setup command", () => {
       );
     });
   });
+
+  // Defence-in-depth: the global config records the absolute config_root,
+  // detected tools, and managed-tool versions. On a multi-user host these
+  // shouldn't be world-readable. Apply 0o600 on POSIX; Windows ignores POSIX
+  // bits so the assertion is gated.
+  it.skipIf(process.platform === "win32")(
+    "writes the global config with owner-only mode (0o600)",
+    async () => {
+      await withTmpDir(async (dir) => {
+        process.env.VEGASTACK_CONFIG_DIR = path.join(dir, ".vegastack");
+        const code = await runSetup({ dryRun: false, yes: true, json: true });
+        expect(code).toBe(0);
+        const stat = fs.statSync(globalConfigPath());
+        // Mask off file-type bits, compare permission bits only.
+        expect(stat.mode & 0o777).toBe(0o600);
+      });
+    },
+  );
 });

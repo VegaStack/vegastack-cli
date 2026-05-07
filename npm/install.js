@@ -13,7 +13,15 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
-if (process.env.VEGASTACK_SKIP_POSTINSTALL === "1") {
+// Defence-in-depth: honour `npm_config_ignore_scripts=true`. npm itself
+// usually short-circuits before invoking postinstall when the user runs
+// `npm i --ignore-scripts`, but the per-package check is missing; an
+// out-of-tree caller invoking `node npm/install.js` directly (e.g. a
+// supply-chain auditor exercising the shim) should also see this guard
+// honoured. Audit security/F-006 in audit-1778150875.
+if (process.env.npm_config_ignore_scripts === "true") {
+  process.stderr.write("vegastack postinstall: npm_config_ignore_scripts=true; skipping.\n");
+} else if (process.env.VEGASTACK_SKIP_POSTINSTALL === "1") {
   process.stderr.write("vegastack postinstall: VEGASTACK_SKIP_POSTINSTALL=1 set; nothing to do.\n");
 } else {
   process.stderr.write(
@@ -44,7 +52,19 @@ if (process.env.VEGASTACK_SKIP_POSTINSTALL === "1") {
         encoding: "utf8",
         timeout: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 15000,
       });
-      if (r.stderr) process.stderr.write(r.stderr);
+      // Cap forwarded stderr so a misbehaving `skills reconcile` cannot spam
+      // npm's postinstall log buffer with megabytes of output. Audit
+      // npm-shim/F-005 in audit-1778150875.
+      if (r.stderr) {
+        const cap = 4096;
+        if (r.stderr.length > cap) {
+          process.stderr.write(
+            `${r.stderr.slice(0, cap)}\n…(truncated ${r.stderr.length - cap} bytes of postinstall stderr)\n`,
+          );
+        } else {
+          process.stderr.write(r.stderr);
+        }
+      }
       if (r.error || (r.status ?? 0) !== 0) {
         const reason = r.error?.message ?? `exit ${r.status ?? "?"}`;
         process.stderr.write(
