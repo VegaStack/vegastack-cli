@@ -10,6 +10,7 @@ import { spawnCmdSync } from "./spawn-cmd.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { HOME } from "./paths.js";
+import { atomicWriteFileSync } from "./fs-utils.js";
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const PKG_NAME = "@vegastack/cli";
@@ -36,8 +37,12 @@ export function readUpdateCache(): UpdateCache | null {
 
 export function writeUpdateCache(cache: UpdateCache): void {
   const file = updateCachePath();
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(cache, null, 2) + "\n");
+  // Atomic temp+rename so concurrent CLI invocations (e.g. `vegastack doctor`
+  // running while a separate `vegastack update` finishes) cannot leave a
+  // truncated/half-written JSON document at the canonical path. A partial
+  // write would make `readUpdateCache` JSON.parse-fail and silently return
+  // null, suppressing the update nag for the next 24h.
+  atomicWriteFileSync(file, JSON.stringify(cache, null, 2) + "\n");
 }
 
 export function cacheIsFresh(cache: UpdateCache, now = Date.now()): boolean {

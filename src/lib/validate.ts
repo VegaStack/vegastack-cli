@@ -53,8 +53,20 @@ export function rejectDangerousChars(input: string, fieldName = "path"): void {
 function realpathIfExists(p: string): string {
   try {
     return fs.realpathSync(p);
-  } catch {
-    return path.normalize(p);
+  } catch (e) {
+    const code = (e as { code?: string }).code;
+    // Only treat "doesn't exist yet" as fall-through. Permission/IO errors
+    // (EACCES on an unreadable intermediate symlink, EIO, ELOOP, ENOTDIR
+    // mid-path, etc.) must NOT silently downgrade containment to the
+    // unresolved input — that re-opens the TOCTOU window the realpath was
+    // meant to close. Surface them as ValidationError so the caller can
+    // refuse to act on the path.
+    if (code === "ENOENT") return path.normalize(p);
+    throw new VegaStackError(
+      "ValidationError",
+      `cannot resolve real path of ${p}: ${(e as Error).message}`,
+      { context: { path: p, code } },
+    );
   }
 }
 
