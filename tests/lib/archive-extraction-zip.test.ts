@@ -95,4 +95,38 @@ describe("safeExtractZip — issue #76 (zip-slip defense)", () => {
       fs.rmSync(dest, { recursive: true, force: true });
     }
   });
+
+  it("rejects zip archives containing symlink entries", async () => {
+    // Build a zip containing a symlink. `zip --symlinks` preserves the
+    // symlink mode bits in externalFileAttributes — exactly the field
+    // safeExtractZip's symlink guard inspects.
+    const symParent = makeTmp("vs-zip-sym-");
+    const src = path.join(symParent, "src");
+    fs.mkdirSync(src, { recursive: true });
+    fs.writeFileSync(path.join(symParent, "target.txt"), "TARGET");
+    fs.symlinkSync(path.join(symParent, "target.txt"), path.join(src, "link"));
+    const symZip = path.join(symParent, "sym.zip");
+    execFileSync("zip", ["-q", "--symlinks", symZip, "link"], {
+      cwd: src,
+      stdio: "pipe",
+    });
+    const dest = makeTmp("vs-zip-extract-");
+    try {
+      let caught: unknown;
+      try {
+        await safeExtractZip(symZip, dest);
+      } catch (e) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(VegaStackError);
+      const top = (caught as Error).message;
+      const cause = (caught as { cause?: Error }).cause?.message ?? "";
+      expect(`${top} :: ${cause}`).toMatch(/symlink|symbolic/i);
+      // No file (symlink target) should land in dest.
+      expect(fs.readdirSync(dest)).toHaveLength(0);
+    } finally {
+      fs.rmSync(dest, { recursive: true, force: true });
+      fs.rmSync(symParent, { recursive: true, force: true });
+    }
+  });
 });
