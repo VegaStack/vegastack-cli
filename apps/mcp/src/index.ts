@@ -143,6 +143,13 @@ export class VegaStackMcp extends McpAgent<Env> {
 
 const CORS_HEADERS: Record<string, string> = {
   // v0.1: anonymous public read. Tightens to per-tenant in v0.2 if we add auth.
+  // TODO(v0.2): when auth lands, drop "*" and source Allow-Origin from
+  // env.ALLOWED_ORIGINS; leaving "*" while accepting `Authorization`
+  // would let any origin trigger preflight and have the browser attach
+  // a bearer token (CORS-spec credentials gate is bypassed by token-in-
+  // explicit-header). This must be flipped in the same patch as the auth
+  // path -- any reviewer landing auth without narrowing this constant
+  // should reject the change.
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, Mcp-Session-Id",

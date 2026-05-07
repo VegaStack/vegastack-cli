@@ -53,7 +53,13 @@ export function linkOrCopyDir(src: string, dest: string): LinkResult {
 export function isSymlinkTo(dest: string, expected: string): boolean {
   try {
     if (!fs.lstatSync(dest).isSymbolicLink()) return false;
-    return fs.readlinkSync(dest) === expected;
+    const raw = fs.readlinkSync(dest);
+    if (raw === expected) return true;
+    // Resolve relative or trailing-slash forms before comparing so a link
+    // created with a relative target (or normalised separator) still
+    // matches when the caller passes an absolute `expected` path.
+    const resolvedRaw = path.resolve(path.dirname(dest), raw);
+    return resolvedRaw === path.resolve(expected);
   } catch {
     return false;
   }

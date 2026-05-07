@@ -87,6 +87,13 @@ export function parseKnowledgeCard(id: string, raw: string): KnowledgeCard {
 function parseSimpleYaml(src: string): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   const lines = src.split(/\r?\n/);
+  // Defence-in-depth: the read boundary in r2-registry should already
+  // bound knowledge-card size, but a 50 MB markdown that slipped through
+  // would split into millions of lines and CPU-throttle the isolate.
+  // Fail closed if the input is implausibly large for a frontmatter doc.
+  if (lines.length > 5000) {
+    throw new Error("knowledge card too large to parse");
+  }
   let i = 0;
   while (i < lines.length) {
     const line = lines[i]!;
@@ -120,7 +127,11 @@ function parseSimpleYaml(src: string): Record<string, unknown> {
         i++;
       }
       if (nested.length > 0) out[key] = nested;
-      else out[key] = blockLines.map((l) => l.replace(/^\s\s/, "")).join("\n").trim();
+      else
+        out[key] = blockLines
+          .map((l) => l.replace(/^\s\s/, ""))
+          .join("\n")
+          .trim();
       continue;
     }
     out[key] = parseScalar(valRaw);
@@ -129,10 +140,7 @@ function parseSimpleYaml(src: string): Record<string, unknown> {
   return out;
 }
 
-function readListItem(
-  lines: string[],
-  startIndex: number,
-): { value: unknown; nextIndex: number } {
+function readListItem(lines: string[], startIndex: number): { value: unknown; nextIndex: number } {
   // Inline scalar list item: "- foo"
   const first = lines[startIndex]!;
   const inline = first.match(/^\s*-\s+(.*)$/);
