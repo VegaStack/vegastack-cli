@@ -21,6 +21,43 @@ export interface PreviewOptions {
   json: boolean;
   yes: boolean;
   shell?: boolean | undefined;
+  allowPrivateHost?: boolean | undefined;
+}
+
+/**
+ * Validate `--url` against an allowlist (loopback only by default) to prevent
+ * SSRF probes against link-local / RFC1918 / cloud-metadata services. Exported
+ * for unit testing.
+ */
+export function validatePreviewUrl(rawUrl: string, opts: { allowPrivateHost?: boolean } = {}): URL {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new VegaStackError("ValidationError", `--url is not a valid URL: ${rawUrl}`);
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new VegaStackError(
+      "ValidationError",
+      `--url must be http(s); got '${parsed.protocol}' in ${rawUrl}`,
+    );
+  }
+  const host = parsed.hostname.toLowerCase();
+  const loopback =
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "[::1]" ||
+    host === "::1" ||
+    host === "0.0.0.0";
+  if (loopback) return parsed;
+  if (opts.allowPrivateHost === true) return parsed;
+  // Reject link-local (169.254.0.0/16, IPv6 fe80::/10) and RFC1918 ranges and
+  // cloud metadata endpoints. Hostnames (non-IP) are also rejected unless the
+  // operator passes --allow-private-host.
+  throw new VegaStackError(
+    "ValidationError",
+    `--url '${rawUrl}' is not a loopback host; pass --allow-private-host to override (SSRF guard)`,
+  );
 }
 
 const SHELL_METACHAR_RE = /[;&|`$<>()\n\r]/;
@@ -139,7 +176,7 @@ export async function runPreview(opts: PreviewOptions): Promise<number> {
     await waitForExit(children);
     return 0;
   } catch (e) {
-    for (const child of children) child.kill("SIGTERM");
+    for (const child of children) killPreviewChild(child);
     return printError(e);
   }
 }
@@ -149,6 +186,7 @@ async function startLocalPreview(
   children: PreviewChild[],
 ): Promise<RunningPreview> {
   if (opts.url) {
+    validatePreviewUrl(opts.url, { allowPrivateHost: opts.allowPrivateHost === true });
     await waitForUrl(opts.url, opts.timeout);
     return { localUrl: opts.url, server: null };
   }
@@ -264,6 +302,11 @@ function detectPackageManager(cwd: string): string {
 
 function spawnShell(command: string, shell: boolean): PreviewChild {
   const env = { ...process.env, BROWSER: "none" };
+  // detached:true puts the child in a new process group on POSIX so we can
+  // signal the entire group (parent + grandchildren spawned by `npm run dev`,
+  // `next dev`, etc.) via process.kill(-pid). On Windows detached has no
+  // group semantics; we use taskkill /T in killPreviewChild() instead.
+  const detached = process.platform !== "win32";
   if (shell) {
     log.warn(
       "preview --shell evaluates --command via the system shell; only use with trusted input",
@@ -272,6 +315,7 @@ function spawnShell(command: string, shell: boolean): PreviewChild {
       shell: true,
       stdio: ["ignore", "pipe", "pipe"],
       env,
+      detached,
     });
   }
   const argv = parseCommandArgv(command);
@@ -279,7 +323,58 @@ function spawnShell(command: string, shell: boolean): PreviewChild {
     shell: false,
     stdio: ["ignore", "pipe", "pipe"],
     env,
+    detached,
   });
+}
+
+/**
+ * Terminate a preview child including any grandchildren. POSIX uses the
+ * process group id (negative pid); Windows uses taskkill /T /F. Exported for
+ * unit testing.
+ */
+// Accept any object with a `pid` and a `kill(signal?)` method. Using a wide
+// `(...args: unknown[]) => boolean` lets us pass real `ChildProcess` objects
+// (whose `kill` is typed with `NodeJS.Signals | number`) and test stubs.
+interface KillableChild {
+  pid?: number | undefined;
+  kill(signal?: unknown): boolean;
+}
+
+export function killPreviewChild(child: KillableChild): void {
+  const pid = child.pid;
+  if (typeof pid !== "number" || pid <= 0) {
+    try {
+      child.kill("SIGTERM");
+    } catch {
+      // already exited
+    }
+    return;
+  }
+  if (process.platform === "win32") {
+    try {
+      spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore" });
+    } catch {
+      // taskkill missing — fall back to direct kill
+      try {
+        child.kill("SIGTERM");
+      } catch {
+        // ignore
+      }
+    }
+    return;
+  }
+  // POSIX: kill the process group (parent + descendants)
+  try {
+    process.kill(-pid, "SIGTERM");
+    return;
+  } catch {
+    // ESRCH (group exited) or EPERM — fall through
+  }
+  try {
+    child.kill("SIGTERM");
+  } catch {
+    // ignore
+  }
 }
 
 function pipeChild(child: PreviewChild, label: string): void {
@@ -360,7 +455,7 @@ async function waitForExit(children: PreviewChild[]): Promise<void> {
   if (children.some((child) => child.exitCode !== null || child.signalCode !== null)) return;
   await new Promise<void>((resolve) => {
     const shutdown = (): void => {
-      for (const child of children) child.kill("SIGTERM");
+      for (const child of children) killPreviewChild(child);
       resolve();
     };
     process.once("SIGINT", shutdown);

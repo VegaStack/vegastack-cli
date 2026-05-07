@@ -396,6 +396,11 @@ program
     false,
   )
   .option("--url <url>", "existing local URL to preview, e.g. http://localhost:3000")
+  .option(
+    "--allow-private-host",
+    "allow --url to point at a non-loopback host (defeats SSRF guard; use with care)",
+    false,
+  )
   .option("--port <n>", "local port to wait for when no URL is provided", parsePositiveInt)
   .option("--tunnel", "create a temporary Cloudflare Quick Tunnel", false)
   .option("--hostname <hostname>", "route a custom Cloudflare hostname to the preview")
@@ -426,6 +431,7 @@ Cloudflare notice:
       yes: boolean;
       json: boolean;
       shell: boolean;
+      allowPrivateHost: boolean;
     }) => {
       const { runPreview } = await dynamicImportPreview();
       process.exit(
@@ -440,6 +446,7 @@ Cloudflare notice:
           yes: opts.yes,
           json: opts.json,
           shell: opts.shell,
+          allowPrivateHost: opts.allowPrivateHost,
         }),
       );
     },
