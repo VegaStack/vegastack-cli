@@ -110,7 +110,9 @@ export function resolveRegistrySummary(manifestPath = REGISTRY_MANIFEST): Regist
     providers.sort();
     return { registryVersion, providers };
   } catch (e) {
-    process.stderr.write(`warn: Registry MANIFEST.json unparseable (${(e as Error).message}); falling back\n`);
+    process.stderr.write(
+      `warn: Registry MANIFEST.json unparseable (${(e as Error).message}); falling back\n`,
+    );
     return { registryVersion: "dev", providers: FALLBACK_PROVIDERS.slice() };
   }
 }
@@ -138,13 +140,30 @@ function parseArgs(argv: string[]): CliOptions {
     templatePath: TEMPLATE_PATH,
     manifestPath: REGISTRY_MANIFEST,
   };
+  // Reject `--out --check` style mistakes: a flag passed where a value is
+  // expected silently shifted i past the next flag, leaving the literal
+  // string "--check" as the output filename. Treat this as a usage error.
+  const takeValue = (flag: string, i: number): string => {
+    const next = argv[i + 1];
+    if (next === undefined || next.startsWith("--")) {
+      process.stderr.write(`missing value for ${flag}\n`);
+      process.exit(2);
+    }
+    return next;
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--check") opts.check = true;
-    else if (a === "--out") opts.out = argv[++i] ?? opts.out;
-    else if (a === "--template") opts.templatePath = argv[++i] ?? opts.templatePath;
-    else if (a === "--manifest") opts.manifestPath = argv[++i] ?? opts.manifestPath;
-    else if (a === "--help" || a === "-h") {
+    else if (a === "--out") {
+      opts.out = takeValue("--out", i);
+      i++;
+    } else if (a === "--template") {
+      opts.templatePath = takeValue("--template", i);
+      i++;
+    } else if (a === "--manifest") {
+      opts.manifestPath = takeValue("--manifest", i);
+      i++;
+    } else if (a === "--help" || a === "-h") {
       process.stdout.write(
         "Usage: generate-skill-from-registry [--check] [--out PATH] [--template PATH] [--manifest PATH]\n",
       );
@@ -184,7 +203,9 @@ export function runCli(argv = process.argv.slice(2)): number {
 
   fs.mkdirSync(path.dirname(opts.out), { recursive: true });
   fs.writeFileSync(opts.out, rendered, "utf8");
-  process.stdout.write(`wrote ${opts.out} (${rendered.length} bytes, ${summary.providers.length} providers)\n`);
+  process.stdout.write(
+    `wrote ${opts.out} (${rendered.length} bytes, ${summary.providers.length} providers)\n`,
+  );
   return 0;
 }
 

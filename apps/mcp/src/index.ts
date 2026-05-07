@@ -24,6 +24,10 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { listProviders, readRootManifest } from "./lib/r2-registry.js";
 import { createBearerAuth, createRateLimiter, readMiddlewareConfig } from "./middleware.js";
 
+// Single source of truth for the worker version string. Bumped in lockstep
+// with apps/mcp/package.json#version (CI repo-meta test enforces equality).
+const WORKER_VERSION = "0.1.13-next.0";
+
 import {
   handleTerraformDiscover,
   terraformDiscoverDescription,
@@ -55,7 +59,7 @@ import {
 export class VegaStackMcp extends McpAgent<Env> {
   server = new McpServer({
     name: "vegastack-mcp",
-    version: "0.1.13-next.0",
+    version: WORKER_VERSION,
   });
 
   override async init(): Promise<void> {
@@ -208,7 +212,7 @@ export default {
       }
       return json({
         name: "vegastack-mcp",
-        version: "0.1.13-next.0",
+        version: WORKER_VERSION,
         registry_version: registryVersion,
         schema_version: 1,
       });
