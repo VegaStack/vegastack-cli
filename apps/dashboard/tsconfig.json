@@ -3,7 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      "@contracts/*": ["../../docs/contracts/*"]
     },
     "types": ["@cloudflare/workers-types", "astro/client"],
     "jsx": "preserve",

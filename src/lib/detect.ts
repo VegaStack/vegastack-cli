@@ -288,7 +288,12 @@ function detectFrameworks(files: Set<string>, pkg: PackageJson | null): Framewor
 function detectRepo(cwd: string): RepoDetection {
   const git = fs.existsSync(path.join(cwd, ".git"));
   const config = readText(path.join(cwd, ".git", "config")) ?? "";
-  const remotes = [...config.matchAll(/url\s*=\s*(.+)/g)].map((m) => (m[1] ?? "").trim());
+  // Only collect URLs from `[remote "<name>"]` sections. The previous regex
+  // matched every `url = …` line, including `[url "…"] insteadOf` rewrite
+  // blocks and `[http "…"]` config — that produced spurious entries and let
+  // the host heuristic mis-classify a GitHub project as GitLab when an
+  // `insteadOf` rule rewrote ssh URLs.
+  const remotes = extractRemoteUrls(config);
   const branch =
     readText(path.join(cwd, ".git", "HEAD"))?.match(/refs\/heads\/(.+)$/)?.[1] ?? undefined;
   const joined = remotes.join(" ");
@@ -302,6 +307,27 @@ function detectRepo(cwd: string): RepoDetection {
           ? "azure-devops"
           : undefined;
   return { git, ...(host ? { host } : {}), ...(branch ? { default_branch: branch } : {}), remotes };
+}
+
+/**
+ * Extract URLs from `[remote "<name>"]` sections of a git config file.
+ * Skips `[url "…"] insteadOf` and `[http "…"]` blocks whose `url =` lines
+ * are not real remotes.
+ */
+function extractRemoteUrls(config: string): string[] {
+  const out: string[] = [];
+  let inRemoteSection = false;
+  for (const line of config.split(/\r?\n/)) {
+    const sectionMatch = /^\s*\[\s*([A-Za-z0-9_-]+)(?:\s+"[^"]*")?\s*\]\s*$/.exec(line);
+    if (sectionMatch) {
+      inRemoteSection = sectionMatch[1] === "remote";
+      continue;
+    }
+    if (!inRemoteSection) continue;
+    const urlMatch = /^\s*url\s*=\s*(.+?)\s*$/.exec(line);
+    if (urlMatch?.[1]) out.push(urlMatch[1]);
+  }
+  return out;
 }
 
 function detectCi(files: string[]): ProjectDetection["ci"] {
