@@ -67,6 +67,9 @@ Each subagent receives:
    - `/tmp/fix-NN/result.json` — structured result for orchestrator.
 5. **Instruction** to run steps 1–7 (CONFIRM → MUTATE) of the TDD loop only.
    **Do NOT post the evidence comment.** **Do NOT close the issue.**
+6. **MANDATORY worktree** (post-2026-05-07 lesson). The orchestrator pre-creates a worktree at `/tmp/wt-fix-NN/` and the subagent's prompt instructs it to `cd /tmp/wt-fix-NN/` for all work. Without a worktree, sibling subagents in the same canonical repo flap branches via shared `cwd` and corrupt each other's commits. Worktree usage is no longer optional.
+7. **MANDATORY repo-relative paths in characterization fixtures** (post-2026-05-07 lesson). When a subagent generates a baseline JSON for a refactor pin, the script must store paths as `path.relative(REPO_ROOT, abs)` rather than the absolute path. Otherwise the fixture is non-portable across worktrees and breaks at integration-time. Reference: `tests/fixtures/discover/orchestrator-baseline.json` was generated against `/private/tmp/wt-round4-S/...` and failed when run from the canonical `/Users/mk/projects/vegastack-cli/...`. Always store + compare relative.
+8. **Honest deferral mandate.** The subagent must mark `skipped: true` with `reason: <one of: needs_design | already_fixed | multi_day_refactor | audit_says_dont_fix>` for any finding it cannot reliably fix. **No half-attempts.** Honest skips are infinitely preferable to brittle fixes that pass only the subagent's own tests.
 
 Subagent return contract (`result.json`):
 
@@ -143,6 +146,14 @@ the orchestrator's integration step depends on this honesty.
    - npm run typecheck                     (must pass)
    - npm run lint                          (must pass)
    - npm run format:check                  (must pass)
+   - **Auto-fix step (post-2026-05-07 lesson):** if `format:check` warns
+     about new test files added by subagents, run `npm run format` and
+     commit the fixup as `style: prettier-format follow-up`. Don't let
+     format warnings cascade into the next merge.
+   - **Lint auto-fix:** same — if eslint flags trivial issues
+     (`no-unused-vars`, `prefer-nullish-coalescing`, `no-undef NodeJS`),
+     fix them in a `chore: lint cleanup` commit so the integration
+     branch stays green.
    - For each issue in this and previous merges:
      - Re-run the originating audit category check (cheap version: rerun the
        repro command from the issue body)

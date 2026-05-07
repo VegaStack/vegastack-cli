@@ -13,8 +13,9 @@ Actions:
 - Re-read evidence. If evidence is missing/insufficient → ask user to expand the issue body before proceeding.
 - For outsider issues (no `audit` label): classify severity using audit-skill rubric, set `severity:*` and `area:*` labels, set issue type, post a triage comment.
 - Capture: `ISSUE_REF`, `INITIAL_SHA = git rev-parse HEAD`, `BRANCH_BASE = $(git rev-parse --abbrev-ref HEAD)`.
+- **Already-fixed verification (post-2026-05-07 lesson):** before doing any work, re-read the cited file:LINE at HEAD and check if the cited symptom still applies. Many findings get addressed transitively by adjacent commits between audit and fix. If the symptom is gone, mark `already_fixed: true` in result.json with the closing-commit SHA, post a brief comment on the issue noting the inadvertent close, and **stop** — do not write a fake red test to "prove" a non-existent bug.
 
-Exit: structured CONFIRM record (issue ref, severity, category, restated symptom, repro command).
+Exit: structured CONFIRM record (issue ref, severity, category, restated symptom, repro command, OR `already_fixed: true` with attribution).
 
 ---
 
@@ -205,6 +206,23 @@ Post the evidence comment on the GH issue. Template in `evidence-comment.md`. In
 - "How to manually re-verify" copy-paste block
 
 In ephemeral mode: append to the report's `## Verification log` instead.
+
+---
+
+## Step 8.5 — REGRESSION PIN (added post-2026-05-07)
+
+**Goal:** prevent the bug-class from recurring once the fix lands.
+
+If the fix's bug-class matches a pattern in `vegastack-audit/references/regression-pins.md`:
+- Add (or extend) the corresponding `tests/architecture/<pattern>.test.ts` in the same GREEN commit (or a follow-up commit on the same branch).
+- The architectural test should fail if the bad pattern reappears anywhere in the repo.
+
+If the bug-class is genuinely novel:
+- Add the new pattern to `regression-pins.md` (catalog grows monotonically).
+- Add the corresponding architectural test under `tests/architecture/`.
+- Note in the evidence comment that a new pin was added.
+
+**Why:** without an architectural test, the fix is one diff away from regressing. Architectural tests are cheap, catch the bad pattern at edit time (not at next-audit-time), and cost ~5 lines of test code. The 2026-05-07 audit had to re-fix several patterns that earlier rounds had nominally addressed because no pin existed.
 
 ---
 

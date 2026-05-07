@@ -33,12 +33,28 @@ interface BaselineCase {
 
 const baseline = JSON.parse(fs.readFileSync(BASELINE_PATH, "utf8")) as Record<string, BaselineCase>;
 
-function normalize(r: DiscoverResult): DiscoverResult {
-  // Drop timings (non-deterministic) and re-stringify for stable structural
-  // compare. Mirrors the generator script.
-  const out = JSON.parse(JSON.stringify(r)) as DiscoverResult & { timings?: unknown };
+function relativizeStrings(value: unknown): unknown {
+  if (typeof value === "string") {
+    return value.split(REPO_ROOT).join("<REPO_ROOT>");
+  }
+  if (Array.isArray(value)) return value.map(relativizeStrings);
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = relativizeStrings(v);
+    }
+    return out;
+  }
+  return value;
+}
+
+function normalize(r: DiscoverResult): unknown {
+  // Drop timings (non-deterministic) and rewrite absolute paths to repo-
+  // relative tokens so the comparison is portable across worktrees and CI.
+  // Mirrors the generator script's relativizeStrings.
+  const out = JSON.parse(JSON.stringify(r)) as Record<string, unknown> & { timings?: unknown };
   delete out.timings;
-  return out;
+  return relativizeStrings(out);
 }
 
 describe("discover orchestrator — characterization (round-4 refactor pin)", () => {

@@ -9,7 +9,7 @@ describe("apps/dashboard/wrangler.toml", () => {
     // namespace IDs. Either the IDs are real (committed) or the binding
     // is commented out so the deploy succeeds without it. Either way, no
     // `REPLACE_WITH_*` token may remain active in the file.
-    const filePath = path.resolve(__dirname, "..", "wrangler.toml");
+    const filePath = path.resolve(__dirname, "..", "..", "apps", "dashboard", "wrangler.toml");
     const text = fs.readFileSync(filePath, "utf8");
     // Strip TOML comments before scanning so example values inside `#`
     // documentation lines are tolerated.

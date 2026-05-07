@@ -26,14 +26,31 @@ const cases = [
   { name: "brief-mode", args: { query: "s3 bucket", root: ROOT, provider: "aws", brief: true } },
 ];
 
-// Deterministic shape: drop timing fields, drop absolute paths.
+// Deterministic shape: drop timing fields, REWRITE absolute paths to
+// repo-relative so the fixture is portable across worktrees and CI.
+// Without this rewrite, the baseline embeds `/Users/...` or `/private/tmp/wt-...`
+// from wherever the script ran and the characterization test fails on
+// every other machine.
+const ABS_RE = new RegExp(`(?:^|"|/)${REPO_ROOT.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}(?=/)`, "g");
+
+function relativizeStrings(value) {
+  if (typeof value === "string") {
+    return value.replace(ABS_RE, "<REPO_ROOT>");
+  }
+  if (Array.isArray(value)) return value.map(relativizeStrings);
+  if (value && typeof value === "object") {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) out[k] = relativizeStrings(v);
+    return out;
+  }
+  return value;
+}
+
 function normalize(env) {
   if (!env) return env;
   const out = JSON.parse(JSON.stringify(env));
   if (out.timings) delete out.timings;
-  // Strip provider-dir absolute paths to keep fixture portable. Files in the
-  // envelope already use repo-relative paths.
-  return out;
+  return relativizeStrings(out);
 }
 
 const result = {};
@@ -41,7 +58,8 @@ for (const c of cases) {
   // Re-import to clear any process-level caches between cases? Not needed —
   // the discoverer is pure given (query, root). Caches are correctness-safe.
   const r = await discover(c.args);
-  result[c.name] = { input: c.args, output: normalize(r) };
+  // Also relativize the input args (they contain root: ROOT which is abs).
+  result[c.name] = { input: relativizeStrings(c.args), output: normalize(r) };
 }
 
 fs.mkdirSync(path.dirname(OUT), { recursive: true });

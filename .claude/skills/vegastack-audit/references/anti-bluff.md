@@ -3,6 +3,8 @@
 This skill must never claim a finding without proof, and never write a secret to disk or to GitHub.
 
 > **Read [`finding-contract.md`](finding-contract.md) first.** It defines the strict format every subagent must use and the mandatory **Cited line** echo-back — the single most important defense against subagent hallucinations. The first full audit run (2026-05-07) had a 25% false-positive rate (2 of 8 verified findings); the contract was authored to drive that to zero.
+>
+> **Validator regex note (post-2026-05-07 lesson):** the post-audit `_validate.py` regex for `**Cited line:**` must handle backticks inside the value (template literals like `` `${url}` ``). The naive `\`(.*?)\`` capture truncates at the first inner backtick, producing false MISMATCHes (~8% of findings on the 2026-05-07 run). Updated regex: `\*\*Cited line:\*\*\s*(?:```([\s\S]*?)```|`(.*)`|(.+))$` — match a triple-backtick fenced span first, then a single-backtick span (greedy), then bare-text fallback. Apply this in every validator implementation.
 
 ## Evidence rules (audit-time)
 

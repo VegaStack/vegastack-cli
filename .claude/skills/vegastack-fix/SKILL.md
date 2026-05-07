@@ -142,6 +142,7 @@ When invoked from `/ship`:
 - `references/anti-bluff.md` — the 12 hard rules in detail.
 - `references/evidence-comment.md` — GH comment template + report verification-log template.
 - `references/batch-orchestration.md` — `--parallel` orchestration: eligibility check, subagent contract, integration verify, failure recovery. Read this before passing `--parallel` to a batch.
+- `references/cleanup-verification.md` — round-N+1 cleanup-verification subagent template. Spawn after every parallel-fix batch that targets a rollup issue to confirm dispositions and avoid half-attempted fixes in the next round.
 
 ## Quick start
 

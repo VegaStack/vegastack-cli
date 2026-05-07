@@ -16,7 +16,7 @@ description: |
   staleness, "audit this PR/branch", or invokes /vegastack-audit. Also
   trigger when /ship runs (it chains this skill in ephemeral mode before
   any release). Trigger even if the user does not say the word "audit" —
-  any request that maps to one of the 11 categories above counts.
+  any request that maps to one of the 12 categories above counts.
 
   DO NOT use for: writing new features; one-off bug investigation (use
   /vegastack-fix instead); user-facing CLI questions about how to USE
@@ -51,7 +51,7 @@ Run an end-to-end production-readiness audit of `@vegastack/cli`.
 
 - `scope=full` (default) — every file in the repo, every category.
 - `scope=changed` — only files modified in the working tree (`git status --porcelain`, both staged and unstaged) **plus** their computed blast radius. Untracked files are included.
-- `category=<csv>` — restrict to a subset of the 11 categories (see `references/categories.md`).
+- `category=<csv>` — restrict to a subset of the 12 categories (see `references/categories.md`).
 - `mode=standalone|ephemeral` — set explicitly when calling from another skill. Default: `standalone`.
 - `--strict-mutation` — opt-in: also run stryker for hard mutation evidence on top of the agentic mutation review. Default off.
 
@@ -65,7 +65,7 @@ Run an end-to-end production-readiness audit of `@vegastack/cli`.
    - `scope=full`: all tracked files + all untracked non-ignored files.
    - `scope=changed`: changed files from `git status --porcelain` ∪ blast radius (see `references/blast-radius.md`).
 
-3. **Decide categories.** Default = all 11. If `category=` provided, run only those. See `references/categories.md` for the full checklist per category, including the exact commands and pass/fail criteria.
+3. **Decide categories.** Default = all 12. If `category=` provided, run only those. See `references/categories.md` for the full checklist per category, including the exact commands and pass/fail criteria.
 
 4. **Allocate audit run filename.**
 
@@ -157,7 +157,7 @@ Run an end-to-end production-readiness audit of `@vegastack/cli`.
 ## References (load on demand)
 
 - `references/finding-contract.md` — **mandatory** strict format every subagent must use, plus the mechanical validation algorithm. Always pass this to subagent prompts.
-- `references/categories.md` — the 11 categories: per-category checklists, commands, pass criteria.
+- `references/categories.md` — the 12 categories: per-category checklists, commands, pass criteria.
 - `references/anti-bluff.md` — evidence requirements + secret redaction patterns.
 - `references/gh-issue-flow.md` — dedup logic, native issue types, label scheme, tracking-issue template.
 - `references/report-format.md` — exact filename rules, table schema, header schema, status vocabulary.

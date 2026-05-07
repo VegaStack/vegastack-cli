@@ -79,7 +79,7 @@ describe("project harness detection", () => {
     });
   });
 
-  it("detects broad ops and CI sources as planned packs without selecting them", async () => {
+  it("detects broad ops and CI sources as available selected Registry packs", async () => {
     await withTmpDir((dir) => {
       fs.writeFileSync(path.join(dir, ".gitlab-ci.yml"), "stages: [test]\n");
       fs.mkdirSync(path.join(dir, ".circleci"), { recursive: true });
@@ -127,8 +127,9 @@ describe("project harness detection", () => {
         "nix",
         "bazel",
       ]) {
-        expect(detected.get(name)?.status).toBe("planned");
-        expect(detected.get(name)?.selected).toBe(false);
+        expect(detected.get(name)?.status).toBe("available");
+        expect(detected.get(name)?.source).toBe("VegaStack Registry");
+        expect(detected.get(name)?.selected).toBe(true);
       }
       expect(detected.get("cloudflare")?.status).toBe("available");
       expect(detected.get("cloudflare")?.selected).toBe(true);

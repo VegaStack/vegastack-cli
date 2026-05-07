@@ -143,47 +143,49 @@ export const PACKS: readonly PackDefinition[] = Object.freeze([
     detects: ["vercel.json", ".vercel/project.json"],
     source: "https://vercel.com/docs",
   },
-  plannedPack("gitlab-ci", "GitLab CI", "ci-yaml", [".gitlab-ci.yml"]),
-  plannedPack("circleci", "CircleCI", "ci-yaml", [".circleci/config.yml"]),
-  plannedPack("buildkite", "Buildkite", "ci-yaml", [".buildkite/pipeline.yml"]),
-  plannedPack("azure-pipelines", "Azure Pipelines", "ci-yaml", ["azure-pipelines.yml"]),
-  plannedPack("bitbucket-pipelines", "Bitbucket Pipelines", "ci-yaml", ["bitbucket-pipelines.yml"]),
-  plannedPack("travis-ci", "Travis CI", "ci-yaml", [".travis.yml"]),
-  plannedPack("drone-ci", "Drone CI", "ci-yaml", [".drone.yml"]),
-  plannedPack("google-cloud-build", "Google Cloud Build", "ci-yaml", ["cloudbuild.yaml"]),
-  plannedPack("ansible", "Ansible", "configuration-management", [
+  registryPack("gitlab-ci", "GitLab CI", "ci-yaml", [".gitlab-ci.yml"]),
+  registryPack("circleci", "CircleCI", "ci-yaml", [".circleci/config.yml"]),
+  registryPack("buildkite", "Buildkite", "ci-yaml", [".buildkite/pipeline.yml"]),
+  registryPack("azure-pipelines", "Azure Pipelines", "ci-yaml", ["azure-pipelines.yml"]),
+  registryPack("bitbucket-pipelines", "Bitbucket Pipelines", "ci-yaml", [
+    "bitbucket-pipelines.yml",
+  ]),
+  registryPack("travis-ci", "Travis CI", "ci-yaml", [".travis.yml"]),
+  registryPack("drone-ci", "Drone CI", "ci-yaml", [".drone.yml"]),
+  registryPack("google-cloud-build", "Google Cloud Build", "ci-yaml", ["cloudbuild.yaml"]),
+  registryPack("ansible", "Ansible", "configuration-management", [
     "ansible.cfg",
     "playbook.yaml",
     "roles/",
   ]),
-  plannedPack("pulumi", "Pulumi", "iac-sdk", ["Pulumi.yaml"]),
-  plannedPack("cloudformation", "AWS CloudFormation", "iac-template", [
+  registryPack("pulumi", "Pulumi", "iac-sdk", ["Pulumi.yaml"]),
+  registryPack("cloudformation", "AWS CloudFormation", "iac-template", [
     "AWSTemplateFormatVersion",
     "Resources",
   ]),
-  plannedPack("serverless-framework", "Serverless Framework", "serverless-yaml", [
+  registryPack("serverless-framework", "Serverless Framework", "serverless-yaml", [
     "serverless.yml",
   ]),
-  plannedPack("netlify", "Netlify", "deploy-platform", ["netlify.toml", "_redirects", "_headers"]),
-  plannedPack("aws-sam", "AWS SAM", "serverless-template", ["template.yaml", "samconfig.toml"]),
-  plannedPack("aws-cdk", "AWS CDK", "iac-sdk", ["cdk.json"]),
-  plannedPack("opentofu", "OpenTofu", "iac-hcl", ["*.tofu", "*.tofu.json"]),
-  plannedPack("terragrunt", "Terragrunt", "iac-hcl", ["terragrunt.hcl"]),
-  plannedPack("packer", "Packer", "image-build-hcl", ["*.pkr.hcl"]),
-  plannedPack("nomad", "Nomad", "scheduler-hcl", ["*.nomad", "*.nomad.hcl"]),
-  plannedPack("kustomize", "Kustomize", "kubernetes-overlay", ["kustomization.yaml"]),
-  plannedPack("argo-cd", "Argo CD", "gitops-yaml", ["kind: Application"]),
-  plannedPack("flux", "Flux", "gitops-yaml", ["toolkit.fluxcd.io"]),
-  plannedPack("skaffold", "Skaffold", "kubernetes-dev-yaml", ["skaffold.yaml"]),
-  plannedPack("tilt", "Tilt", "kubernetes-dev", ["Tiltfile"]),
-  plannedPack("devcontainer", "Dev Containers", "container-dev-env", [
+  registryPack("netlify", "Netlify", "deploy-platform", ["netlify.toml", "_redirects", "_headers"]),
+  registryPack("aws-sam", "AWS SAM", "serverless-template", ["template.yaml", "samconfig.toml"]),
+  registryPack("aws-cdk", "AWS CDK", "iac-sdk", ["cdk.json"]),
+  registryPack("opentofu", "OpenTofu", "iac-hcl", ["*.tofu", "*.tofu.json"]),
+  registryPack("terragrunt", "Terragrunt", "iac-hcl", ["terragrunt.hcl"]),
+  registryPack("packer", "Packer", "image-build-hcl", ["*.pkr.hcl"]),
+  registryPack("nomad", "Nomad", "scheduler-hcl", ["*.nomad", "*.nomad.hcl"]),
+  registryPack("kustomize", "Kustomize", "kubernetes-overlay", ["kustomization.yaml"]),
+  registryPack("argo-cd", "Argo CD", "gitops-yaml", ["kind: Application"]),
+  registryPack("flux", "Flux", "gitops-yaml", ["toolkit.fluxcd.io"]),
+  registryPack("skaffold", "Skaffold", "kubernetes-dev-yaml", ["skaffold.yaml"]),
+  registryPack("tilt", "Tilt", "kubernetes-dev", ["Tiltfile"]),
+  registryPack("devcontainer", "Dev Containers", "container-dev-env", [
     ".devcontainer/devcontainer.json",
   ]),
-  plannedPack("nix", "Nix", "reproducible-builds", ["flake.nix", "default.nix"]),
-  plannedPack("bazel", "Bazel", "build-system", ["MODULE.bazel", "WORKSPACE"]),
+  registryPack("nix", "Nix", "reproducible-builds", ["flake.nix", "default.nix"]),
+  registryPack("bazel", "Bazel", "build-system", ["MODULE.bazel", "WORKSPACE"]),
 ]);
 
-function plannedPack(
+function registryPack(
   name: string,
   title: string,
   shape: string,
@@ -193,10 +195,10 @@ function plannedPack(
     name,
     title,
     shape,
-    status: "planned",
-    description: `${title} repository signals detected. VegaStack Registry coverage is planned.`,
+    status: "available",
+    description: `${title} repository signals detected. VegaStack Registry coverage is available.`,
     detects,
-    source: "planned VegaStack Registry pack",
+    source: "VegaStack Registry",
   };
 }
 

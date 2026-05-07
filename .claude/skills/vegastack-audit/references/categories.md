@@ -20,6 +20,7 @@ exact file:line or command output as evidence.
 9. [performance](#9-performance) — startup, hot paths, memory, lazy imports
 10. [docs-and-ux](#10-docs-and-ux) — help text, error messages, exit codes, manifests
 11. [release-readiness](#11-release-readiness) — CI, provenance, branch protection, 2FA
+12. [regression-prevention](#12-regression-prevention) — architectural pins for patterns previously fixed
 
 Plus the [severity rubric](#severity-rubric) at the end.
 
@@ -219,6 +220,22 @@ vegastack init --dry-run && vegastack search terraform aws vpc && vegastack scan
 | Onboarding | fresh-VM walkthrough of README | <10 min, no surprises. |
 
 ---
+
+## 12. regression-prevention
+
+**Covers:** architectural-test pins for patterns previously fixed. Each pattern documents a class of bug that should never recur once fixed; a corresponding `tests/architecture/*.test.ts` file is the regression bar. Full catalog in `references/regression-pins.md`.
+
+| Check | Method | Pass |
+|---|---|---|
+| Pattern catalog | read `references/regression-pins.md` | Every documented pattern has its architectural test in `tests/architecture/`. Missing pin = Low finding. |
+| ESLint complexity rule | `npx eslint --rule '{"complexity":["error",15]}' src` | Exit 0. |
+| Per-file complexity pin tests | grep `tests/**/*-complexity.test.ts` | Hot-path functions have explicit pins (e.g. `runDoctor`, `tier1`, `discover`, `discoverGenericPacks`). |
+| Architectural test suite present | `ls tests/architecture/` | Directory exists with the expected pin tests. |
+| Audit-skill validator portability | `tests/architecture/no-absolute-paths-in-fixtures.test.ts` | Baseline JSONs use repo-relative paths only. |
+
+Findings here are typically **Low** — they don't block release but compound over time. They become noticeable when a "trivial" fix re-introduces an old class of bug because nothing pinned it.
+
+When `/vegastack-fix` lands a fix, it should add the corresponding architectural pin in the same commit. The next audit's `regression-prevention` category catches any drift.
 
 ## 11. release-readiness
 
