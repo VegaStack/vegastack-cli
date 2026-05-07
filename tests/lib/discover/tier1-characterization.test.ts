@@ -15,14 +15,13 @@ import type { AliasRewrite } from "../../../src/lib/discover/tokenize.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
-const BASELINE_PATH = path.join(
-  REPO_ROOT,
-  "tests",
-  "fixtures",
-  "discover",
-  "tier1-baseline.json",
-);
+const BASELINE_PATH = path.join(REPO_ROOT, "tests", "fixtures", "discover", "tier1-baseline.json");
 
+interface BaselineEntry {
+  score: number;
+  reasons: { kind: string; detail: string }[];
+  tier: string;
+}
 interface BaselineCase {
   input: {
     tokens: string[];
@@ -30,35 +29,37 @@ interface BaselineCase {
     aliasMatches: AliasRewrite[] | null;
   };
   fixture: string;
-  entries: Array<[string, { score: number; reasons: Array<{ kind: string; detail: string }>; tier: string }]>;
+  entries: [string, BaselineEntry][];
 }
 
-const baseline: Record<string, BaselineCase> = JSON.parse(
-  fs.readFileSync(BASELINE_PATH, "utf8"),
-);
+const baseline = JSON.parse(fs.readFileSync(BASELINE_PATH, "utf8")) as Record<string, BaselineCase>;
 
 describe("tier1 — characterization (#59 refactor pin)", () => {
   for (const [name, c] of Object.entries(baseline)) {
     it(`preserves output for case: ${name}`, () => {
       const providerDir = path.join(REPO_ROOT, c.fixture);
       const manifest = loadManifest(providerDir);
-      const out = tier1({
+      const tier1Args: Parameters<typeof tier1>[0] = {
         manifest,
         tokens: c.input.tokens,
         provider: c.input.provider,
         providerDir,
-        aliasMatches: c.input.aliasMatches ?? undefined,
-      });
+      };
+      if (c.input.aliasMatches != null) tier1Args.aliasMatches = c.input.aliasMatches;
+      const out = tier1(tier1Args);
       const got = Array.from(out.entries())
-        .map(([k, v]) => [
-          path.relative(providerDir, k),
-          {
-            score: v.score,
-            reasons: v.reasons.map((r) => ({ kind: r.kind, detail: r.detail })),
-            tier: v.tier,
-          },
-        ] as const)
-        .sort(([a], [b]) => (a as string).localeCompare(b as string));
+        .map(
+          ([k, v]) =>
+            [
+              path.relative(providerDir, k),
+              {
+                score: v.score,
+                reasons: v.reasons.map((r) => ({ kind: r.kind, detail: r.detail })),
+                tier: v.tier,
+              },
+            ] as const,
+        )
+        .sort(([a], [b]) => a.localeCompare(b));
       expect(got).toEqual(c.entries);
     });
   }
