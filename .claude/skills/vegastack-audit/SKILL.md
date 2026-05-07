@@ -80,16 +80,43 @@ Run an end-to-end production-readiness audit of `@vegastack/cli`.
 5. **Run categories in parallel where independent.** Use the `Agent` tool with subagent type Explore or general-purpose to fan out:
    - Always serial (network/state side-effects): `supply-chain`, `release-readiness`.
    - Parallelizable: every other category, plus the 10 `code-review` slices (see `references/categories.md` §code-review).
-   - Each subagent returns a structured Markdown section + a list of findings as JSON-ish blocks for the table.
+   - **Every subagent prompt must reference `references/finding-contract.md` and require strict-format emission.** Use the canonical instruction line:
+     > *"Read `.claude/skills/vegastack-audit/references/finding-contract.md` before emitting any finding. Every finding with a file:LINE Location MUST include a `**Cited line:**` field containing the verbatim content of that line, read at finding-emit time. Findings that fail self-verification (cited line ≠ actual file content) must be dropped, not submitted. Subagent return summary must report `Self-verify drops: <n>`."*
 
-6. **Aggregate findings into one table.** Schema in `references/report-format.md`. Columns: `ID | Sev | Category | Location | Title | Issue | Status | Verified`. Locations and issues are clickable links.
+6. **Aggregate findings into one table.** Schema in `references/report-format.md`. Columns: `ID | Sev | Category | Location | Title | Issue | Status | Verified | Validated`. The `Validated` column reflects post-audit mechanical validation (step 7a).
 
 7. **Redact secrets** in the report body before writing to disk. See `references/anti-bluff.md` §redaction. Pass everything through gitleaks-rule patterns + the project's known token shapes.
+
+7a. **Mechanical post-audit validation** — protects against subagent hallucinations.
+
+   For every finding in the aggregated set, re-read the cited file:LINE and compare to the `**Cited line:**` echoed by the subagent:
+
+   ```python
+   def validate(finding):
+       if finding.location in (None, "n/a"): return SKIPPED
+       if not finding.cited_line: return MISSING_CITATION
+       actual = open(file).readlines()[line - 1].rstrip("\n")
+       if actual.strip() == finding.cited_line.strip():
+           return VERIFIED
+       return MISMATCH
+   ```
+
+   **Validation outcomes drive issue creation:**
+
+   | Outcome | In report? | GH issue created? |
+   |---|---|---|
+   | VERIFIED | yes (✅) | yes |
+   | SKIPPED (n/a Location) | yes (—) | yes |
+   | MISSING_CITATION | yes (⚠️) | **no** — subagent format violation |
+   | MISMATCH | yes (❌, both lines shown) | **no** — likely hallucination, needs human triage |
+
+   Report header records: `Validation: <verified>/<total> findings verified, <missing> missing-citation, <mismatch> mismatch`. **A mismatch rate >5% is a strong signal that the audit run is unreliable and should be re-spawned with stricter subagent prompts.**
 
 8. **Write the single audit report file.** Single file, sectioned by category. No per-category files.
 
 9. **Create GitHub issues** (only when `mode=standalone`):
    - Skip entirely in ephemeral mode.
+   - **Skip findings with validation status `MISMATCH` or `MISSING_CITATION`** — they're flagged in the local report only and require human triage.
    - Severity gate: Critical/High/Medium → individual issue; Low → single rollup issue per run; Info → local report only.
    - Dedup: query existing open issues by `(category, file, normalized-title-hash)` before creating. On match, comment "re-detected in audit `<filename>`" and link from the new run's tracking issue. Do not duplicate.
    - Create one **tracking issue** per run titled `Audit <ISO> — <scope>` containing a checklist of child issue refs.
@@ -97,9 +124,9 @@ Run an end-to-end production-readiness audit of `@vegastack/cli`.
    - Labels (minimal): `audit`, `severity:critical|high|medium|low`, `area:<category>`. No status labels — GitHub's open/closed state is authoritative.
    - Update the report's `Issue` column with the resulting issue URLs.
 
-10. **Print summary** to the user: counts by severity, link to the report file, link to the tracking issue (if standalone).
+10. **Print summary** to the user: counts by severity, link to the report file, link to the tracking issue (if standalone), validation summary (verified/total + mismatch count).
 
-11. **Anti-bluff verification** of the audit run itself: every finding must cite a specific file:line OR a specific command output. The skill refuses to write a finding with no evidence pointer.
+11. **Anti-bluff verification** of the audit run itself: every finding must cite a specific file:line OR a specific command output. The skill refuses to write a finding with no evidence pointer. Plus: every file:line finding must pass mechanical validation (step 7a) to be eligible for issue creation.
 
 ## Hard rules
 
@@ -111,6 +138,7 @@ Run an end-to-end production-readiness audit of `@vegastack/cli`.
 
 ## References (load on demand)
 
+- `references/finding-contract.md` — **mandatory** strict format every subagent must use, plus the mechanical validation algorithm. Always pass this to subagent prompts.
 - `references/categories.md` — the 11 categories: per-category checklists, commands, pass criteria.
 - `references/anti-bluff.md` — evidence requirements + secret redaction patterns.
 - `references/gh-issue-flow.md` — dedup logic, native issue types, label scheme, tracking-issue template.

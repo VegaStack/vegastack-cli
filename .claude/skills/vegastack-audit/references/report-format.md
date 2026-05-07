@@ -35,6 +35,7 @@ portability. Both refer to the same run.
 **Tracking issue:** [#<n>](<url>) (omitted in ephemeral mode)
 **Duration:** `<H:MM:SS>`
 **Redactions:** `<count>`
+**Validation:** `<verified>/<total>` findings verified · `<missing>` missing-citation · `<mismatch>` mismatch *(>5% mismatch = re-spawn audit with stricter prompts)*
 **Tooling:** node `<v>`, npm `<v>`, gitleaks `<v>`, gh `<v>`
 
 ## Summary
@@ -53,13 +54,21 @@ Top-level table (after summary). One row per finding, ordered by severity desc t
 
 ```markdown
 ## Findings
-| ID | Sev | Category | Location | Title | Issue | Status | Verified |
-|----|-----|----------|----------|-------|-------|--------|----------|
-| F-001 | High | security | [src/lib/managed-tools.ts:142](../src/lib/managed-tools.ts#L142) | Missing sig verification on cloudflared download | [#143](https://github.com/vegastack/vegastack-cli/issues/143) | open | pending |
-| F-002 | High | code-review/cli | [src/commands/init.ts:88](../src/commands/init.ts#L88) | Path traversal via --project-dir | [#144](https://github.com/vegastack/vegastack-cli/issues/144) | closed | completed |
-| F-003 | Medium | docs-and-ux | [README.md:120](../README.md#L120) | Stale `vegastack secrets` reference | [#145](https://github.com/vegastack/vegastack-cli/issues/145) | closed-wontfix | n/a |
-| F-004 | Low | test-coverage | `src/lib/discover/intents.ts` | Branch coverage 64% | [rollup #146](https://github.com/vegastack/vegastack-cli/issues/146) | open | pending |
+| ID | Sev | Category | Location | Title | Issue | Status | Verified | Validated |
+|----|-----|----------|----------|-------|-------|--------|----------|-----------|
+| F-001 | High | security | [src/lib/managed-tools.ts:142](../src/lib/managed-tools.ts#L142) | Missing sig verification on cloudflared download | [#143](https://github.com/vegastack/vegastack-cli/issues/143) | open | pending | ✅ |
+| F-002 | High | code-review/cli | [src/commands/init.ts:88](../src/commands/init.ts#L88) | Path traversal via --project-dir | [#144](https://github.com/vegastack/vegastack-cli/issues/144) | closed | completed | ✅ |
+| F-003 | Medium | docs-and-ux | [README.md:120](../README.md#L120) | Stale `vegastack secrets` reference | [#145](https://github.com/vegastack/vegastack-cli/issues/145) | closed-wontfix | n/a | ✅ |
+| F-004 | Low | test-coverage | `src/lib/discover/intents.ts` | Branch coverage 64% | [rollup #146](https://github.com/vegastack/vegastack-cli/issues/146) | open | pending | — |
+| F-005 | Critical | code-review/scan | [src/commands/scan.ts:110](../src/commands/scan.ts#L110) | `runScan` references undefined `ok` | _no issue_ | local | n/a | ❌ |
 ```
+
+The new **Validated** column reflects mechanical post-audit validation
+(see SKILL.md step 7a) against the subagent's `**Cited line:**` echo.
+
+Findings with status `MISSING_CITATION` (⚠️) or `MISMATCH` (❌) are **excluded
+from GitHub issue creation** but kept in the local report so the maintainer
+can triage them.
 
 ## Column vocabulary
 
@@ -78,6 +87,11 @@ Top-level table (after summary). One row per finding, ordered by severity desc t
   - `pending` — not yet attempted
   - `completed` — anti-bluff loop passed; evidence committed
   - `n/a` — for `closed-wontfix` and `Info`
+- **Validated** — mechanical post-audit validation status set by audit skill step 7a:
+  - ✅ — VERIFIED: re-read of cited file:LINE matches the subagent's `**Cited line:**` echo
+  - — — SKIPPED: whole-file or command-output finding (no specific line to validate)
+  - ⚠️ — MISSING_CITATION: subagent didn't include the required `**Cited line:**` field; excluded from issue creation
+  - ❌ — MISMATCH: echoed line ≠ actual file content; excluded from issue creation, requires human triage
 
 ## Per-category sections
 

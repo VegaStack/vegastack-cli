@@ -2,15 +2,19 @@
 
 This skill must never claim a finding without proof, and never write a secret to disk or to GitHub.
 
+> **Read [`finding-contract.md`](finding-contract.md) first.** It defines the strict format every subagent must use and the mandatory **Cited line** echo-back — the single most important defense against subagent hallucinations. The first full audit run (2026-05-07) had a 25% false-positive rate (2 of 8 verified findings); the contract was authored to drive that to zero.
+
 ## Evidence rules (audit-time)
 
 Every finding row in the report must carry **at least one** of:
 
-1. **File pointer** — `path/to/file.ts:LINE` that the auditor can click and confirm.
+1. **File pointer** — `path/to/file.ts:LINE` the auditor can click and confirm. **Must be accompanied by the `Cited line` echo** (see `finding-contract.md`). The mechanical validator re-reads the file at this line; any mismatch drops the finding from issue creation.
 2. **Command output** — the exact command and its (redacted) output, captured inline in the category section.
 3. **External reference** — a CVE, advisory URL, RFC, or doc link the finding depends on.
 
 Findings without evidence are **dropped**, not weakened. The skill must not write a finding it cannot back up.
+
+Findings with **MISMATCH** validation status (cited line ≠ actual file content) stay in the local report (with both lines shown side-by-side) but are excluded from GitHub issue creation. The maintainer triages them manually — they're either subagent typos (fix and re-run) or hallucinations (drop).
 
 ## Severity-evidence map
 
