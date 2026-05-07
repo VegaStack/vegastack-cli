@@ -41,8 +41,14 @@ export function linkOrCopyDir(src: string, dest: string): LinkResult {
     if (code === "EEXIST") throw e;
     if (code !== "EPERM" && code !== "ENOTSUP" && code !== "EACCES") throw e;
 
+    // The doc-comment promises that the caller has ensured `dest` doesn't
+    // exist, but `force: true` would silently overwrite it on the cp
+    // fallback path (Windows non-Dev-Mode, FAT/exFAT). Detect the contract
+    // violation up front and report `replaced` honestly so renderer status
+    // surfaces don't lie about it.
+    const replaced = fs.existsSync(dest);
     fs.cpSync(src, dest, { recursive: true, dereference: false, errorOnExist: false, force: true });
-    return { strategy: "copy", replaced: false };
+    return { strategy: "copy", replaced };
   }
 }
 

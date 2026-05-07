@@ -20,6 +20,11 @@ export class Scorer {
   private readonly entries = new Map<string, ScoredFile>();
   /** "filepath\0kind" → true, used for DEDUPE_REASON_KINDS. */
   private readonly seen = new Set<string>();
+  /** Memoised pathWeight result per filepath — pathWeight does a linear
+   *  scan over PATH_WEIGHTS patterns and is called many times per query
+   *  (peer fan-out, companion boosts, multiple stages). One lookup per
+   *  unique filepath suffices. */
+  private readonly weightCache = new Map<string, number>();
 
   add(filepath: string, score: number, kind: ReasonKind, detail: string): void {
     if (DEDUPE_REASON_KINDS.has(kind)) {
@@ -33,7 +38,12 @@ export class Scorer {
       entry = { score: 0, reasons: [], tier: "manifest" };
       this.entries.set(filepath, entry);
     }
-    entry.score += score * pathWeight(filepath);
+    let weight = this.weightCache.get(filepath);
+    if (weight === undefined) {
+      weight = pathWeight(filepath);
+      this.weightCache.set(filepath, weight);
+    }
+    entry.score += score * weight;
     entry.reasons.push({ kind, detail });
   }
 

@@ -2,6 +2,10 @@
 import { defineConfig } from "astro/config";
 import cloudflare from "@astrojs/cloudflare";
 import tailwindcss from "@tailwindcss/vite";
+import { fileURLToPath } from "node:url";
+import * as path from "node:path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://astro.build/config
 // Uses the Cloudflare adapter with Workers static assets. Tailwind is wired via
@@ -21,6 +25,15 @@ export default defineConfig({
   }),
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      // Mirrors the `@contracts/*` path alias from tsconfig.json so the
+      // dashboard never reaches four levels up into the monorepo with a
+      // brittle relative path. Required at runtime because Vite does not
+      // honour tsconfig paths automatically.
+      alias: {
+        "@contracts": path.resolve(__dirname, "../../docs/contracts"),
+      },
+    },
   },
   build: {
     inlineStylesheets: "auto",

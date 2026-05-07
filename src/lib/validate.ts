@@ -84,7 +84,16 @@ function realpathIfExists(p: string): string {
  */
 export function validateSafeOutputDir(
   input: string,
-  options?: { allowedRoots?: string[]; cwd?: string },
+  options?: {
+    allowedRoots?: string[];
+    cwd?: string;
+    /**
+     * When `false`, validate but do not mkdir. Useful for `--dry-run` flows
+     * that want to compute the canonical path without touching the
+     * filesystem. Defaults to `true` to preserve historical behaviour.
+     */
+    ensure?: boolean;
+  },
 ): string {
   rejectDangerousChars(input, "output dir");
 
@@ -107,8 +116,11 @@ export function validateSafeOutputDir(
   }
 
   // Create if missing. Use the original path so the user-visible output
-  // matches what they passed.
-  fs.mkdirSync(normalized, { recursive: true });
+  // matches what they passed. Suppressed via `ensure: false` so dry-run
+  // callers can validate without leaving empty directories on disk.
+  if (options?.ensure !== false) {
+    fs.mkdirSync(normalized, { recursive: true });
+  }
 
   return normalized;
 }

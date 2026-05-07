@@ -88,7 +88,18 @@ export async function getEnv(): Promise<RuntimeEnv | undefined> {
       env: RuntimeEnv;
     };
     return mod.env;
-  } catch {
+  } catch (e) {
+    // Surface real Workers-runtime bugs in dev so they don't get silently
+    // swallowed alongside the expected "module not available outside
+    // Workers" error. The catch path is still load-bearing for static
+    // builds (astro build) where the specifier itself is rejected.
+    if (
+      typeof process !== "undefined" &&
+      (process.env?.NODE_ENV === "development" || process.env?.VEGASTACK_DEBUG === "1")
+    ) {
+      // eslint-disable-next-line no-console
+      console.warn("[dashboard] cloudflare:workers import failed:", e);
+    }
     return undefined;
   }
 }

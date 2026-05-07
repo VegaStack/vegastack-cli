@@ -15,10 +15,9 @@ import { spawnSync } from "node:child_process";
 
 // Defence-in-depth: honour `npm_config_ignore_scripts=true`. npm itself
 // usually short-circuits before invoking postinstall when the user runs
-// `npm i --ignore-scripts`, but the per-package check is missing; an
-// out-of-tree caller invoking `node npm/install.js` directly (e.g. a
-// supply-chain auditor exercising the shim) should also see this guard
-// honoured. Audit security/F-006 in audit-1778150875.
+// `npm i --ignore-scripts`, but some wrappers (yarn classic, shell scripts
+// forwarding env) call postinstall directly. Honour the user's intent
+// defensively. Audit security/F-006 in audit-1778150875.
 if (process.env.npm_config_ignore_scripts === "true") {
   process.stderr.write("vegastack postinstall: npm_config_ignore_scripts=true; skipping.\n");
 } else if (process.env.VEGASTACK_SKIP_POSTINSTALL === "1") {

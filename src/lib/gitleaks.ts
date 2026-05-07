@@ -149,14 +149,16 @@ async function downloadVerified(url: string, target: string, expectedSha: string
     headers: { "User-Agent": "vegastack-cli" },
   });
   if (!response.ok) {
-    throw new VegaStackError("NetworkError", `failed to fetch ${url}: HTTP ${response.status}`, {
+    const safeUrl = stripUrlQuery(url);
+    throw new VegaStackError("NetworkError", `failed to fetch ${safeUrl}: HTTP ${response.status}`, {
       context: { url, status: response.status },
     });
   }
   const bytes = Buffer.from(await response.arrayBuffer());
   const actual = sha256(bytes);
   if (actual !== expectedSha) {
-    throw new VegaStackError("ChecksumMismatch", `checksum mismatch for ${url}`, {
+    const safeUrl = stripUrlQuery(url);
+    throw new VegaStackError("ChecksumMismatch", `checksum mismatch for ${safeUrl}`, {
       context: { expected: expectedSha, actual },
     });
   }
@@ -211,6 +213,22 @@ function findOnPath(bin: string): string | null {
     }
   }
   return null;
+}
+
+/**
+ * Strip query/fragment from a URL for safe inclusion in user-visible error
+ * messages. Defends against signed-URL or token-bearing query strings leaking
+ * via logs.
+ */
+function stripUrlQuery(url: string): string {
+  try {
+    const u = new URL(url);
+    u.search = "";
+    u.hash = "";
+    return u.toString();
+  } catch {
+    return url;
+  }
 }
 
 function fileSha256(file: string): string {

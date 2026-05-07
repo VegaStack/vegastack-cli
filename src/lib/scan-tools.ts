@@ -75,10 +75,23 @@ export function runTool(
     encoding: "utf8",
     maxBuffer: 100 * 1024 * 1024,
   });
+  // Distinguish "binary not found" (ENOENT after the resolution step
+  // disappeared, e.g. metadata cache pointed at a deleted path) from a real
+  // tool-internal failure. Returning status 127 (the conventional shell
+  // exit code for "command not found") lets the caller route via the
+  // tool-failure path rather than masquerading as a finding.
+  const err = result.error as NodeJS.ErrnoException | undefined;
+  if (err && err.code === "ENOENT") {
+    return {
+      status: 127,
+      stdout: "",
+      stderr: `${bin}: not found (ENOENT). The tool was resolved at scan start but is no longer available.`,
+    };
+  }
   return {
-    status: result.status ?? (result.error ? 1 : 0),
+    status: result.status ?? (err ? 1 : 0),
     stdout: result.stdout ?? "",
-    stderr: result.stderr ?? (result.error ? String(result.error) : ""),
+    stderr: result.stderr ?? (err ? String(err) : ""),
   };
 }
 

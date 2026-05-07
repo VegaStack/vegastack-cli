@@ -181,6 +181,13 @@ export function projectDetectionCachePath(cwd: string): string {
 
 /** Resolve the package root (where this CLI was installed). */
 export function pkgRoot(): string {
+  // Optional override for embedding scenarios (custom Node loaders, vitest
+  // workers). When set, skip the argv-based walk entirely so library callers
+  // do not need to spoof process.argv[1].
+  const override = process.env.VEGASTACK_PKG_ROOT;
+  if (override !== undefined && override !== "") {
+    return path.resolve(override);
+  }
   // dist/lib/paths.js → dist/ → package root
   // node:url import.meta.url unavailable here at compile-time without ESM gymnastics; use process.argv[1].
   // Resolve symlinks: when installed via `npm i -g`, the `vegastack` bin is a
@@ -207,7 +214,16 @@ export function pkgRoot(): string {
     }
     cur = path.dirname(cur);
   }
-  return path.resolve(path.dirname(cliPath), "..");
+  // We could not locate the @vegastack/cli package.json by walking up from
+  // `process.argv[1]`. Returning a guessed `cwd/..` fallback (the previous
+  // behaviour) silently shipped the wrong files to downstream readers
+  // (e.g. pkgCanonicalSkillMd). Throw an actionable error instead — library
+  // callers can set VEGASTACK_PKG_ROOT explicitly to opt out.
+  throw new VegaStackError(
+    "Unknown",
+    "could not locate @vegastack/cli package root from process.argv[1]; set VEGASTACK_PKG_ROOT to override",
+    { context: { argv1: process.argv[1] ?? null, cliPath } },
+  );
 }
 
 // ── Per-agent install destinations ───────────────────────────────

@@ -164,6 +164,7 @@ export const PACKS: readonly PackDefinition[] = Object.freeze([
   plannedPack("serverless-framework", "Serverless Framework", "serverless-yaml", [
     "serverless.yml",
   ]),
+  plannedPack("netlify", "Netlify", "deploy-platform", ["netlify.toml", "_redirects", "_headers"]),
   plannedPack("aws-sam", "AWS SAM", "serverless-template", ["template.yaml", "samconfig.toml"]),
   plannedPack("aws-cdk", "AWS CDK", "iac-sdk", ["cdk.json"]),
   plannedPack("opentofu", "OpenTofu", "iac-hcl", ["*.tofu", "*.tofu.json"]),

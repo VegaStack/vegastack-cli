@@ -110,6 +110,13 @@ function parseFrontmatter(text: string): Record<string, unknown> {
       i++;
       while (i < lines.length) {
         const cur = lines[i] ?? "";
+        // Spec-compliant YAML forbids tab indentation; silently truncating
+        // at the first tab would discard the description body. Diagnose.
+        if (cur.startsWith("\t")) {
+          throw new Error(
+            `SKILL.md frontmatter line ${i + 1}: tab-indented continuation is not allowed (use two spaces)`,
+          );
+        }
         if (!cur.startsWith("  ") && cur.trim() !== "") break;
         collected.push(cur.replace(/^ {2}/, ""));
         i++;
@@ -124,6 +131,11 @@ function parseFrontmatter(text: string): Record<string, unknown> {
       i++;
       while (i < lines.length) {
         const cur = lines[i] ?? "";
+        if (cur.startsWith("\t")) {
+          throw new Error(
+            `SKILL.md frontmatter line ${i + 1}: tab-indented nested key is not allowed (use two spaces)`,
+          );
+        }
         if (!cur.startsWith("  ") && cur.trim() !== "") break;
         if (cur.trim() === "") {
           i++;

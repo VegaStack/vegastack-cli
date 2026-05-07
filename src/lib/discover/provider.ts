@@ -63,6 +63,38 @@ function escapeRegExp(s: string): string {
   return s.replace(RX_ESCAPE, "\\$&");
 }
 
+// Per-process regex caches. The provider list, substring phrases, and alias
+// table are invariant across queries within a Registry pack, but
+// detectProvider used to rebuild O(N+M+K) RegExps per call. Cache keyed by
+// the source string so memory stays bounded by the alias-table size.
+const CANONICAL_RX_CACHE = new Map<string, RegExp>();
+const SUBSTRING_RX_CACHE = new Map<string, RegExp>();
+const ALIAS_RX_CACHE = new Map<string, RegExp>();
+function canonicalRx(provider: string): RegExp {
+  let rx = CANONICAL_RX_CACHE.get(provider);
+  if (!rx) {
+    rx = new RegExp(`(?<![a-z0-9])${escapeRegExp(provider)}(?![a-z0-9])`);
+    CANONICAL_RX_CACHE.set(provider, rx);
+  }
+  return rx;
+}
+function substringRx(phrase: string): RegExp {
+  let rx = SUBSTRING_RX_CACHE.get(phrase);
+  if (!rx) {
+    rx = new RegExp(`(?<![a-z0-9])${escapeRegExp(phrase)}(?![a-z0-9])`);
+    SUBSTRING_RX_CACHE.set(phrase, rx);
+  }
+  return rx;
+}
+function aliasRx(alias: string): RegExp {
+  let rx = ALIAS_RX_CACHE.get(alias);
+  if (!rx) {
+    rx = new RegExp(`\\b${escapeRegExp(alias)}\\b`);
+    ALIAS_RX_CACHE.set(alias, rx);
+  }
+  return rx;
+}
+
 interface DetectOptions {
   /** Canonical provider list, resolved at runtime from Registry MANIFEST.json.
    *  When omitted, an empty list is used (only PROVIDER_SUBSTRING_PHRASES +
@@ -93,20 +125,17 @@ export function detectProvider(query: string, opts: DetectOptions = {}): Provide
 
   // Stage 1: canonical name (word-boundary).
   for (const provider of known) {
-    const rx = new RegExp(`(?<![a-z0-9])${escapeRegExp(provider)}(?![a-z0-9])`);
-    if (rx.test(q)) bump(provider, PROVIDER_CONFIDENCE.canonical, "canonical");
+    if (canonicalRx(provider).test(q)) bump(provider, PROVIDER_CONFIDENCE.canonical, "canonical");
   }
 
   // Stage 2: PROVIDER_SUBSTRING phrases (e.g. "mongodb atlas").
   for (const [phrase, provider] of PROVIDER_SUBSTRING_PHRASES) {
-    const rx = new RegExp(`(?<![a-z0-9])${escapeRegExp(phrase)}(?![a-z0-9])`);
-    if (rx.test(q)) bump(provider, PROVIDER_CONFIDENCE.substring, "substring");
+    if (substringRx(phrase).test(q)) bump(provider, PROVIDER_CONFIDENCE.substring, "substring");
   }
 
   // Stage 3: SERVICE_ALIASES (default + per-Registry pack override).
   for (const [alias, provider] of aliasTable) {
-    const rx = new RegExp(`\\b${escapeRegExp(alias)}\\b`);
-    if (rx.test(q)) bump(provider, PROVIDER_CONFIDENCE.alias, "alias");
+    if (aliasRx(alias).test(q)) bump(provider, PROVIDER_CONFIDENCE.alias, "alias");
   }
 
   // Apply context exclusions: when X is in the set with score >= alias-floor,
