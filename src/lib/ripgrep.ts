@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { VegaStackError } from "./errors.js";
-import { fetchWithTimeout } from "./fetch-with-timeout.js";
+import { streamDownloadVerified } from "./fetch-with-timeout.js";
 import {
   MANAGED_TOOLS_MANIFEST,
   managedToolTarget,
@@ -133,24 +133,15 @@ function currentTarget(): Target {
   return target;
 }
 
+/** Hard ceiling on a ripgrep archive (50 MiB; current releases are <10 MiB). */
+const MAX_RIPGREP_BYTES = 50 * 1024 * 1024;
+
 async function downloadVerified(url: string, target: string, expectedSha: string): Promise<void> {
-  const response = await fetchWithTimeout(url, {
-    redirect: "follow",
+  await streamDownloadVerified(url, target, {
+    expectedSha,
+    maxBytes: MAX_RIPGREP_BYTES,
     headers: { "User-Agent": "vegastack-cli" },
   });
-  if (!response.ok) {
-    throw new VegaStackError("NetworkError", `failed to fetch ${url}: HTTP ${response.status}`, {
-      context: { url, status: response.status },
-    });
-  }
-  const bytes = Buffer.from(await response.arrayBuffer());
-  const actual = sha256(bytes);
-  if (actual !== expectedSha) {
-    throw new VegaStackError("ChecksumMismatch", `checksum mismatch for ${url}`, {
-      context: { expected: expectedSha, actual },
-    });
-  }
-  fs.writeFileSync(target, bytes);
 }
 
 function extractArchive(archivePath: string, targetDir: string, kind: "tar.gz" | "zip"): void {

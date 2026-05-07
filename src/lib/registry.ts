@@ -4,7 +4,7 @@ import * as os from "node:os";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { VegaStackError } from "./errors.js";
-import { fetchWithTimeout } from "./fetch-with-timeout.js";
+import { fetchWithTimeout, streamDownloadVerified } from "./fetch-with-timeout.js";
 import { projectConfigPath, registryCacheRoot } from "./paths.js";
 import { PACKS, registryEntryCachePath, type PackDefinition } from "./project.js";
 import { log } from "./log.js";
@@ -423,26 +423,11 @@ async function downloadVerifiedFile(
   expectedSha: string,
   expectedBytes: number,
 ): Promise<void> {
-  const response = await fetchWithTimeout(url, { redirect: "follow" });
-  if (!response.ok) {
-    throw new VegaStackError("NetworkError", `failed to fetch ${url}: HTTP ${response.status}`, {
-      context: { url, status: response.status },
-    });
-  }
-  const bytes = Buffer.from(await response.arrayBuffer());
-  const actualSha = sha256(bytes);
-  if (actualSha !== expectedSha) {
-    throw new VegaStackError("ChecksumMismatch", `checksum mismatch for ${url}`, {
-      context: { url, expected: expectedSha, actual: actualSha },
-    });
-  }
-  if (bytes.byteLength !== expectedBytes) {
-    throw new VegaStackError("ArtifactCorrupt", `size mismatch for ${url}`, {
-      context: { url, expected: expectedBytes, actual: bytes.byteLength },
-    });
-  }
-  fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, bytes);
+  await streamDownloadVerified(url, target, {
+    expectedSha,
+    expectedBytes,
+    maxBytes: expectedBytes,
+  });
 }
 
 function extractVerifiedArchive(archivePath: string, targetDir: string): void {

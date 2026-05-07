@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { VegaStackError } from "./errors.js";
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes total per request.
@@ -38,6 +41,106 @@ export async function fetchWithTimeout(
   } finally {
     clearTimeout(timer);
   }
+}
+
+export interface StreamDownloadOptions extends FetchWithTimeoutOptions {
+  /** Hard byte ceiling. Stream is aborted once this is exceeded. */
+  maxBytes: number;
+  /** Optional exact-bytes invariant for verified artifacts. */
+  expectedBytes?: number;
+  /** Optional hex sha256 the streamed bytes must match. */
+  expectedSha?: string;
+}
+
+/**
+ * Download `url` to `target` while streaming the body to a `.part` file.
+ * Aborts and throws ArtifactCorrupt if running total exceeds `maxBytes`,
+ * which prevents a malicious mirror from OOM-ing the CLI by serving a
+ * multi-GB body before any size/sha check.
+ */
+export async function streamDownloadVerified(
+  url: string,
+  target: string,
+  opts: StreamDownloadOptions,
+): Promise<void> {
+  const { maxBytes, expectedBytes, expectedSha, ...rest } = opts;
+  const response = await fetchWithTimeout(url, { redirect: "follow", ...rest });
+  if (!response.ok) {
+    throw new VegaStackError("NetworkError", `failed to fetch ${url}: HTTP ${response.status}`, {
+      context: { url, status: response.status },
+    });
+  }
+  const body = response.body;
+  if (!body) {
+    throw new VegaStackError("ArtifactCorrupt", `empty body from ${url}`, { context: { url } });
+  }
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  const partPath = `${target}.part`;
+  const handle = fs.createWriteStream(partPath);
+  const hash = createHash("sha256");
+  let total = 0;
+  const reader = (body as ReadableStream<Uint8Array>).getReader();
+  const cleanupPart = (): void => {
+    try {
+      handle.destroy();
+    } catch {
+      /* ignore */
+    }
+    try {
+      fs.unlinkSync(partPath);
+    } catch {
+      /* ignore */
+    }
+  };
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        cleanupPart();
+        try {
+          await reader.cancel();
+        } catch {
+          /* ignore */
+        }
+        throw new VegaStackError(
+          "ArtifactCorrupt",
+          `download from ${url} exceeded ${maxBytes} bytes`,
+          {
+            context: { url, max_bytes: maxBytes },
+          },
+        );
+      }
+      const chunk = Buffer.from(value);
+      hash.update(chunk);
+      if (!handle.write(chunk)) {
+        await new Promise<void>((resolve) => handle.once("drain", resolve));
+      }
+    }
+    await new Promise<void>((resolve, reject) => {
+      handle.end((err: Error | null | undefined) => (err ? reject(err) : resolve()));
+    });
+  } catch (e) {
+    cleanupPart();
+    throw e;
+  }
+
+  if (expectedBytes !== undefined && total !== expectedBytes) {
+    cleanupPart();
+    throw new VegaStackError("ArtifactCorrupt", `size mismatch for ${url}`, {
+      context: { url, expected: expectedBytes, actual: total },
+    });
+  }
+  const actualSha = hash.digest("hex");
+  if (expectedSha !== undefined && actualSha !== expectedSha) {
+    cleanupPart();
+    throw new VegaStackError("ChecksumMismatch", `checksum mismatch for ${url}`, {
+      context: { url, expected: expectedSha, actual: actualSha },
+    });
+  }
+  fs.renameSync(partPath, target);
 }
 
 function pickTimeout(explicit: number | undefined): number {

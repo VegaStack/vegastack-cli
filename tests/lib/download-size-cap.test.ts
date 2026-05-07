@@ -27,7 +27,7 @@ async function listenStreaming(producer: (res: http.ServerResponse) => void): Pr
     producer(res);
   });
   await new Promise<void>((resolve) => server!.listen(0, "127.0.0.1", resolve));
-  const addr = server!.address();
+  const addr = server.address();
   if (typeof addr !== "object" || addr === null) throw new Error("no address");
   return `http://127.0.0.1:${addr.port}/`;
 }
@@ -35,23 +35,34 @@ async function listenStreaming(producer: (res: http.ServerResponse) => void): Pr
 describe("streamDownloadVerified", () => {
   it("aborts when streamed body exceeds maxBytes", async () => {
     const url = await listenStreaming((res) => {
-      // stream way more than the cap, slowly, so the abort can fire
       let written = 0;
       const interval = setInterval(() => {
-        if (!res.write(Buffer.alloc(1024, 0))) {
-          // backpressure — wait
+        if (res.destroyed || res.writableEnded) {
+          clearInterval(interval);
+          return;
+        }
+        try {
+          res.write(Buffer.alloc(1024, 0));
+        } catch {
+          clearInterval(interval);
+          return;
         }
         written += 1024;
         if (written > 1_000_000) {
           clearInterval(interval);
-          res.end();
+          try {
+            res.end();
+          } catch {
+            /* ignore */
+          }
         }
       }, 1);
+      res.on("close", () => clearInterval(interval));
     });
     const target = path.join(tmp, "out.bin");
-    await expect(
-      streamDownloadVerified(url, target, { maxBytes: 4096 }),
-    ).rejects.toMatchObject({ kind: "ArtifactCorrupt" });
+    await expect(streamDownloadVerified(url, target, { maxBytes: 4096 })).rejects.toMatchObject({
+      kind: "ArtifactCorrupt",
+    });
     expect(fs.existsSync(target)).toBe(false);
   });
 

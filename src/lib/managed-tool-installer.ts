@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { VegaStackError } from "./errors.js";
-import { fetchWithTimeout } from "./fetch-with-timeout.js";
+import { streamDownloadVerified } from "./fetch-with-timeout.js";
 import {
   MANAGED_TOOLS_MANIFEST,
   managedToolTarget,
@@ -150,24 +150,16 @@ function releaseAssetUrl(name: ManagedToolName, target: ManagedToolTarget): stri
   return `https://github.com/${tool.repo}/releases/download/${tool.version}/${target.asset}`;
 }
 
+/** Hard ceiling on a managed-tool archive (200 MiB) — bounds memory if a
+ *  mirror serves an unbounded body before sha verification. */
+const MAX_MANAGED_TOOL_BYTES = 200 * 1024 * 1024;
+
 async function downloadVerified(url: string, target: string, expectedSha: string): Promise<void> {
-  const response = await fetchWithTimeout(url, {
-    redirect: "follow",
+  await streamDownloadVerified(url, target, {
+    expectedSha,
+    maxBytes: MAX_MANAGED_TOOL_BYTES,
     headers: { "User-Agent": "vegastack-cli" },
   });
-  if (!response.ok) {
-    throw new VegaStackError("NetworkError", `failed to fetch ${url}: HTTP ${response.status}`, {
-      context: { url, status: response.status },
-    });
-  }
-  const bytes = Buffer.from(await response.arrayBuffer());
-  const actual = sha256(bytes);
-  if (actual !== expectedSha) {
-    throw new VegaStackError("ChecksumMismatch", `checksum mismatch for ${url}`, {
-      context: { expected: expectedSha, actual },
-    });
-  }
-  fs.writeFileSync(target, bytes);
 }
 
 function extractArchive(
