@@ -130,144 +130,208 @@ interface WeightedRegistrySearchMatch extends RegistrySearchMatch {
   query_term: string;
 }
 
-export async function discoverGenericPacks(
-  query: string,
-  packs: string[],
-  max = 10,
-  opts: { installTools?: boolean } = {},
-): Promise<GenericPackResult> {
-  const baseTokens = tokenize(query).filter((t) => t.length > 1 && !QUERY_STOPWORDS.has(t));
-  const querySurfaceTokens = surfaceTokens(query);
-  const queryPhrases = meaningfulQueryPhrases(query);
-  const results: GenericPackResult["results"] = [];
-  const knowledge: GenericPackResult["knowledge"] = [];
-  const conceptAliasesUsed: GenericPackResult["concept_aliases_used"] = [];
-  const dependencies: GenericPackResult["dependencies"] = [];
-  const errors: { registry_entry: string; message: string }[] = [];
-  const warnings: string[] = [];
-  const exactByEntryPath = new Map<string, WeightedRegistrySearchMatch[]>();
+interface DiscoverCtx {
+  query: string;
+  packs: string[];
+  max: number;
+  opts: { installTools?: boolean };
+  baseTokens: string[];
+  querySurfaceTokens: string[];
+  queryPhrases: string[];
+  results: GenericPackResult["results"];
+  knowledge: GenericPackResult["knowledge"];
+  conceptAliasesUsed: GenericPackResult["concept_aliases_used"];
+  dependencies: GenericPackResult["dependencies"];
+  errors: { registry_entry: string; message: string }[];
+  warnings: string[];
+  exactByEntryPath: Map<string, WeightedRegistrySearchMatch[]>;
+}
 
-  for (const pack of packs) {
-    const root = registryEntryCachePath(pack);
-    const docsRoot = path.join(root, "docs");
-    const manifest = readManifest(root);
-    const fileTitles = manifestFileTitles(manifest);
-    if (!fs.existsSync(docsRoot)) {
-      errors.push({ registry_entry: pack, message: `docs directory missing at ${docsRoot}` });
-      continue;
-    }
-    const aliases = readAliases(root);
-    const aliasMatches = matchAliases(pack, query, aliases);
-    conceptAliasesUsed.push(...aliasMatches);
-    const routingAliasMatches = aliasMatches.filter(
-      (a) => a.source === "configured" || a.source === "terraform-aliases-yaml",
-    );
-    const packAliasBoost =
-      packs.length > 1 && (routingAliasMatches.length > 0 || queryNamesPack(query, pack)) ? 700 : 0;
-    const aliasTokens = aliasMatches.flatMap((a) => a.tokens);
-    const tokens = [...new Set([...baseTokens, ...aliasTokens])];
-    const fileTokenScores = manifestFileTokenScores(manifest, tokens);
-    const metadataTokens = tokensForMetadata(tokens, pack);
-    const dependencyHints = readDependencies(root, metadataTokens).map((d) => ({
-      registry_entry: pack,
-      ...d,
-    }));
-    dependencies.push(...dependencyHints);
-    knowledge.push(...readKnowledge(root, pack, metadataTokens));
+interface PackContext {
+  pack: string;
+  root: string;
+  docsRoot: string;
+  manifest: RegistryManifest | undefined;
+  fileTitles: Map<string, string>;
+  aliasMatches: GenericPackResult["concept_aliases_used"];
+  packAliasBoost: number;
+  tokens: string[];
+  fileTokenScores: Map<string, number>;
+}
 
-    const packNameTokens = new Set(tokenize(pack));
-    const exactSearchTerms = searchTermsForQuery(query, 10)
-      .filter((term) => {
-        const termTokens = tokenize(term);
-        return !(termTokens.length > 0 && termTokens.every((token) => packNameTokens.has(token)));
-      })
-      .filter((term) => !tokenize(term).some((token) => packNameTokens.has(token)));
-    for (const term of exactSearchTerms) {
-      try {
-        const searchOpts: Parameters<typeof searchRegistry>[0] = {
-          entries: [pack],
-          query: term,
-          max: Math.max(100, max * 20),
-        };
-        if (opts.installTools !== undefined) searchOpts.installTools = opts.installTools;
-        const exact = await searchRegistry(searchOpts);
-        for (const warning of exact.warnings ?? []) {
-          if (!warnings.includes(warning)) warnings.push(warning);
-        }
-        for (const match of exact.matches) {
-          const key = `${match.registry_entry}:${match.path}`;
-          const arr = exactByEntryPath.get(key) ?? [];
-          const weighted = { ...match, query_term: term };
-          if (!arr.some((m) => exactMatchKey(m) === exactMatchKey(weighted))) arr.push(weighted);
-          exactByEntryPath.set(key, arr);
-        }
-      } catch (e) {
-        warnings.push(
-          `exact search skipped for ${pack}: ${e instanceof Error ? e.message : String(e)}`,
-        );
-      }
-    }
+function preparePackContext(ctx: DiscoverCtx, pack: string): PackContext | null {
+  const root = registryEntryCachePath(pack);
+  const docsRoot = path.join(root, "docs");
+  const manifest = readManifest(root);
+  const fileTitles = manifestFileTitles(manifest);
+  if (!fs.existsSync(docsRoot)) {
+    ctx.errors.push({ registry_entry: pack, message: `docs directory missing at ${docsRoot}` });
+    return null;
+  }
+  const aliases = readAliases(root);
+  const aliasMatches = matchAliases(pack, ctx.query, aliases);
+  ctx.conceptAliasesUsed.push(...aliasMatches);
+  const routingAliasMatches = aliasMatches.filter(
+    (a) => a.source === "configured" || a.source === "terraform-aliases-yaml",
+  );
+  const packAliasBoost =
+    ctx.packs.length > 1 &&
+    (routingAliasMatches.length > 0 || queryNamesPack(ctx.query, pack))
+      ? 700
+      : 0;
+  const aliasTokens = aliasMatches.flatMap((a) => a.tokens);
+  const tokens = [...new Set([...ctx.baseTokens, ...aliasTokens])];
+  const fileTokenScores = manifestFileTokenScores(manifest, tokens);
+  const metadataTokens = tokensForMetadata(tokens, pack);
+  const dependencyHints = readDependencies(root, metadataTokens).map((d) => ({
+    registry_entry: pack,
+    ...d,
+  }));
+  ctx.dependencies.push(...dependencyHints);
+  ctx.knowledge.push(...readKnowledge(root, pack, metadataTokens));
+  return {
+    pack,
+    root,
+    docsRoot,
+    manifest,
+    fileTitles,
+    aliasMatches,
+    packAliasBoost,
+    tokens,
+    fileTokenScores,
+  };
+}
 
-    const candidates = candidateSections(root, docsRoot, tokens, [
-      ...aliasMatches.flatMap((a) => a.targets),
-      ...[...exactByEntryPath.entries()]
-        .filter(([key]) => key.startsWith(`${pack}:`))
-        .flatMap(([, matches]) => matches.map((m) => `${m.path}#L${m.line}`)),
-    ]);
-    for (const section of candidates) {
-      const manifestScore = fileTokenScores.get(section.path) ?? 0;
-      const score =
-        scoreSection(section, tokens, queryPhrases, pack, querySurfaceTokens) +
-        (section.route_score ?? 0) +
-        manifestScore * 10 +
-        packAliasBoost;
-      const exactMatches = exactMatchesForSection(
-        exactByEntryPath.get(`${pack}:${section.path}`) ?? [],
-        section,
-      );
-      if (
-        hasWeakConceptCoverage(section, querySurfaceTokens, pack) &&
-        !exactMatchesCoverConcepts(exactMatches, querySurfaceTokens, pack)
-      ) {
-        continue;
-      }
-      if (score <= 0 && exactMatches.length === 0) continue;
-      const result: GenericPackResult["results"][number] = {
-        registry_entry: pack,
-        path: section.path,
-        score: score + exactMatchScore(exactMatches),
-        excerpt: section.excerpt,
+function exactSearchTermsForPack(query: string, pack: string): string[] {
+  const packNameTokens = new Set(tokenize(pack));
+  return searchTermsForQuery(query, 10)
+    .filter((term) => {
+      const termTokens = tokenize(term);
+      return !(termTokens.length > 0 && termTokens.every((token) => packNameTokens.has(token)));
+    })
+    .filter((term) => !tokenize(term).some((token) => packNameTokens.has(token)));
+}
+
+async function runExactSearch(ctx: DiscoverCtx, pc: PackContext): Promise<void> {
+  const terms = exactSearchTermsForPack(ctx.query, pc.pack);
+  for (const term of terms) {
+    try {
+      const searchOpts: Parameters<typeof searchRegistry>[0] = {
+        entries: [pc.pack],
+        query: term,
+        max: Math.max(100, ctx.max * 20),
       };
-      const manifestTitle = fileTitles.get(section.path);
-      const title = section.heading ?? manifestTitle ?? undefined;
-      if (title !== undefined) result.title = title;
-      if (section.id !== undefined) result.section_id = section.id;
-      if (section.heading !== undefined) result.heading = section.heading;
-      if (section.start_line !== undefined) result.start_line = section.start_line;
-      if (section.end_line !== undefined) result.end_line = section.end_line;
-      if (exactMatches.length > 0) {
-        result.exact_verified = exactMatches.some((m) => m.verified);
-        result.exact_matches = uniqueExactDisplayMatches(exactMatches)
-          .slice(0, 3)
-          .map((m) => ({
-            line: m.line,
-            column: m.column,
-            text: m.text,
-          }));
+      if (ctx.opts.installTools !== undefined) searchOpts.installTools = ctx.opts.installTools;
+      const exact = await searchRegistry(searchOpts);
+      for (const warning of exact.warnings ?? []) {
+        if (!ctx.warnings.includes(warning)) ctx.warnings.push(warning);
       }
-      const matchReasons = [
-        ...(section.route_reasons ?? []),
-        ...(exactMatches.length > 0 ? ["exact:literal"] : []),
-        ...(manifestScore > 0 ? [`manifest_tokens:${manifestScore}`] : []),
-      ];
-      if (matchReasons.length > 0) result.match_reasons = [...new Set(matchReasons)].slice(0, 12);
-      results.push(result);
+      for (const match of exact.matches) {
+        const key = `${match.registry_entry}:${match.path}`;
+        const arr = ctx.exactByEntryPath.get(key) ?? [];
+        const weighted = { ...match, query_term: term };
+        if (!arr.some((m) => exactMatchKey(m) === exactMatchKey(weighted))) arr.push(weighted);
+        ctx.exactByEntryPath.set(key, arr);
+      }
+    } catch (e) {
+      ctx.warnings.push(
+        `exact search skipped for ${pc.pack}: ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
   }
+}
 
-  results.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path));
-  const trimmed = diversifyByRegistryEntry(pruneOverlappingResults(results), packs, max);
-  const trimmedKnowledge = knowledge
+function attachSectionMetadata(
+  result: GenericPackResult["results"][number],
+  section: SearchRecord,
+  manifestTitle: string | undefined,
+): void {
+  const title = section.heading ?? manifestTitle ?? undefined;
+  if (title !== undefined) result.title = title;
+  if (section.id !== undefined) result.section_id = section.id;
+  if (section.heading !== undefined) result.heading = section.heading;
+  if (section.start_line !== undefined) result.start_line = section.start_line;
+  if (section.end_line !== undefined) result.end_line = section.end_line;
+}
+
+function attachExactMatchMetadata(
+  result: GenericPackResult["results"][number],
+  exactMatches: ReturnType<typeof exactMatchesForSection>,
+): void {
+  if (exactMatches.length === 0) return;
+  result.exact_verified = exactMatches.some((m) => m.verified);
+  result.exact_matches = uniqueExactDisplayMatches(exactMatches)
+    .slice(0, 3)
+    .map((m) => ({ line: m.line, column: m.column, text: m.text }));
+}
+
+function buildMatchReasons(
+  section: SearchRecord,
+  exactMatches: ReturnType<typeof exactMatchesForSection>,
+  manifestScore: number,
+): string[] {
+  return [
+    ...(section.route_reasons ?? []),
+    ...(exactMatches.length > 0 ? ["exact:literal"] : []),
+    ...(manifestScore > 0 ? [`manifest_tokens:${manifestScore}`] : []),
+  ];
+}
+
+function buildSectionResult(
+  ctx: DiscoverCtx,
+  pc: PackContext,
+  section: SearchRecord,
+): GenericPackResult["results"][number] | null {
+  const manifestScore = pc.fileTokenScores.get(section.path) ?? 0;
+  const score =
+    scoreSection(section, pc.tokens, ctx.queryPhrases, pc.pack, ctx.querySurfaceTokens) +
+    (section.route_score ?? 0) +
+    manifestScore * 10 +
+    pc.packAliasBoost;
+  const exactMatches = exactMatchesForSection(
+    ctx.exactByEntryPath.get(`${pc.pack}:${section.path}`) ?? [],
+    section,
+  );
+  if (
+    hasWeakConceptCoverage(section, ctx.querySurfaceTokens, pc.pack) &&
+    !exactMatchesCoverConcepts(exactMatches, ctx.querySurfaceTokens, pc.pack)
+  ) {
+    return null;
+  }
+  if (score <= 0 && exactMatches.length === 0) return null;
+  const result: GenericPackResult["results"][number] = {
+    registry_entry: pc.pack,
+    path: section.path,
+    score: score + exactMatchScore(exactMatches),
+    excerpt: section.excerpt,
+  };
+  attachSectionMetadata(result, section, pc.fileTitles.get(section.path));
+  attachExactMatchMetadata(result, exactMatches);
+  const matchReasons = buildMatchReasons(section, exactMatches, manifestScore);
+  if (matchReasons.length > 0) result.match_reasons = [...new Set(matchReasons)].slice(0, 12);
+  return result;
+}
+
+function processPackCandidates(ctx: DiscoverCtx, pc: PackContext): void {
+  const targetIds = [
+    ...pc.aliasMatches.flatMap((a) => a.targets),
+    ...[...ctx.exactByEntryPath.entries()]
+      .filter(([key]) => key.startsWith(`${pc.pack}:`))
+      .flatMap(([, matches]) => matches.map((m) => `${m.path}#L${m.line}`)),
+  ];
+  const candidates = candidateSections(pc.root, pc.docsRoot, pc.tokens, targetIds);
+  for (const section of candidates) {
+    const result = buildSectionResult(ctx, pc, section);
+    if (result !== null) ctx.results.push(result);
+  }
+}
+
+function trimKnowledge(
+  knowledge: GenericPackResult["knowledge"],
+  baseTokens: string[],
+  max: number,
+): GenericPackResult["knowledge"] {
+  return knowledge
     .filter(
       (k) =>
         scoreKnowledgeForFinal(k, baseTokens) >= 3 && knowledgeMatchesDistinctive(k, baseTokens),
@@ -278,7 +342,14 @@ export async function discoverGenericPacks(
         a.id.localeCompare(b.id),
     )
     .slice(0, Math.min(8, max));
-  const trimmedDependencies = dependencies
+}
+
+function trimDependencies(
+  dependencies: GenericPackResult["dependencies"],
+  baseTokens: string[],
+  max: number,
+): GenericPackResult["dependencies"] {
+  return dependencies
     .filter((d) => dependencyUsefulForQuery(d, baseTokens))
     .sort(
       (a, b) =>
@@ -286,13 +357,20 @@ export async function discoverGenericPacks(
         a.name.localeCompare(b.name),
     )
     .slice(0, Math.min(6, max));
+}
+
+function buildFinalResult(ctx: DiscoverCtx): GenericPackResult {
+  ctx.results.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path));
+  const trimmed = diversifyByRegistryEntry(pruneOverlappingResults(ctx.results), ctx.packs, ctx.max);
+  const trimmedKnowledge = trimKnowledge(ctx.knowledge, ctx.baseTokens, ctx.max);
+  const trimmedDependencies = trimDependencies(ctx.dependencies, ctx.baseTokens, ctx.max);
   return {
-    status: errors.length > 0 && trimmed.length === 0 ? "error" : "ok",
-    query,
+    status: ctx.errors.length > 0 && trimmed.length === 0 ? "error" : "ok",
+    query: ctx.query,
     mode: "registry-docs",
-    registry_entries: packs,
+    registry_entries: ctx.packs,
     knowledge: trimmedKnowledge,
-    concept_aliases_used: conceptAliasesUsed,
+    concept_aliases_used: ctx.conceptAliasesUsed,
     dependencies: trimmedDependencies,
     results: trimmed,
     citations: [
@@ -301,9 +379,40 @@ export async function discoverGenericPacks(
       ),
       ...trimmedKnowledge.map((k) => k.id),
     ],
-    ...(errors.length ? { errors } : {}),
-    ...(warnings.length ? { warnings: [...new Set(warnings)].slice(0, 10) } : {}),
+    ...(ctx.errors.length ? { errors: ctx.errors } : {}),
+    ...(ctx.warnings.length ? { warnings: [...new Set(ctx.warnings)].slice(0, 10) } : {}),
   };
+}
+
+export async function discoverGenericPacks(
+  query: string,
+  packs: string[],
+  max = 10,
+  opts: { installTools?: boolean } = {},
+): Promise<GenericPackResult> {
+  const ctx: DiscoverCtx = {
+    query,
+    packs,
+    max,
+    opts,
+    baseTokens: tokenize(query).filter((t) => t.length > 1 && !QUERY_STOPWORDS.has(t)),
+    querySurfaceTokens: surfaceTokens(query),
+    queryPhrases: meaningfulQueryPhrases(query),
+    results: [],
+    knowledge: [],
+    conceptAliasesUsed: [],
+    dependencies: [],
+    errors: [],
+    warnings: [],
+    exactByEntryPath: new Map(),
+  };
+  for (const pack of packs) {
+    const pc = preparePackContext(ctx, pack);
+    if (pc === null) continue;
+    await runExactSearch(ctx, pc);
+    processPackCandidates(ctx, pc);
+  }
+  return buildFinalResult(ctx);
 }
 
 function queryNamesPack(query: string, pack: string): boolean {
