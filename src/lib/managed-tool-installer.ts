@@ -6,6 +6,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { VegaStackError } from "./errors.js";
 import { streamDownloadVerified } from "./fetch-with-timeout.js";
+import { atomicWriteFileSync } from "./fs-utils.js";
 import {
   MANAGED_TOOLS_MANIFEST,
   managedToolTarget,
@@ -192,8 +193,7 @@ function writeManagedToolMetadata(
   name: ManagedToolName,
   value: ManagedToolInstall,
 ): ManagedToolInstall {
-  fs.mkdirSync(path.dirname(managedToolMetadataPath(name)), { recursive: true });
-  fs.writeFileSync(managedToolMetadataPath(name), `${JSON.stringify(value, null, 2)}\n`);
+  atomicWriteFileSync(managedToolMetadataPath(name), `${JSON.stringify(value, null, 2)}\n`);
   return value;
 }
 
