@@ -9,8 +9,14 @@ export default defineConfig({
     // Each test gets a fresh tmp dir + isolates filesystem side-effects.
     // We run integration tests sequentially to avoid cross-test contamination
     // when they share the agent install dirs.
+    //
+    // singleFork: true is required to keep the cli-help integration suite
+    // (which spawns `node dist/cli.js` children) stable. With singleFork:false
+    // parallel forks contend on shared filesystem state and the suite fails
+    // non-deterministically — see issue #60 and the parallel-safety regression
+    // test in tests/integration/cli-help.flake.test.ts.
     pool: "forks",
-    poolOptions: { forks: { singleFork: false } },
+    poolOptions: { forks: { singleFork: true } },
 
     // Fail fast on flake — surface flaky tests immediately.
     retry: 0,
