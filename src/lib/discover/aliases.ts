@@ -33,27 +33,55 @@ export interface LoadAliasesArgs {
   provider: string;
 }
 
+interface CacheEntry {
+  mtimeMs: number;
+  aliases: AliasRewrite[];
+}
+
+const CACHE = new Map<string, CacheEntry>();
+const EMPTY: AliasRewrite[] = Object.freeze([] as AliasRewrite[]) as AliasRewrite[];
+
+/** Reset the module-level alias cache. Test-only. */
+export function clearAliasCache(): void {
+  CACHE.clear();
+}
+
 /** Load all aliases for one provider. Returns [] when the file is absent
- *  or empty — that is NOT an error. */
+ *  or empty — that is NOT an error. Cached by mtime. */
 export function loadAliases(args: LoadAliasesArgs): AliasRewrite[] {
   const file = path.join(args.terraformRoot, args.provider, "aliases.yaml");
-  if (!fs.existsSync(file)) return [];
+  let stat: fs.Stats;
+  try {
+    stat = fs.statSync(file);
+  } catch {
+    return EMPTY;
+  }
+
+  const cached = CACHE.get(file);
+  if (cached && cached.mtimeMs === stat.mtimeMs) return cached.aliases;
 
   let raw: string;
   try {
     raw = fs.readFileSync(file, "utf8");
   } catch {
-    return [];
+    return EMPTY;
   }
-  if (raw.trim().length === 0) return [];
+  if (raw.trim().length === 0) {
+    CACHE.set(file, { mtimeMs: stat.mtimeMs, aliases: EMPTY });
+    return EMPTY;
+  }
 
   let parsed: unknown;
   try {
     parsed = yaml.load(raw);
   } catch {
-    return [];
+    CACHE.set(file, { mtimeMs: stat.mtimeMs, aliases: EMPTY });
+    return EMPTY;
   }
-  if (!Array.isArray(parsed)) return [];
+  if (!Array.isArray(parsed)) {
+    CACHE.set(file, { mtimeMs: stat.mtimeMs, aliases: EMPTY });
+    return EMPTY;
+  }
 
   const out: AliasRewrite[] = [];
   for (const item of parsed) {
@@ -67,6 +95,7 @@ export function loadAliases(args: LoadAliasesArgs): AliasRewrite[] {
       provider: args.provider,
     });
   }
+  CACHE.set(file, { mtimeMs: stat.mtimeMs, aliases: out });
   return out;
 }
 
