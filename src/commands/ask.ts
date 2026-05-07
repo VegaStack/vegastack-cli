@@ -1,15 +1,11 @@
 // `vegastack ask <query>` — generic registry evidence builder.
 
 import { runTerraformDiscover } from "./terraform-discover.js";
-import {
-  allInstalledRegistryEntryNames,
-  assertRegistryEntriesInstalled,
-  ensureProjectInitialized,
-} from "../lib/registry.js";
+import { assertRegistryEntriesInstalled } from "../lib/registry.js";
 import { discoverGenericPacks } from "../lib/generic-pack-discover.js";
 import { VegaStackError } from "../lib/errors.js";
-import { log, printError } from "../lib/log.js";
-import { resolveProjectEntriesWithDetection } from "../lib/auto-detect-entries.js";
+import { printError } from "../lib/log.js";
+import { resolveRegistryEntriesFromOptions } from "./_shared.js";
 
 export interface AskOptions {
   all: boolean;
@@ -79,27 +75,5 @@ export async function runAsk(query: string, opts: AskOptions): Promise<number> {
 }
 
 function resolveAskRegistryEntries(opts: AskOptions): string[] {
-  if (opts.entries) {
-    return normalizeEntryNames(opts.entries);
-  }
-  if (opts.all) {
-    const names = allInstalledRegistryEntryNames().sort();
-    log.info(`searching all installed registry entries: ${names.join(", ") || "(none)"}`);
-    return names;
-  }
-  ensureProjectInitialized(process.cwd());
-  const names = resolveProjectEntriesWithDetection(process.cwd());
-  log.info(`searching project registry entries: ${names.join(", ") || "(none)"}`);
-  return names;
-}
-
-function normalizeEntryNames(value: string | string[]): string[] {
-  return [
-    ...new Set(
-      (Array.isArray(value) ? value : [value])
-        .flatMap((entry) => entry.split(","))
-        .map((p) => p.trim())
-        .filter(Boolean),
-    ),
-  ].sort();
+  return resolveRegistryEntriesFromOptions(opts);
 }
