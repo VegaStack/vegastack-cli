@@ -27,7 +27,7 @@ import { runSkills, runSkillsReconcile } from "./commands/skills.js";
 import { runSetup } from "./commands/setup.js";
 import { runUpdate } from "./commands/update.js";
 import { VegaStackError } from "./lib/errors.js";
-import { log, printError, setJsonMode, setQuiet } from "./lib/log.js";
+import { printError, setJsonMode, setQuiet } from "./lib/log.js";
 import { globalConfigPath } from "./lib/paths.js";
 import { autoRefreshProjectState } from "./lib/project-state.js";
 import { printUpdateNagIfStale } from "./lib/update-check.js";
@@ -85,6 +85,12 @@ function parsePositiveInt(value: string): number {
 }
 
 const program = new Command();
+// `exitOverride` makes commander throw `CommanderError` instead of calling
+// `process.exit` directly. We need this so the top-level try/catch below can
+// translate `commander.invalidArgument` into a typed `ValidationError`
+// (exit 10) per the documented exit-code rubric. Without it, commander short-
+// circuits with exit 1 before our handler runs.
+program.exitOverride();
 program
   .name("vegastack")
   .description(
@@ -141,7 +147,7 @@ Environment variables:
 
 Exit codes:
   0   ok
-  1   unknown error
+  1   unknown error (also: commander unknown-command / unknown-option usage errors)
   2   discovery returned an error envelope
   3   query was ambiguous
   4   Registry pack missing
@@ -150,9 +156,13 @@ Exit codes:
   7   network error
   8   checksum mismatch
   9   agent install error
-  10  validation error
+  10  validation error (CLI input validation, including invalid option arguments)
   11  managed tool missing
   12  unsupported environment
+
+Note: this CLI uses 2 for typed discovery errors (not POSIX-style "usage").
+Commander-level usage errors (unknown command, unknown option) exit 1; bad
+option-argument values (e.g. --format invalid) exit 10 via the typed map.
 
 Report bugs at https://github.com/vegastack/vegastack-cli/issues.
 `,
@@ -812,14 +822,22 @@ try {
 } catch (e) {
   // Commander throws CommanderError on usage errors with its own exitCode.
   const err = e as { code?: string; exitCode?: number; message?: string };
+  // Argument-validator failures (`InvalidArgumentError` thrown from custom
+  // option parsers like `parsePositiveInt` or scan's `--format` validator) are
+  // user-facing validation errors. Route them through the typed error map so
+  // they exit 10 (the documented validation code), not commander's generic 1.
+  if (typeof err.code === "string" && err.code === "commander.invalidArgument") {
+    process.exit(
+      printError(new VegaStackError("ValidationError", err.message ?? "invalid argument")),
+    );
+  }
   if (
     typeof err.exitCode === "number" &&
     typeof err.code === "string" &&
     err.code.startsWith("commander.")
   ) {
-    if (err.code !== "commander.helpDisplayed" && err.code !== "commander.version") {
-      log.err(err.message ?? "command failed");
-    }
+    // Commander already wrote the error message to stderr before throwing
+    // (exitOverride preserves that behavior). Don't duplicate it.
     process.exit(err.exitCode);
   }
   process.exit(printError(e instanceof VegaStackError ? e : asUnknown(e)));
