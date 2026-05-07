@@ -20,14 +20,21 @@ bucket_name = "vegastack-cli-registry"
 preview_bucket_name = "vegastack-cli-registry"
 
 # KV namespace caches R2 fetches and the rolling 30-day report index.
-# Create with:
-#   wrangler kv namespace create REPORTS_CACHE
-#   wrangler kv namespace create REPORTS_CACHE --preview
-# Then paste the returned IDs below.
-[[kv_namespaces]]
-binding = "REPORTS_CACHE"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
-preview_id = "REPLACE_WITH_PREVIEW_KV_NAMESPACE_ID"
+#
+# This binding is intentionally OFF in the committed config so a fresh
+# checkout (or fork) can `wrangler deploy` without first creating its own
+# KV namespace. Cache misses fall through to a direct R2 read — see
+# src/lib/r2.ts (the env?.REPORTS_CACHE?.get / .put are optional-chained).
+#
+# To enable caching for your deployment:
+#   1. wrangler kv namespace create REPORTS_CACHE
+#   2. wrangler kv namespace create REPORTS_CACHE --preview
+#   3. Uncomment the block below and paste the returned IDs.
+#
+# [[kv_namespaces]]
+# binding = "REPORTS_CACHE"
+# id = "your-kv-namespace-id-here"
+# preview_id = "your-preview-kv-namespace-id-here"
 
 [vars]
 PUBLIC_SITE_URL = "https://cli-evals.vegastack.com"
