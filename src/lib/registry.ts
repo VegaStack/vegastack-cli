@@ -9,6 +9,7 @@ import { projectConfigPath, registryCacheRoot } from "./paths.js";
 import { PACKS, registryEntryCachePath, type PackDefinition } from "./project.js";
 import { log } from "./log.js";
 import { verifyRegistryCatalogSignature } from "./registry-signature.js";
+import { acquireRegistryInstallLock } from "./registry-install-lock.js";
 import {
   projectConfigExists,
   projectRegistryEntryNames,
@@ -250,6 +251,22 @@ async function installPublishedRegistryEntry(
     }
   }
 
+  // Serialize concurrent installs of the same entry across processes — see
+  // rollup #82 F-006. Two parallel `vegastack init` runs would otherwise
+  // race the rename block below and clobber each other's cache.
+  const release = await acquireRegistryInstallLock(registryCacheRoot(), name);
+  try {
+    await doInstall(name, entry, dest);
+  } finally {
+    release();
+  }
+}
+
+async function doInstall(
+  name: string,
+  entry: RegistryCatalogEntry,
+  dest: string,
+): Promise<void> {
   log.step(`downloading Registry pack ${name}`);
   if (!entry.archive || !entry.archive_sha256 || typeof entry.archive_bytes !== "number") {
     throw new VegaStackError(
