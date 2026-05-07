@@ -21,7 +21,7 @@ describe("proper-lockfile is fully removed", () => {
 
   it("is not imported from any source/test/script file", () => {
     const result = execSync(
-      `git grep -nIE "proper-lockfile" -- src tests scripts apps npm || true`,
+      `git grep -nIE "proper-lockfile" -- src tests scripts apps npm ':!tests/lib/no-proper-lockfile.test.ts' || true`,
       { cwd: repoRoot, encoding: "utf8" },
     ).trim();
     expect(result).toBe("");
