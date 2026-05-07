@@ -135,6 +135,20 @@ export class VegaStackMcp extends McpAgent<Env> {
   }
 }
 
+interface McpHandler {
+  fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response>;
+}
+
+// ─── Module-scope MCP transport handlers ──────────────────────────────────
+//
+// `VegaStackMcp.serve` / `serveSSE` are static factories from the Agents
+// SDK that build a Worker handler bound to this DO namespace. They are pure
+// of `request` and can be hoisted, avoiding a per-request allocation that
+// (depending on the SDK's internal closure) may register repeated event
+// listeners or rebuild routers each invocation. (audit F-001, code-review/mcp)
+const MCP_HANDLER: McpHandler = VegaStackMcp.serve("/mcp") as unknown as McpHandler;
+const SSE_HANDLER: McpHandler = VegaStackMcp.serveSSE("/sse") as unknown as McpHandler;
+
 // ─── Worker fetch handler ─────────────────────────────────────────────────
 
 const CORS_HEADERS: Record<string, string> = {
@@ -222,13 +236,11 @@ export default {
     // McpAgent.serveSSE(path) are static helpers that build a Worker handler
     // wired to this class's Durable Object namespace.
     if (url.pathname === "/mcp" || url.pathname.startsWith("/mcp/")) {
-      const handler = VegaStackMcp.serve("/mcp") as unknown as McpHandler;
-      const resp = await handler.fetch(request, env, ctx);
+      const resp = await MCP_HANDLER.fetch(request, env, ctx);
       return withCors(resp);
     }
     if (url.pathname === "/sse" || url.pathname.startsWith("/sse/")) {
-      const handler = VegaStackMcp.serveSSE("/sse") as unknown as McpHandler;
-      const resp = await handler.fetch(request, env, ctx);
+      const resp = await SSE_HANDLER.fetch(request, env, ctx);
       return withCors(resp);
     }
 
@@ -237,10 +249,6 @@ export default {
 } satisfies ExportedHandler<Env>;
 
 // ─── helpers ──────────────────────────────────────────────────────────────
-
-interface McpHandler {
-  fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response>;
-}
 
 const TOOL_NAMES = [
   "terraform_discover",

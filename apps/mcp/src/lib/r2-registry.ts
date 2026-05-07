@@ -35,6 +35,18 @@ interface MemoryEntry {
 const MEM_CACHE = new Map<string, MemoryEntry>();
 const MEM_CACHE_MAX = 64;
 
+// Hard upper bound on any single Registry artifact loaded into a Workers
+// isolate. Workers have a 128 MiB memory ceiling; an unbounded R2 / CDN read
+// followed by `JSON.parse` (or a hand-rolled YAML/TOML walk) can OOM-kill
+// the isolate. 4 MiB is generous for manifests; knowledge / recipe artifacts
+// are typically <64 KiB. (audit F-003, code-review/mcp)
+export const MAX_REGISTRY_ARTIFACT_BYTES = 4 * 1024 * 1024;
+
+// Public CDN fallback fetch budget. Without this, a slow origin holds the
+// subrequest until the global Workers limit (~30s) fires, turning every
+// cache miss into a 30s stall on the MCP client side. (audit F-004)
+const CDN_FETCH_TIMEOUT_MS = 5_000;
+
 function rememberInMemory(key: string, body: string): void {
   if (MEM_CACHE.size >= MEM_CACHE_MAX) {
     // Drop the oldest entry — Map preserves insertion order.
@@ -70,8 +82,17 @@ export async function readRegistryText(env: Env, key: string): Promise<string> {
   let body: string | null = null;
   try {
     const obj = await env.REGISTRY.get(key);
-    if (obj) body = await obj.text();
+    if (obj) {
+      // Fail fast on oversized artifacts before allocating the string into
+      // isolate memory (audit F-003). `obj.size` is set on R2 GETs.
+      const size = (obj as { size?: number }).size;
+      if (typeof size === "number" && size > MAX_REGISTRY_ARTIFACT_BYTES) {
+        throw new ArtifactTooLarge(key, size);
+      }
+      body = await obj.text();
+    }
   } catch (e) {
+    if (e instanceof ArtifactTooLarge) throw e;
     // R2 binding may be unavailable in some local dev modes; fall through to CDN.
     body = null;
   }
@@ -81,11 +102,32 @@ export async function readRegistryText(env: Env, key: string): Promise<string> {
   //    key, which is the contract every caller expects.
   if (body === null && env.REGISTRY_PUBLIC_BASE_URL) {
     const url = `${env.REGISTRY_PUBLIC_BASE_URL.replace(/\/$/, "")}/${key.replace(/^\//, "")}`;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), CDN_FETCH_TIMEOUT_MS);
     try {
-      const resp = await fetch(url);
-      if (resp.ok) body = await resp.text();
-    } catch {
+      const resp = await fetch(url, { signal: ctrl.signal });
+      if (resp.ok) {
+        // Honour Content-Length when present; otherwise the body still cannot
+        // exceed the cap — we re-check after reading. (audit F-003)
+        const lenHeader = resp.headers.get("Content-Length");
+        const len = lenHeader ? Number.parseInt(lenHeader, 10) : Number.NaN;
+        if (Number.isFinite(len) && len > MAX_REGISTRY_ARTIFACT_BYTES) {
+          throw new ArtifactTooLarge(key, len);
+        }
+        const text = await resp.text();
+        if (text.length > MAX_REGISTRY_ARTIFACT_BYTES) {
+          throw new ArtifactTooLarge(key, text.length);
+        }
+        body = text;
+      }
+    } catch (e) {
+      if (e instanceof ArtifactTooLarge) {
+        clearTimeout(timer);
+        throw e;
+      }
       body = null;
+    } finally {
+      clearTimeout(timer);
     }
   }
 
@@ -143,6 +185,14 @@ export class RegistryKeyNotFound extends Error {
   constructor(public readonly key: string) {
     super(`Registry pack key not found: ${key}`);
     this.name = "RegistryKeyNotFound";
+  }
+}
+
+export class ArtifactTooLarge extends Error {
+  readonly code = "ArtifactTooLarge";
+  constructor(public readonly key: string, public readonly size: number) {
+    super(`Registry pack key exceeds size cap: ${key} (${size} bytes > ${MAX_REGISTRY_ARTIFACT_BYTES})`);
+    this.name = "ArtifactTooLarge";
   }
 }
 
