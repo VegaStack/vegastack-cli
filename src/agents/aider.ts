@@ -107,17 +107,179 @@ function parseConf(text: string): ParsedConf {
   return out;
 }
 
-function renderConf(parsed: ParsedConf): string {
-  const lines = parsed.otherLines.slice();
-  // Trim trailing blank lines (we'll re-add one).
-  while (lines.length && (lines[lines.length - 1] ?? "").trim() === "") lines.pop();
+/**
+ * Audit F-004: minimal in-place insertion of `entry` into `read[]`.
+ *
+ * Reparsing+reserializing the YAML drops user comments, reorders keys, and
+ * collapses flow lists into block lists. Aider treats `.aider.conf.yml` as
+ * user-owned config — we should never reformat it. Strategy:
+ *
+ *   1. If the file has no `read:` key, append a fresh block at the end.
+ *   2. If `read:` is a flow list (`read: [a, b]`), append `, entry` inside.
+ *   3. If `read:` is a single-value scalar (`read: foo.md`), convert to
+ *      a 2-element flow list (the smallest possible diff).
+ *   4. If `read:` is a block list, splice `  - entry` after the last
+ *      continuation line.
+ *
+ * In every branch we touch only the lines that need to change. The user's
+ * comments, blank lines, ordering, and inline `# notes` are preserved
+ * verbatim.
+ *
+ * Returns the new file contents or `null` if `entry` is already present.
+ */
+function appendReadEntry(text: string, entry: string): string | null {
+  const lines = text.split(/\r?\n/);
+  // Track whether the file ended with a trailing newline so we can preserve it.
+  const trailingNewline = lines.length > 0 && lines[lines.length - 1] === "";
+  if (trailingNewline) lines.pop();
 
-  if (parsed.read.length > 0) {
-    lines.push("read:");
-    for (const r of parsed.read) lines.push(`  - ${r}`);
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i] ?? "";
+    const m = /^read\s*:\s*(.*?)\s*$/.exec(line);
+    if (!m) {
+      i++;
+      continue;
+    }
+    const tail = m[1] ?? "";
+
+    if (tail.startsWith("[") && tail.endsWith("]")) {
+      // Flow list. Check membership first.
+      const items = tail
+        .slice(1, -1)
+        .split(",")
+        .map((s) => s.trim().replace(/^["']|["']$/g, ""))
+        .filter(Boolean);
+      if (items.includes(entry)) return null;
+      // Append before closing bracket — preserves any inline comment after.
+      const insertion = items.length === 0 ? entry : `, ${entry}`;
+      // Replace last `]` of this segment.
+      const closeIdx = line.lastIndexOf("]");
+      lines[i] = `${line.slice(0, closeIdx)}${insertion}${line.slice(closeIdx)}`;
+      return lines.join("\n") + (trailingNewline ? "\n" : "");
+    }
+
+    if (tail !== "" && !tail.startsWith("#")) {
+      // Single-value scalar. Convert to flow list with original + entry.
+      const orig = tail.replace(/^["']|["']$/g, "");
+      if (orig === entry) return null;
+      lines[i] = `read: [${orig}, ${entry}]`;
+      return lines.join("\n") + (trailingNewline ? "\n" : "");
+    }
+
+    // Block list — find the last continuation line and splice after it.
+    let j = i + 1;
+    let lastBlockIdx = i;
+    while (j < lines.length) {
+      const cur = lines[j] ?? "";
+      const itemMatch = /^\s+-\s+(.*?)\s*$/.exec(cur);
+      if (itemMatch) {
+        const item = (itemMatch[1] ?? "").replace(/^["']|["']$/g, "").trim();
+        if (item === entry) return null;
+        lastBlockIdx = j;
+        j++;
+        continue;
+      }
+      // Indented blank/comment lines belong to the block too.
+      if (cur.trim() === "" || /^\s+#/.test(cur)) {
+        j++;
+        continue;
+      }
+      break;
+    }
+    lines.splice(lastBlockIdx + 1, 0, `  - ${entry}`);
+    return lines.join("\n") + (trailingNewline ? "\n" : "");
   }
-  lines.push("");
-  return lines.join("\n");
+
+  // No `read:` key found — append a fresh block at end of file.
+  while (lines.length && (lines[lines.length - 1] ?? "").trim() === "") lines.pop();
+  lines.push("read:");
+  lines.push(`  - ${entry}`);
+  return lines.join("\n") + "\n";
+}
+
+/**
+ * Audit F-004 (uninstall side): remove a previously-inserted entry from
+ * read[] without touching surrounding lines, comments, or formatting.
+ * Returns null if the entry was not present.
+ *
+ * `entryAliases` is the set of strings any of which match (e.g. the
+ * absolute path we wrote and the relative form we now prefer).
+ */
+function removeReadEntry(text: string, entryAliases: readonly string[]): string | null {
+  const lines = text.split(/\r?\n/);
+  const trailingNewline = lines.length > 0 && lines[lines.length - 1] === "";
+  if (trailingNewline) lines.pop();
+
+  const matches = (s: string): boolean => entryAliases.includes(s);
+  let changed = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? "";
+    const m = /^read\s*:\s*(.*?)\s*$/.exec(line);
+    if (!m) continue;
+    const tail = m[1] ?? "";
+
+    if (tail.startsWith("[") && tail.endsWith("]")) {
+      const items = tail
+        .slice(1, -1)
+        .split(",")
+        .map((s) => s.trim().replace(/^["']|["']$/g, ""))
+        .filter(Boolean);
+      const kept = items.filter((it) => !matches(it));
+      if (kept.length === items.length) continue;
+      lines[i] = `read: [${kept.join(", ")}]`;
+      changed = true;
+      continue;
+    }
+
+    if (tail !== "" && !tail.startsWith("#")) {
+      const orig = tail.replace(/^["']|["']$/g, "");
+      if (matches(orig)) {
+        lines.splice(i, 1);
+        i--;
+        changed = true;
+      }
+      continue;
+    }
+
+    // Block list — drop matching `  - <entry>` continuation lines.
+    let j = i + 1;
+    while (j < lines.length) {
+      const cur = lines[j] ?? "";
+      const itemMatch = /^\s+-\s+(.*?)\s*$/.exec(cur);
+      if (itemMatch) {
+        const item = (itemMatch[1] ?? "").replace(/^["']|["']$/g, "").trim();
+        if (matches(item)) {
+          lines.splice(j, 1);
+          changed = true;
+          continue;
+        }
+        j++;
+        continue;
+      }
+      if (cur.trim() === "" || /^\s+#/.test(cur)) {
+        j++;
+        continue;
+      }
+      break;
+    }
+  }
+
+  if (!changed) return null;
+  return lines.join("\n") + (trailingNewline ? "\n" : "");
+}
+
+/**
+ * Audit F-005: for project scope we must write a *relative* path into
+ * `.aider.conf.yml` so the file remains portable when committed. Global
+ * scope keeps the absolute form (the home-level conf is per-machine).
+ */
+function relativeToConfDir(scope: Scope, conf: string, conv: string): string {
+  if (scope !== "project") return conv;
+  const rel = path.relative(path.dirname(conf), conv);
+  // path.relative on posix returns "" when same dir; guard against that.
+  return rel === "" ? path.basename(conv) : rel;
 }
 
 class AiderRenderer implements AgentRenderer {
@@ -137,7 +299,11 @@ class AiderRenderer implements AgentRenderer {
     if (confPresent) {
       try {
         const parsed = parseConf(fs.readFileSync(conf, "utf8"));
-        referenced = parsed.read.includes(conv) || parsed.read.includes(path.basename(conv));
+        const rel = relativeToConfDir(ctx.scope, conf, conv);
+        referenced =
+          parsed.read.includes(conv) ||
+          parsed.read.includes(rel) ||
+          parsed.read.includes(path.basename(conv));
       } catch {
         /* ignore */
       }
@@ -190,21 +356,33 @@ class AiderRenderer implements AgentRenderer {
       result.notes.push(`up to date: ${conv}`);
     }
 
-    // 2) Patch .aider.conf.yml — add `conv` to read[] iff not already there.
+    // 2) Patch .aider.conf.yml — add `entry` to read[] iff not already there.
+    //    Audit F-004: minimal in-place edit (preserves user comments / order).
+    //    Audit F-005: write a relative path for project scope so the conf
+    //                 file stays portable across machines/CI.
     fs.mkdirSync(path.dirname(conf), { recursive: true });
+    const entry = relativeToConfDir(ctx.scope, conf, conv);
     let raw = "";
     try {
       raw = fs.readFileSync(conf, "utf8");
     } catch {
       /* file absent — start empty */
     }
-    const parsed = parseConf(raw);
-    if (!parsed.read.includes(conv)) {
-      parsed.read.push(conv);
-      fs.writeFileSync(conf, renderConf(parsed), "utf8");
-      result.notes.push(`patched ${conf} (added ${conv} to read[])`);
-    } else {
+    // `appendReadEntry` returns null when the entry is already present
+    // (under any form: relative, absolute, or basename).
+    const parsedExisting = parseConf(raw);
+    const aliases = new Set([entry, conv, path.basename(conv)]);
+    const alreadyPresent = parsedExisting.read.some((r) => aliases.has(r));
+    if (alreadyPresent) {
       result.notes.push(`already referenced in ${conf}`);
+    } else {
+      const next = appendReadEntry(raw, entry);
+      if (next === null) {
+        result.notes.push(`already referenced in ${conf}`);
+      } else {
+        fs.writeFileSync(conf, next, "utf8");
+        result.notes.push(`patched ${conf} (added ${entry} to read[])`);
+      }
     }
 
     result.installed = true;
@@ -238,11 +416,16 @@ class AiderRenderer implements AgentRenderer {
 
     if (existsOrLink(conf)) {
       try {
-        const parsed = parseConf(fs.readFileSync(conf, "utf8"));
-        const before = parsed.read.length;
-        parsed.read = parsed.read.filter((r) => r !== conv && r !== path.basename(conv));
-        if (parsed.read.length !== before) {
-          fs.writeFileSync(conf, renderConf(parsed), "utf8");
+        // Audit F-006 (companion): only remove the exact path(s) we wrote —
+        // both the relative form (current install) and the absolute form
+        // (legacy installs from before F-005). We deliberately do *not*
+        // match `path.basename(conv)` alone, since a user's separate
+        // `vendor/CONVENTIONS.vegastack.md` would share that basename.
+        const raw = fs.readFileSync(conf, "utf8");
+        const rel = relativeToConfDir(ctx.scope, conf, conv);
+        const next = removeReadEntry(raw, [rel, conv]);
+        if (next !== null) {
+          fs.writeFileSync(conf, next, "utf8");
           result.notes.push(`unpatched ${conf}`);
           removedSomething = true;
         }

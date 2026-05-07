@@ -49,7 +49,7 @@ describe("continue renderer", () => {
     const text = fs.readFileSync(dest, "utf8");
     expect(text).toContain("mcpServers:");
     expect(text).toContain("vegastack");
-    expect(text).toMatch(/url: https?:\/\//);
+    expect(text).toMatch(/url: "https?:\/\//);
   });
 
   it("defaults to the modern /mcp StreamableHTTP transport", async () => {
@@ -64,8 +64,8 @@ describe("continue renderer", () => {
       const dest = continueMcpServerPath("project", cwd);
       const text = fs.readFileSync(dest, "utf8");
       // Default URL is the modern /mcp endpoint, not the legacy /sse.
-      expect(text).toContain("url: https://mcp.vegastack.com/mcp");
-      expect(text).not.toContain("url: https://mcp.vegastack.com/sse");
+      expect(text).toContain('url: "https://mcp.vegastack.com/mcp"');
+      expect(text).not.toContain("https://mcp.vegastack.com/sse");
       // Transport tracks the URL: /mcp ⇒ streamable-http.
       expect(text).toContain("transport: streamable-http");
     } finally {
@@ -134,6 +134,63 @@ describe("continue renderer", () => {
       dryRun: false,
     });
     expect(r.notes.join(" ")).toMatch(/nothing to remove/);
+  });
+
+  it("reads VEGASTACK_MCP_URL at install time, not module-load time (F-001)", async () => {
+    const prev = process.env.VEGASTACK_MCP_URL;
+    // Note: continueRenderer was already imported at the top of this file,
+    // so any module-load capture would have locked in the *initial* env. We
+    // mutate it now and assert the renderer picks the new value up.
+    process.env.VEGASTACK_MCP_URL = "https://example.com/custom-mcp";
+    try {
+      await continueRenderer.install({ scope: "project", cwd, force: true, dryRun: false });
+      const dest = continueMcpServerPath("project", cwd);
+      const text = fs.readFileSync(dest, "utf8");
+      expect(text).toContain('url: "https://example.com/custom-mcp"');
+    } finally {
+      if (prev === undefined) delete process.env.VEGASTACK_MCP_URL;
+      else process.env.VEGASTACK_MCP_URL = prev;
+    }
+  });
+
+  it("rejects javascript: scheme URLs (F-001/F-002)", async () => {
+    const prev = process.env.VEGASTACK_MCP_URL;
+    process.env.VEGASTACK_MCP_URL = "javascript:alert(1)";
+    try {
+      const r = await continueRenderer.install({
+        scope: "project",
+        cwd,
+        force: false,
+        dryRun: false,
+      });
+      expect(r.installed).toBe(false);
+      expect(r.warnings.join(" ")).toMatch(/http\(s\)/);
+      expect(fs.existsSync(continueMcpServerPath("project", cwd))).toBe(false);
+    } finally {
+      if (prev === undefined) delete process.env.VEGASTACK_MCP_URL;
+      else process.env.VEGASTACK_MCP_URL = prev;
+    }
+  });
+
+  it("rejects YAML-injection attempts in VEGASTACK_MCP_URL (F-002)", async () => {
+    const prev = process.env.VEGASTACK_MCP_URL;
+    // A newline-bearing URL would, without quoting/validation, append rogue
+    // YAML keys under mcpServers[0]. We require it be rejected outright.
+    process.env.VEGASTACK_MCP_URL = "https://x\nrogueKey: rogueValue";
+    try {
+      const r = await continueRenderer.install({
+        scope: "project",
+        cwd,
+        force: false,
+        dryRun: false,
+      });
+      expect(r.installed).toBe(false);
+      expect(r.warnings.length).toBeGreaterThan(0);
+      expect(fs.existsSync(continueMcpServerPath("project", cwd))).toBe(false);
+    } finally {
+      if (prev === undefined) delete process.env.VEGASTACK_MCP_URL;
+      else process.env.VEGASTACK_MCP_URL = prev;
+    }
   });
 
   it("status reports installed after install", async () => {

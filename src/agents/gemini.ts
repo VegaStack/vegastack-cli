@@ -97,16 +97,47 @@ class GeminiRenderer implements AgentRenderer {
       return result;
     }
 
+    const extPayload = fs.readFileSync(pkgGeminiExtension(), "utf8");
+    const skillPayload = fs.readFileSync(pkgCanonicalSkillMd(), "utf8");
+
+    // Audit F-003: install must be atomic. Pre-flight every target file:
+    // if any required write would be blocked (existing-and-different without
+    // --force), refuse to write any of them so the on-disk state never
+    // straddles a half-installed extension. Without this, a user with a
+    // hand-edited `gemini-extension.json` (warning) and missing SKILL.md
+    // could end up with our SKILL.md and command.toml on disk while
+    // `installed: false` was still reported.
+    const targets: { dest: string; payload: string }[] = [
+      { dest: extJson, payload: extPayload },
+      { dest: skillMd, payload: skillPayload },
+      { dest: cmdToml, payload: COMMAND_TOML },
+    ];
+    const conflicts: string[] = [];
+    for (const t of targets) {
+      let onDisk: string | null = null;
+      try {
+        onDisk = fs.readFileSync(t.dest, "utf8");
+      } catch {
+        /* absent — safe to write */
+      }
+      if (onDisk !== null && onDisk !== t.payload && !ctx.force) {
+        conflicts.push(t.dest);
+      }
+    }
+    if (conflicts.length > 0) {
+      for (const c of conflicts) {
+        result.warnings.push(`destination exists and differs; pass --force to overwrite: ${c}`);
+      }
+      return result;
+    }
+
     fs.mkdirSync(path.dirname(extJson), { recursive: true });
     fs.mkdirSync(path.dirname(skillMd), { recursive: true });
     fs.mkdirSync(path.dirname(cmdToml), { recursive: true });
 
-    const extPayload = fs.readFileSync(pkgGeminiExtension(), "utf8");
-    const skillPayload = fs.readFileSync(pkgCanonicalSkillMd(), "utf8");
-
-    writeIfChanged(extJson, extPayload, ctx.force, result);
-    writeIfChanged(skillMd, skillPayload, ctx.force, result);
-    writeIfChanged(cmdToml, COMMAND_TOML, ctx.force, result);
+    for (const t of targets) {
+      writeIfChanged(t.dest, t.payload, ctx.force, result);
+    }
 
     if (result.warnings.length === 0) {
       result.installed = true;
