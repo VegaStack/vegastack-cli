@@ -8,6 +8,7 @@ import { VegaStackError } from "./errors.js";
 import { streamDownloadVerified } from "./fetch-with-timeout.js";
 import {
   MANAGED_TOOLS_MANIFEST,
+  assertManagedToolLibcSupported,
   managedToolTarget,
   type ManagedToolTarget,
 } from "./managed-tools-manifest.js";
@@ -136,6 +137,13 @@ export function managedToolVersion(bin: string, args: string[] = ["--version"]):
 }
 
 function currentTarget(name: ManagedToolName): ManagedToolTarget {
+  // Block download up front when the host libc has no compatible asset
+  // (today: Alpine-musl for zizmor and the gitleaks installer's sibling).
+  try {
+    assertManagedToolLibcSupported(name);
+  } catch (e) {
+    throw new VegaStackError("Unsupported", e instanceof Error ? e.message : String(e));
+  }
   const target = managedToolTarget(name);
   if (!target) {
     throw new VegaStackError(

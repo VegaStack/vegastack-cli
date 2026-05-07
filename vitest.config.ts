@@ -32,11 +32,19 @@ export default defineConfig({
       include: ["src/**/*.ts"],
       exclude: ["src/cli.ts", "**/*.d.ts"], // cli.ts is the wiring layer; e2e covers it
       thresholds: {
-        // Current suite baseline. Tighten as command coverage grows.
-        statements: 60,
-        branches: 75,
-        functions: 67,
-        lines: 60,
+        // Global floor — pinned just below current suite levels so a
+        // regression (a deleted test, a new untested branch) trips the gate.
+        // The categories.md §7 target is ≥75% lines / ≥80% branches overall
+        // and ≥85% lines on `src/lib/`; we are tracking toward that as
+        // command-level smoke coverage lands (audit rollup-I, F-002/F-004/F-005).
+        // Documented deviation: a handful of commands (`init`, `doctor`,
+        // `update`, `skills`, `terraform-discover`) and large libs
+        // (`registry.ts`, `managed-tool-installer.ts`) still need deep tests —
+        // see issue #82 test-coverage findings.
+        statements: 67,
+        branches: 74,
+        functions: 75,
+        lines: 67,
       },
     },
 
