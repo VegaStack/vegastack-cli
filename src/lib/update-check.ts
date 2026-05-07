@@ -6,7 +6,7 @@
 // only inside `vegastack doctor` or `vegastack update`, and the nag printed on
 // every command reads from the cached value only.
 
-import { spawnSync } from "node:child_process";
+import { spawnCmdSync } from "./spawn-cmd.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { HOME } from "./paths.js";
@@ -61,8 +61,7 @@ export function isNewer(a: string, b: string): boolean {
 
 /** Run `npm view @vegastack/cli version` and return the version string, or null on failure. */
 export function fetchLatestVersion(timeoutMs = 5000): string | null {
-  const r = spawnSync("npm", ["view", PKG_NAME, "version"], {
-    encoding: "utf8",
+  const r = spawnCmdSync("npm", ["view", PKG_NAME, "version"], {
     timeout: timeoutMs,
   });
   if (r.status !== 0) return null;

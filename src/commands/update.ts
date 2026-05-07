@@ -4,7 +4,7 @@
 // `--check` only refreshes the version cache and prints a status line — useful
 // for the doctor flow and for CI scripts that want to know without installing.
 
-import { spawnSync } from "node:child_process";
+import { spawnCmdSync } from "../lib/spawn-cmd.js";
 import prompts from "prompts";
 import {
   allInstalledRegistryEntryNames,
@@ -165,7 +165,7 @@ function updateCli(opts: UpdateOpts): boolean {
 
   const args = ["i", "-g", `${PKG_NAME}@latest`];
   log.step(`running: npm ${args.join(" ")}`);
-  const r = spawnSync("npm", args, { stdio: "inherit" });
+  const r = spawnCmdSync("npm", args, { stdio: "inherit" });
   if (r.error !== undefined) {
     throw r.error;
   }
@@ -205,7 +205,7 @@ function runPostCliToolUpdate(opts: UpdateOpts): boolean {
   if (opts.yes) args.push("--yes");
   if (opts.json) args.push("--json");
   log.step(`running post-upgrade managed tool reconciliation: vegastack ${args.join(" ")}`);
-  const r = spawnSync("vegastack", args, { stdio: "inherit" });
+  const r = spawnCmdSync("vegastack", args, { stdio: "inherit" });
   if (r.error !== undefined || (r.status ?? 0) !== 0) {
     log.warn(
       "post-upgrade tool reconciliation with the new CLI failed; falling back to current CLI manifest",
