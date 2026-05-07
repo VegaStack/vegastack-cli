@@ -23,6 +23,47 @@ const REPORTS_PREFIX = "cli/evals/reports/";
 const INDEX_KEY = "cli/evals/reports/INDEX.json";
 const KV_TTL_SECONDS = 60 * 60; // 1 hour
 
+/**
+ * Cache schema version. Bump this prefix when the parsed shape stored in
+ * KV changes incompatibly so a cold rollout doesn't serve stale entries
+ * shaped to the previous schema.
+ *
+ * Bump procedure:
+ *   1. Change `CACHE_SCHEMA_VERSION` to the next `vN`.
+ *   2. Deploy. New writes land under the new prefix; old entries expire
+ *      naturally within KV_TTL_SECONDS (1h).
+ *   3. Optional: `wrangler kv key list` + delete the old `vN-1:` entries
+ *      if you need an immediate purge.
+ */
+const CACHE_SCHEMA_VERSION = "v1";
+const reportCacheKey = (date: string) => `${CACHE_SCHEMA_VERSION}:report:${date}`;
+const indexCacheKey = `${CACHE_SCHEMA_VERSION}:index`;
+
+/** Concurrency cap for parallel R2 reads in getRecentReports. */
+const R2_FANOUT_LIMIT = 5;
+
+/**
+ * Tiny worker-pool: runs `tasks` with at most `limit` in flight. Preserves
+ * input order in the result. Avoids importing a dep just for this.
+ */
+async function pooledMap<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  const runners = new Array(Math.min(limit, items.length)).fill(0).map(async () => {
+    while (true) {
+      const i = cursor++;
+      if (i >= items.length) return;
+      results[i] = await worker(items[i]!, i);
+    }
+  });
+  await Promise.all(runners);
+  return results;
+}
+
 export interface ReportIndex {
   /** YYYY-MM-DD strings, newest-first. */
   dates: string[];
@@ -60,18 +101,14 @@ export async function getReport(
   const safeDate = sanitizeDate(date);
   if (!safeDate) return null;
 
-  const cacheKey = `report:${safeDate}`;
-  const cached = await env?.REPORTS_CACHE?.get(cacheKey, "json").catch(
-    () => null,
-  );
+  const cacheKey = reportCacheKey(safeDate);
+  const cached = await env?.REPORTS_CACHE?.get(cacheKey, "json").catch(() => null);
   if (cached) {
     const parsed = parseReport(cached);
     if (parsed) return parsed;
   }
 
-  const obj = await env?.REGISTRY?.get(`${REPORTS_PREFIX}${safeDate}.json`).catch(
-    () => null,
-  );
+  const obj = await env?.REGISTRY?.get(`${REPORTS_PREFIX}${safeDate}.json`).catch(() => null);
   if (!obj) return fallbackReport(safeDate);
 
   let raw: unknown;
@@ -92,19 +129,14 @@ export async function getReport(
 }
 
 /** Latest report — checks index, falls back to today's date, then fixture. */
-export async function getLatestReport(
-  env: RuntimeEnv | undefined,
-): Promise<EvalReport | null> {
+export async function getLatestReport(env: RuntimeEnv | undefined): Promise<EvalReport | null> {
   const index = await getReportIndex(env);
   const latest = index?.latest ?? todayIso();
   return getReport(env, latest);
 }
 
 /** Recent N reports for the trend chart. Newest-first. */
-export async function getRecentReports(
-  env: RuntimeEnv | undefined,
-  n = 30,
-): Promise<EvalReport[]> {
+export async function getRecentReports(env: RuntimeEnv | undefined, n = 30): Promise<EvalReport[]> {
   const index = await getReportIndex(env);
   if (!index) {
     const fb = fallbackReport(todayIso());
@@ -112,16 +144,14 @@ export async function getRecentReports(
   }
 
   const dates = index.dates.slice(0, n);
-  const reports = await Promise.all(dates.map((d) => getReport(env, d)));
+  // Bounded fan-out: cap parallel R2 reads at R2_FANOUT_LIMIT so a cold
+  // edge with N=30 doesn't fire 30 simultaneous subrequests.
+  const reports = await pooledMap(dates, R2_FANOUT_LIMIT, (d) => getReport(env, d));
   return reports.filter((r): r is EvalReport => r !== null);
 }
 
-async function getReportIndex(
-  env: RuntimeEnv | undefined,
-): Promise<ReportIndex | null> {
-  const cached = await env?.REPORTS_CACHE?.get("index", "json").catch(
-    () => null,
-  );
+async function getReportIndex(env: RuntimeEnv | undefined): Promise<ReportIndex | null> {
+  const cached = await env?.REPORTS_CACHE?.get(indexCacheKey, "json").catch(() => null);
   if (cached && isIndex(cached)) return cached;
 
   const obj = await env?.REGISTRY?.get(INDEX_KEY).catch(() => null);
@@ -135,7 +165,7 @@ async function getReportIndex(
   }
   if (!isIndex(raw)) return null;
 
-  await env?.REPORTS_CACHE?.put("index", JSON.stringify(raw), {
+  await env?.REPORTS_CACHE?.put(indexCacheKey, JSON.stringify(raw), {
     expirationTtl: KV_TTL_SECONDS,
   }).catch(() => {});
 
@@ -166,4 +196,3 @@ function sanitizeDate(date: string): string | null {
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
-

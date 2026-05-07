@@ -11,10 +11,7 @@ import sample from "../src/fixtures/sample-report.json";
  */
 describe("getRecentReports concurrency", () => {
   it("never has more than 5 R2 GETs in flight simultaneously", async () => {
-    const dates = Array.from(
-      { length: 30 },
-      (_, i) => `2026-04-${String(i + 1).padStart(2, "0")}`,
-    );
+    const dates = Array.from({ length: 30 }, (_, i) => `2026-04-${String(i + 1).padStart(2, "0")}`);
     const indexJson = {
       dates,
       latest: dates[0],

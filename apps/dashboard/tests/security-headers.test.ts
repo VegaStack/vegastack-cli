@@ -15,10 +15,16 @@ describe("security headers middleware", () => {
       url: new URL("https://cli-evals.vegastack.com/"),
       request: new Request("https://cli-evals.vegastack.com/"),
     } as Parameters<typeof onRequest>[0];
-    return onRequest(ctx, async () => new Response("<html></html>", {
-      status: 200,
-      headers: { "content-type": "text/html" },
-    }));
+    const out = await onRequest(
+      ctx,
+      async () =>
+        new Response("<html></html>", {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        }),
+    );
+    if (!(out instanceof Response)) throw new Error("middleware returned void");
+    return out;
   }
 
   it("sets X-Content-Type-Options: nosniff", async () => {

@@ -45,7 +45,8 @@ describe("r2 KV cache schema-version prefix", () => {
     const out = await getReport(env, "2026-04-28");
     expect(out).not.toBeNull();
     expect(kvPut).toHaveBeenCalled();
-    expect(kvPut.mock.calls[0]![0]).toBe("v1:report:2026-04-28");
+    const calls = kvPut.mock.calls as unknown as Array<unknown[]>;
+    expect(calls[0]?.[0]).toBe("v1:report:2026-04-28");
   });
 
   it("uses a versioned key for the report index", async () => {
