@@ -8,7 +8,11 @@ import tailwindcss from "@tailwindcss/vite";
 // the Vite plugin; package versions are pinned in package.json.
 export default defineConfig({
   site: "https://cli-evals.vegastack.com",
-  output: "static",
+  // SSR by default — index.astro and /api/latest.json read R2 at request time
+  // and return runtime Responses. With "static" Astro would freeze any
+  // build-time R2 miss into the bundle. Per-page opt-in via
+  // `export const prerender = true` for genuinely static pages.
+  output: "server",
   adapter: cloudflare({
     // Use the modern Workers static-assets binding — no Pages.
     // The workerd dev runtime is used by
