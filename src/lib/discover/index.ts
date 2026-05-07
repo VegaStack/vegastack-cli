@@ -362,12 +362,6 @@ export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
   });
 }
 
-/** Synchronous variant retained for tests / scripts that don't want to await
- *  every call. Internally awaits the async pipeline. */
-export function discoverSync(args: DiscoverArgs): Promise<DiscoverResult> {
-  return discover(args);
-}
-
 // ─── Per-provider pipeline ───────────────────────────────────────────────
 
 interface ProviderPipelineArgs {

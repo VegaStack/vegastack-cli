@@ -1,10 +1,9 @@
 // `vegastack search <query>` — deterministic exact Registry source lookup.
 
-import { allInstalledRegistryEntryNames, ensureProjectInitialized } from "../lib/registry.js";
 import { VegaStackError } from "../lib/errors.js";
-import { log, printError } from "../lib/log.js";
+import { printError } from "../lib/log.js";
 import { searchRegistry } from "../lib/registry-search.js";
-import { resolveProjectEntriesWithDetection } from "../lib/auto-detect-entries.js";
+import { resolveRegistryEntriesFromOptions } from "./_shared.js";
 
 export interface SearchCommandOptions {
   all: boolean;
@@ -41,27 +40,5 @@ export async function runSearch(query: string, opts: SearchCommandOptions): Prom
 }
 
 function resolveSearchEntries(opts: SearchCommandOptions): string[] {
-  if (opts.entries) {
-    return normalizeEntryNames(opts.entries);
-  }
-  if (opts.all) {
-    const names = allInstalledRegistryEntryNames().sort();
-    log.info(`searching all installed registry entries: ${names.join(", ") || "(none)"}`);
-    return names;
-  }
-  ensureProjectInitialized(process.cwd());
-  const names = resolveProjectEntriesWithDetection(process.cwd());
-  log.info(`searching project registry entries: ${names.join(", ") || "(none)"}`);
-  return names;
-}
-
-function normalizeEntryNames(value: string | string[]): string[] {
-  return [
-    ...new Set(
-      (Array.isArray(value) ? value : [value])
-        .flatMap((entry) => entry.split(","))
-        .map((p) => p.trim())
-        .filter(Boolean),
-    ),
-  ].sort();
+  return resolveRegistryEntriesFromOptions(opts);
 }
