@@ -66,6 +66,34 @@ describe("gemini renderer", () => {
     expect(r.notes.join(" ")).toMatch(/up to date/);
   });
 
+  it("install is atomic: a single conflict aborts before any file is written (F-003)", async () => {
+    // Pre-populate gemini-extension.json with hand-edited content. The other
+    // two target files (SKILL.md, command.toml) are absent. Without --force,
+    // the install must refuse to write *anything* — previously it would
+    // happily land SKILL.md and command.toml on disk while flagging
+    // installed:false, leaving the extension half-built.
+    const root = geminiExtensionRoot("project", cwd);
+    const extJson = path.join(root, "gemini-extension.json");
+    const skillMd = path.join(root, "skills", "vegastack", "SKILL.md");
+    const cmdToml = path.join(root, "commands", "vegastack.toml");
+    fs.mkdirSync(path.dirname(extJson), { recursive: true });
+    fs.writeFileSync(extJson, '{"name":"user-handcrafted"}');
+
+    const r = await geminiRenderer.install({
+      scope: "project",
+      cwd,
+      force: false,
+      dryRun: false,
+    });
+    expect(r.installed).toBe(false);
+    expect(r.warnings.join(" ")).toMatch(/--force/);
+    // Crucially, the OTHER files were not written.
+    expect(fs.existsSync(skillMd)).toBe(false);
+    expect(fs.existsSync(cmdToml)).toBe(false);
+    // And the user's handcrafted file is untouched.
+    expect(fs.readFileSync(extJson, "utf8")).toBe('{"name":"user-handcrafted"}');
+  });
+
   it("uninstall removes the entire extension dir", async () => {
     await geminiRenderer.install({ scope: "project", cwd, force: false, dryRun: false });
     const root = geminiExtensionRoot("project", cwd);

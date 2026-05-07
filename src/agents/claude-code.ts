@@ -53,11 +53,20 @@ function isRegistered(): boolean {
   }
 }
 
+// 16 MiB is well above any realistic plugin install transcript and protects
+// against the default 1 MiB execFileSync cap silently truncating output. The
+// 60 s timeout prevents a hung claude (e.g. wedged on a stale lockfile) from
+// pinning the CLI forever; aborting with an error is preferable to deadlock.
+const CLAUDE_MAX_BUFFER = 16 * 1024 * 1024;
+const CLAUDE_TIMEOUT_MS = 60_000;
+
 function runClaude(args: readonly string[]): { ok: boolean; output: string } {
   try {
     const output = execFileSync("claude", args, {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
+      maxBuffer: CLAUDE_MAX_BUFFER,
+      timeout: CLAUDE_TIMEOUT_MS,
     });
     return { ok: true, output };
   } catch (e) {

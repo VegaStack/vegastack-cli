@@ -26,7 +26,42 @@ import { existsOrLink, removeIfExists } from "../lib/fs-utils.js";
 import { continueMcpServerPath } from "../lib/paths.js";
 import type { AgentRenderer, InstallContext, InstallResult, Scope } from "./types.js";
 
-const DEFAULT_MCP_URL = process.env.VEGASTACK_MCP_URL ?? "https://mcp.vegastack.com/mcp";
+/**
+ * Read VEGASTACK_MCP_URL at call time (not module-load time) and validate.
+ *
+ * Rationale (audit F-001 + F-002):
+ *  - Module-load capture made tests/long-running processes see a stale URL.
+ *  - The URL is interpolated into a YAML scalar; without scheme + character
+ *    validation, a value containing `\n` or `: ` could append rogue YAML keys
+ *    or change the document shape. We restrict the scheme to http(s) and
+ *    reject any URL containing line-breaks or YAML-significant characters
+ *    that would survive `new URL()` parsing.
+ */
+function defaultMcpUrl(): string {
+  const raw = process.env.VEGASTACK_MCP_URL ?? "https://mcp.vegastack.com/mcp";
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error(`VEGASTACK_MCP_URL is not a valid absolute URL: ${JSON.stringify(raw)}`);
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error(`VEGASTACK_MCP_URL must use http(s); got ${JSON.stringify(parsed.protocol)}`);
+  }
+  // Belt-and-braces: refuse control chars / newlines that could escape a
+  // YAML double-quoted scalar even after URL-parse normalisation.
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001F\u007F]/.test(raw)) {
+    throw new Error("VEGASTACK_MCP_URL contains control characters");
+  }
+  return parsed.toString();
+}
+
+/** Quote a string for safe interpolation into a YAML double-quoted scalar. */
+function yamlDoubleQuote(s: string): string {
+  // Escape backslash and double quote; control chars are rejected upstream.
+  return `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
 
 function renderYaml(mcpUrl: string): string {
   // We pick the transport based on the URL suffix so that an operator who
@@ -42,7 +77,7 @@ function renderYaml(mcpUrl: string): string {
     "schema: v1",
     "mcpServers:",
     "  - name: vegastack",
-    `    url: ${mcpUrl}`,
+    `    url: ${yamlDoubleQuote(mcpUrl)}`,
     `    transport: ${transport}`,
     "    description: |",
     "      VegaStack Registry docs harness. Mirrors `vegastack ask` over MCP for",
@@ -83,7 +118,6 @@ class ContinueRenderer implements AgentRenderer {
 
   async install(ctx: InstallContext): Promise<InstallResult> {
     const dest = continueMcpServerPath(ctx.scope, ctx.cwd);
-    const yaml = renderYaml(DEFAULT_MCP_URL);
     const result: InstallResult = {
       agent: this.name,
       installed: false,
@@ -92,9 +126,18 @@ class ContinueRenderer implements AgentRenderer {
       warnings: [],
     };
 
+    let mcpUrl: string;
+    try {
+      mcpUrl = defaultMcpUrl();
+    } catch (e) {
+      result.warnings.push((e as Error).message);
+      return result;
+    }
+    const yaml = renderYaml(mcpUrl);
+
     if (ctx.dryRun) {
       result.notes.push(`would write ${dest}`);
-      result.notes.push(`mcp url: ${DEFAULT_MCP_URL}`);
+      result.notes.push(`mcp url: ${mcpUrl}`);
       return result;
     }
 
