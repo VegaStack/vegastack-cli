@@ -69,10 +69,7 @@ function buildCtx(args: Tier1Args): Ctx {
   const fullPath = (filepath: string): string => path.join(providerDir, filepath);
   const lookupAny = (name: string): ResourceEntry | undefined =>
     resources[name] ?? dataSources[name] ?? undefined;
-  const fanoutSubcatPeers = (
-    subcat: string | undefined,
-    selfFile: string | undefined,
-  ): void => {
+  const fanoutSubcatPeers = (subcat: string | undefined, selfFile: string | undefined): void => {
     if (!subcategoryUseful || !subcat) return;
     const peers = subcategories[subcat];
     if (!peers) return;
@@ -246,10 +243,7 @@ function stage1gExampleTokens(ctx: Ctx, exampleTokens: Record<string, string[]>)
 
 // ── 1h. description substring match ─────────────────────────────────────
 function stage1hDescription(ctx: Ctx): void {
-  for (const [, entry] of [
-    ...Object.entries(ctx.resources),
-    ...Object.entries(ctx.dataSources),
-  ]) {
+  for (const [, entry] of [...Object.entries(ctx.resources), ...Object.entries(ctx.dataSources)]) {
     const desc = (entry.description ?? "").toLowerCase();
     if (!desc || desc === "|-") continue;
     for (const token of ctx.tokens) {
