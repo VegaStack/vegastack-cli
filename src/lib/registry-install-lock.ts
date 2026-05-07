@@ -9,9 +9,8 @@
 //
 // We use an atomic `fs.mkdirSync` of `${root}/${name}.lock` as the mutex —
 // `mkdir(2)` is the canonical POSIX advisory lock that doesn't add an npm
-// dependency (we deliberately removed `proper-lockfile` in rollup B). A
-// stale-detection window (default 10 min) lets a crashed sibling's lock
-// expire instead of wedging the CLI forever.
+// runtime dependency. A stale-detection window (default 10 min) lets a
+// crashed sibling's lock expire instead of wedging the CLI forever.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -66,7 +65,7 @@ export async function acquireRegistryInstallLock(
         }
       };
     } catch (e) {
-      if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
+      if ((e as { code?: string }).code !== "EEXIST") throw e;
       // Lock held — check for staleness.
       try {
         const st = fs.statSync(lockDir);

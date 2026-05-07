@@ -127,10 +127,7 @@ export function copyFileWithBackup(
  * same-volume renames. On rename failure the temp is removed and the
  * canonical path is left untouched.
  */
-export function atomicWriteFileSync(
-  target: string,
-  data: string | NodeJS.ArrayBufferView,
-): void {
+export function atomicWriteFileSync(target: string, data: string | Uint8Array): void {
   fs.mkdirSync(path.dirname(target), { recursive: true });
   const tmp = `${target}.tmp-${process.pid}-${crypto.randomBytes(3).toString("hex")}`;
   fs.writeFileSync(tmp, data);

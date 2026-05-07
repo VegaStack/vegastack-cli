@@ -262,11 +262,7 @@ async function installPublishedRegistryEntry(
   }
 }
 
-async function doInstall(
-  name: string,
-  entry: RegistryCatalogEntry,
-  dest: string,
-): Promise<void> {
+async function doInstall(name: string, entry: RegistryCatalogEntry, dest: string): Promise<void> {
   log.step(`downloading Registry pack ${name}`);
   if (!entry.archive || !entry.archive_sha256 || typeof entry.archive_bytes !== "number") {
     throw new VegaStackError(
