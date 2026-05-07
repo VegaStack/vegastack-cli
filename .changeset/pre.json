@@ -1,0 +1,10 @@
+{
+  "mode": "pre",
+  "tag": "next",
+  "initialVersions": {
+    "@vegastack/cli": "0.1.13-next.0"
+  },
+  "changesets": [
+    "audit-drainage-2026-05-07"
+  ]
+}
