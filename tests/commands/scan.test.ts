@@ -226,4 +226,20 @@ describe("scan config and detection", () => {
       "osv-scanner",
     ]);
   });
+
+  it("rejects --output paths that escape the user's allowed roots (#70)", async () => {
+    // Why: `vegastack scan --output /etc/passwd` (or `--output ../escape.json`
+    // forwarded by a CI caller) used to write the SARIF/JSON payload anywhere
+    // on disk with no containment check. Arbitrary file overwrite.
+    const { validateScanOutputPathForTesting } = await import("../../src/commands/scan.js");
+    await withTmpDir(async (tmp) => {
+      // Within cwd: accepted, returns absolute path
+      expect(validateScanOutputPathForTesting("./report.json", tmp)).toMatch(/report\.json$/);
+      expect(validateScanOutputPathForTesting("report.json", tmp)).toMatch(/report\.json$/);
+      // Escaping cwd to a path outside home + tmp + cwd: rejected
+      expect(() => validateScanOutputPathForTesting("/etc/passwd", tmp)).toThrow(
+        /outside the allowed roots|ValidationError/,
+      );
+    });
+  });
 });
