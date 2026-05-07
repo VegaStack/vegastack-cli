@@ -44,7 +44,18 @@ export async function handleRegistryGetKnowledgeCard(env: Env, args: RegistryGet
         code: "NotFound",
       });
     }
-    throw e;
+    // Do NOT propagate raw error messages — they may contain CF binding
+    // names, request IDs, or stack frames. Log server-side and return a
+    // generic envelope to the client.
+    console.error("registry_get_knowledge_card: internal error", {
+      id: args.id,
+      message: e instanceof Error ? e.message : String(e),
+    });
+    return jsonContent({
+      status: "error",
+      error: "internal error fetching knowledge card",
+      code: "Internal",
+    });
   }
 
   return jsonContent(parseKnowledgeCard(args.id, raw));
