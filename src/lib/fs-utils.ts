@@ -116,6 +116,33 @@ export function copyFileWithBackup(
   return null;
 }
 
+/**
+ * Write a file atomically via temp + rename.
+ *
+ * `fs.writeFileSync(target, ...)` opens the destination with O_TRUNC and
+ * then streams the bytes; a SIGINT, OOM, or power-loss between truncation
+ * and write completion leaves a partial/corrupt file at the canonical path.
+ * This helper writes to `${target}.tmp-${pid}-${rand}` first and then
+ * `fs.renameSync` into place, which is atomic on POSIX and on NTFS for
+ * same-volume renames. On rename failure the temp is removed and the
+ * canonical path is left untouched.
+ */
+export function atomicWriteFileSync(target: string, data: string | Uint8Array): void {
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  const tmp = `${target}.tmp-${process.pid}-${crypto.randomBytes(3).toString("hex")}`;
+  fs.writeFileSync(tmp, data);
+  try {
+    fs.renameSync(tmp, target);
+  } catch (e) {
+    try {
+      fs.unlinkSync(tmp);
+    } catch {
+      /* ignore */
+    }
+    throw e;
+  }
+}
+
 /** Suffix used for backup files: timestamp + 6 random hex chars. */
 function backupSuffix(): string {
   return `${Date.now()}-${crypto.randomBytes(3).toString("hex")}`;

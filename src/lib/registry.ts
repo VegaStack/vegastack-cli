@@ -4,11 +4,12 @@ import * as os from "node:os";
 import { createHash } from "node:crypto";
 import { VegaStackError } from "./errors.js";
 import { safeExtractTar, assertSafeRelativePath } from "./safe-extract.js";
-import { fetchWithTimeout, streamDownloadVerified } from "./fetch-with-timeout.js";
+import { fetchTextWithCap, streamDownloadVerified } from "./fetch-with-timeout.js";
 import { projectConfigPath, registryCacheRoot } from "./paths.js";
 import { PACKS, registryEntryCachePath, type PackDefinition } from "./project.js";
 import { log } from "./log.js";
 import { verifyRegistryCatalogSignature } from "./registry-signature.js";
+import { acquireRegistryInstallLock } from "./registry-install-lock.js";
 import {
   projectConfigExists,
   projectRegistryEntryNames,
@@ -250,6 +251,18 @@ async function installPublishedRegistryEntry(
     }
   }
 
+  // Serialize concurrent installs of the same entry across processes — see
+  // rollup #82 F-006. Two parallel `vegastack init` runs would otherwise
+  // race the rename block below and clobber each other's cache.
+  const release = await acquireRegistryInstallLock(registryCacheRoot(), name);
+  try {
+    await doInstall(name, entry, dest);
+  } finally {
+    release();
+  }
+}
+
+async function doInstall(name: string, entry: RegistryCatalogEntry, dest: string): Promise<void> {
   log.step(`downloading Registry pack ${name}`);
   if (!entry.archive || !entry.archive_sha256 || typeof entry.archive_bytes !== "number") {
     throw new VegaStackError(
@@ -454,14 +467,14 @@ async function fetchRegistryCatalog(): Promise<RegistryCatalog> {
   }
 }
 
+// Hard byte ceiling for catalog/signature fetches. Defends against a hostile
+// mirror streaming a multi-GB body before signature/JSON parsing happens.
+// 16 MiB easily fits the real catalog (a few hundred KB) plus headroom; the
+// signature blob is well under 1 MiB but we share the same cap for simplicity.
+const REGISTRY_FETCH_TEXT_CAP_BYTES = 16 * 1024 * 1024;
+
 async function fetchText(url: string): Promise<string> {
-  const response = await fetchWithTimeout(url, { redirect: "follow" });
-  if (!response.ok) {
-    throw new VegaStackError("NetworkError", `failed to fetch ${url}: HTTP ${response.status}`, {
-      context: { url, status: response.status },
-    });
-  }
-  return await response.text();
+  return await fetchTextWithCap(url, { maxBytes: REGISTRY_FETCH_TEXT_CAP_BYTES });
 }
 
 async function downloadVerifiedFile(

@@ -28,6 +28,17 @@ const ALLOWED_TAR_TYPES: ReadonlySet<string> = new Set(["File", "Directory"]);
  * (and tests) can reuse the exact predicate.
  */
 export function assertSafeRelativePath(value: string): void {
+  // Reject ASCII control bytes (NUL, newline, CR, tab, etc.) up front: a tar
+  // entry name like `foo\nbar` would otherwise pass any per-line listing
+  // prefilter and a NUL byte can truncate downstream filesystem APIs.
+  // Also reject `:` to defend Windows drive-letter separators (`C:\evil`)
+  // since a Windows tar/zip extractor may interpret the colon specially.
+  // eslint-disable-next-line no-control-regex
+  if (/[\x00-\x1f\x7f:]/.test(value)) {
+    throw new VegaStackError("ArtifactCorrupt", `unsafe archive entry path '${value}'`, {
+      context: { path: value },
+    });
+  }
   let trimmed = value;
   while (trimmed.startsWith("./")) trimmed = trimmed.slice(2);
   if (trimmed.endsWith("/")) trimmed = trimmed.slice(0, -1);
