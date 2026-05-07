@@ -167,8 +167,3 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-/** Used by build-time pages to enumerate which dates to prerender. */
-export function knownDatesFromFixture(): string[] {
-  const parsed = parseReport(sampleReport);
-  return parsed ? [parsed.date] : [];
-}

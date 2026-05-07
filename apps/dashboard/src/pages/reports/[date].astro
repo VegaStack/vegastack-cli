@@ -2,7 +2,7 @@
 import Base from "~/layouts/Base.astro";
 import ArchetypeBars from "~/components/ArchetypeBars.astro";
 import PromptCard from "~/components/PromptCard.astro";
-import { getEnv, getReport, knownDatesFromFixture } from "~/lib/r2";
+import { getEnv, getReport } from "~/lib/r2";
 import {
   ARCHETYPE_LABELS,
   formatLiftPct,
@@ -10,13 +10,11 @@ import {
   type Archetype,
 } from "~/lib/parse-report";
 
-export const prerender = true;
-
-export async function getStaticPaths() {
-  // Prerender every date the fixture knows about. R2-backed dates are
-  // served on-demand via the Worker (the rest of the site is static).
-  return knownDatesFromFixture().map((date) => ({ params: { date } }));
-}
+// SSR every request so any date — fixture or R2-backed — falls through to
+// the worker handler. With prerender=true, only fixture dates emitted by
+// getStaticPaths reached the bundle and the 400/404 branches below were
+// unreachable in production.
+export const prerender = false;
 
 const { date } = Astro.params;
 if (typeof date !== "string") {
