@@ -3,6 +3,11 @@
 // Verifies Node, local Registry cache, managed tools, CLI freshness, and
 // per-agent registration. Optional Registry verification checks artifact
 // integrity against each installed entry's ARTIFACTS.json.
+//
+// Structure: `runDoctor` is a thin orchestrator. Each subsystem check is a
+// pure helper returning `Check[]` (or `Check | null`). The non-JSON renderer
+// is `printHumanOutput`; the JSON renderer is `emitJson`. This split keeps
+// `runDoctor` at cyclomatic complexity ≤ 15 (rollup #82).
 
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
@@ -58,25 +63,68 @@ interface VerifyResult {
   errors: string[];
 }
 
-export async function runDoctor(opts: DoctorOptions): Promise<number> {
-  const checks: Check[] = [];
+interface AgentResult {
+  agent: string;
+  scope?: "global" | "project";
+  host?: ReturnType<typeof detectHost>;
+  status: {
+    agent: string;
+    installed: boolean;
+    paths: string[];
+    notes: string[];
+    warnings: string[];
+  };
+}
 
-  checks.push({
+export async function runDoctor(opts: DoctorOptions): Promise<number> {
+  const installedEntries = allInstalledRegistryEntryNames();
+  const currentCli = readCliVersion();
+
+  const checks: Check[] = [
+    nodeCheck(),
+    ...registryCacheChecks(installedEntries),
+    ...(await registryCatalogChecks(installedEntries)),
+    jqCheck(),
+    ripgrepCheck(),
+    cloudflaredCheck(),
+  ];
+  const cliCheck = cliVersionCheck(currentCli);
+  if (cliCheck) checks.push(cliCheck);
+
+  const verifyResults = opts.verifyRegistry ? verifyInstalledRegistry(installedEntries) : undefined;
+  if (verifyResults) checks.push(verifyAggregateCheck(verifyResults));
+
+  const agentResults = await collectAgentResults();
+
+  if (opts.json) {
+    return emitJson({ checks, currentCli, installedEntries, verifyResults, agentResults });
+  }
+
+  printHumanOutput({ checks, verifyResults, agentResults });
+  return exitCode(checks);
+}
+
+// ---------- Subsystem checks ----------
+
+function nodeCheck(): Check {
+  return {
     name: "Node.js",
     ok: Number(process.versions.node.split(".")[0]) >= 18,
     detail: `v${process.versions.node}`,
-  });
+  };
+}
 
-  const installedEntries = allInstalledRegistryEntryNames();
-  checks.push({
-    name: "VegaStack Registry cache",
-    ok: installedEntries.length > 0,
-    detail:
-      installedEntries.length > 0
-        ? `${installedEntries.length} installed: ${installedEntries.join(", ")}`
-        : "no Registry entries installed — run 'vegastack init'",
-  });
-
+function registryCacheChecks(installedEntries: string[]): Check[] {
+  const checks: Check[] = [
+    {
+      name: "VegaStack Registry cache",
+      ok: installedEntries.length > 0,
+      detail:
+        installedEntries.length > 0
+          ? `${installedEntries.length} installed: ${installedEntries.join(", ")}`
+          : "no Registry entries installed — run 'vegastack init'",
+    },
+  ];
   for (const entry of installedEntries) {
     const version = readRegistryEntryVersion(entry, registryEntryDir(entry));
     checks.push({
@@ -85,73 +133,79 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
       detail: version ?? "missing pack_version in MANIFEST.json — run 'vegastack registry update'",
     });
   }
+  return checks;
+}
 
-  checks.push(...(await registryCatalogChecks(installedEntries)));
-
+function jqCheck(): Check {
   const jq = which("jq");
-  checks.push({
+  return {
     name: "jq (optional)",
     ok: jq.found,
     detail: jq.found
       ? jq.version
       : "not found (optional; only needed for advanced manual JSON lookups)",
-  });
+  };
+}
 
-  const managedRg = readRipgrepMetadata();
-  const rgBin = resolveRipgrepBin();
-  checks.push({
+function ripgrepCheck(): Check {
+  const managed = readRipgrepMetadata();
+  const bin = resolveRipgrepBin();
+  return {
     name: "ripgrep",
-    ok: rgBin !== null,
-    detail: rgBin
-      ? `${ripgrepVersion(rgBin) ?? "unknown version"} at ${rgBin}${
-          managedRg ? ` (managed ${managedRg.asset})` : ""
+    ok: bin !== null,
+    detail: bin
+      ? `${ripgrepVersion(bin) ?? "unknown version"} at ${bin}${
+          managed ? ` (managed ${managed.asset})` : ""
         }`
       : `not installed for ${supportedRipgrepTarget()} — run 'vegastack init'`,
-  });
+  };
+}
 
-  const managedCloudflared = readCloudflaredMetadata();
-  const cloudflaredBin = resolveCloudflaredBin();
-  checks.push({
+function cloudflaredCheck(): Check {
+  const managed = readCloudflaredMetadata();
+  const bin = resolveCloudflaredBin();
+  return {
     name: "cloudflared (optional)",
-    ok: cloudflaredBin !== null,
-    detail: cloudflaredBin
-      ? `${cloudflaredVersion(cloudflaredBin) ?? "unknown version"} at ${cloudflaredBin}${
-          managedCloudflared ? ` (managed ${managedCloudflared.asset})` : ""
+    ok: bin !== null,
+    detail: bin
+      ? `${cloudflaredVersion(bin) ?? "unknown version"} at ${bin}${
+          managed ? ` (managed ${managed.asset})` : ""
         }`
       : "not installed (optional; run 'vegastack init' or use VEGASTACK_CLOUDFLARED_BIN for preview tunnels)",
-  });
+  };
+}
 
-  const currentCli = readCliVersion();
-  const latestCli = refreshUpdateCache();
-  if (latestCli !== null) {
-    const stale = isNewer(latestCli, currentCli);
-    checks.push({
-      name: "CLI version",
-      ok: !stale,
-      detail: stale
-        ? `${currentCli} (newer available: ${latestCli} — run \`vegastack update\`)`
-        : `${currentCli} (latest)`,
-    });
-  }
+function cliVersionCheck(currentCli: string): Check | null {
+  const latest = refreshUpdateCache();
+  if (latest === null) return null;
+  const stale = isNewer(latest, currentCli);
+  return {
+    name: "CLI version",
+    ok: !stale,
+    detail: stale
+      ? `${currentCli} (newer available: ${latest} — run \`vegastack update\`)`
+      : `${currentCli} (latest)`,
+  };
+}
 
-  let verifyResults: VerifyResult[] | undefined;
-  if (opts.verifyRegistry) {
-    verifyResults = verifyInstalledRegistry(installedEntries);
-    const allOk = verifyResults.every((r) => r.ok);
-    checks.push({
-      name: "Registry artifact verification",
-      ok: allOk,
-      detail: allOk
-        ? `${verifyResults.length} entries verified`
-        : `${verifyResults.filter((r) => !r.ok).length}/${verifyResults.length} entries failed verification`,
-    });
-  }
+function verifyAggregateCheck(verifyResults: VerifyResult[]): Check {
+  const failed = verifyResults.filter((r) => !r.ok).length;
+  const allOk = failed === 0;
+  return {
+    name: "Registry artifact verification",
+    ok: allOk,
+    detail: allOk
+      ? `${verifyResults.length} entries verified`
+      : `${failed}/${verifyResults.length} entries failed verification`,
+  };
+}
 
+async function collectAgentResults(): Promise<AgentResult[]> {
   const cwd = process.cwd();
-  const agentResults = await Promise.all(
+  return Promise.all(
     ALL_RENDERER_NAMES.map(async (n) => {
       const r = getRenderer(n);
-      if (!r)
+      if (!r) {
         return {
           agent: n,
           status: {
@@ -162,6 +216,7 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
             warnings: [],
           },
         };
+      }
       const scope: "global" | "project" = r.supportsScope("global") ? "global" : "project";
       return {
         agent: n,
@@ -171,59 +226,82 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
       };
     }),
   );
-
-  if (opts.json) {
-    const ok = exitCode(checks) === 0;
-    log.json({
-      ok,
-      cli_version: currentCli,
-      checks: checks.map((c) => ({ name: c.name, ok: c.ok, detail: c.detail })),
-      registry_entries: installedEntries,
-      verify: verifyResults,
-      agents: agentResults,
-    });
-    return ok ? 0 : 1;
-  }
-
-  for (const c of checks) {
-    if (c.ok) log.ok(`${c.name}: ${c.detail}`);
-    else if (c.name.includes("optional")) log.warn(`${c.name}: ${c.detail}`);
-    else log.err(`${c.name}: ${c.detail}`);
-  }
-
-  if (verifyResults) {
-    process.stderr.write("\nRegistry verification:\n");
-    for (const v of verifyResults) {
-      if (v.ok) log.ok(`  ${v.entry}: ok`);
-      else {
-        log.err(`  ${v.entry}: ${v.errors.length} error(s)`);
-        for (const e of v.errors.slice(0, 3)) log.warn(`    ${e}`);
-      }
-    }
-  }
-
-  process.stderr.write("\nAgent registration:\n");
-  for (const ar of agentResults) {
-    const skillRegistered = ar.status.installed;
-    const hostInstalled = ar.host?.installed ?? false;
-    const path0 = ar.status.paths[0] ?? "";
-    const hostMark = hostInstalled ? "host ok" : "host -";
-    const skillMark = skillRegistered ? "skill ok" : "skill -";
-    const line = `${ar.agent.padEnd(12)} ${hostMark}  ${skillMark}  ${path0}`;
-    if (hostInstalled && skillRegistered) log.ok(line);
-    else log.info(line);
-    if (hostInstalled && !skillRegistered) {
-      log.info(`  -> run \`vegastack skills install --agent ${ar.agent}\` to register`);
-    } else if (!hostInstalled && skillRegistered) {
-      log.info(
-        `  -> host not detected (${ar.host?.evidence ?? "?"}); skill is an orphan, safe to remove`,
-      );
-    }
-    for (const w of ar.status.warnings) log.warn(`  ${w}`);
-  }
-
-  return exitCode(checks);
 }
+
+// ---------- Renderers ----------
+
+function emitJson(args: {
+  checks: Check[];
+  currentCli: string;
+  installedEntries: string[];
+  verifyResults: VerifyResult[] | undefined;
+  agentResults: AgentResult[];
+}): number {
+  const ok = exitCode(args.checks) === 0;
+  log.json({
+    ok,
+    cli_version: args.currentCli,
+    checks: args.checks.map((c) => ({ name: c.name, ok: c.ok, detail: c.detail })),
+    registry_entries: args.installedEntries,
+    verify: args.verifyResults,
+    agents: args.agentResults,
+  });
+  return ok ? 0 : 1;
+}
+
+function printHumanOutput(args: {
+  checks: Check[];
+  verifyResults: VerifyResult[] | undefined;
+  agentResults: AgentResult[];
+}): void {
+  for (const c of args.checks) printCheckLine(c);
+  if (args.verifyResults) printVerifyDetail(args.verifyResults);
+  printAgentSection(args.agentResults);
+}
+
+function printCheckLine(c: Check): void {
+  if (c.ok) log.ok(`${c.name}: ${c.detail}`);
+  else if (c.name.includes("optional")) log.warn(`${c.name}: ${c.detail}`);
+  else log.err(`${c.name}: ${c.detail}`);
+}
+
+function printVerifyDetail(verifyResults: VerifyResult[]): void {
+  process.stderr.write("\nRegistry verification:\n");
+  for (const v of verifyResults) {
+    if (v.ok) {
+      log.ok(`  ${v.entry}: ok`);
+      continue;
+    }
+    log.err(`  ${v.entry}: ${v.errors.length} error(s)`);
+    for (const e of v.errors.slice(0, 3)) log.warn(`    ${e}`);
+  }
+}
+
+function printAgentSection(agentResults: AgentResult[]): void {
+  process.stderr.write("\nAgent registration:\n");
+  for (const ar of agentResults) printAgentRow(ar);
+}
+
+function printAgentRow(ar: AgentResult): void {
+  const skillRegistered = ar.status.installed;
+  const hostInstalled = ar.host?.installed ?? false;
+  const path0 = ar.status.paths[0] ?? "";
+  const hostMark = hostInstalled ? "host ok" : "host -";
+  const skillMark = skillRegistered ? "skill ok" : "skill -";
+  const line = `${ar.agent.padEnd(12)} ${hostMark}  ${skillMark}  ${path0}`;
+  if (hostInstalled && skillRegistered) log.ok(line);
+  else log.info(line);
+  if (hostInstalled && !skillRegistered) {
+    log.info(`  -> run \`vegastack skills install --agent ${ar.agent}\` to register`);
+  } else if (!hostInstalled && skillRegistered) {
+    log.info(
+      `  -> host not detected (${ar.host?.evidence ?? "?"}); skill is an orphan, safe to remove`,
+    );
+  }
+  for (const w of ar.status.warnings) log.warn(`  ${w}`);
+}
+
+// ---------- Registry catalog (network) ----------
 
 async function registryCatalogChecks(installedEntries: string[]): Promise<Check[]> {
   if (installedEntries.length === 0) return [];
@@ -237,32 +315,7 @@ async function registryCatalogChecks(installedEntries: string[]): Promise<Check[
       },
     ];
     for (const entry of installedEntries) {
-      const remote = catalog.entries[entry];
-      if (!remote) {
-        checks.push({
-          name: `Published Registry pack: ${entry}`,
-          ok: false,
-          detail: "installed locally but missing from published REGISTRY.json",
-        });
-        continue;
-      }
-      const localVersion = readRegistryEntryVersion(entry, registryEntryDir(entry));
-      const remoteVersion = remote.pack_version ?? remote.version;
-      checks.push({
-        name: `Published Registry version: ${entry}`,
-        ok:
-          localVersion !== undefined &&
-          remoteVersion !== undefined &&
-          localVersion === remoteVersion,
-        detail:
-          localVersion === undefined
-            ? "local version missing"
-            : remoteVersion === undefined
-              ? "published version missing"
-              : localVersion === remoteVersion
-                ? localVersion
-                : `local ${localVersion}, published ${remoteVersion} — run 'vegastack registry update ${entry}'`,
-      });
+      checks.push(publishedEntryCheck(entry, catalog));
     }
     return checks;
   } catch (e) {
@@ -276,6 +329,41 @@ async function registryCatalogChecks(installedEntries: string[]): Promise<Check[
   }
 }
 
+interface PublishedCatalog {
+  entries: Record<string, { pack_version?: string; version?: string } | undefined>;
+}
+
+function publishedEntryCheck(entry: string, catalog: PublishedCatalog): Check {
+  const remote = catalog.entries[entry];
+  if (!remote) {
+    return {
+      name: `Published Registry pack: ${entry}`,
+      ok: false,
+      detail: "installed locally but missing from published REGISTRY.json",
+    };
+  }
+  const localVersion = readRegistryEntryVersion(entry, registryEntryDir(entry));
+  const remoteVersion = remote.pack_version ?? remote.version;
+  return {
+    name: `Published Registry version: ${entry}`,
+    ok: localVersion !== undefined && remoteVersion !== undefined && localVersion === remoteVersion,
+    detail: publishedVersionDetail(entry, localVersion, remoteVersion),
+  };
+}
+
+function publishedVersionDetail(
+  entry: string,
+  localVersion: string | undefined,
+  remoteVersion: string | undefined,
+): string {
+  if (localVersion === undefined) return "local version missing";
+  if (remoteVersion === undefined) return "published version missing";
+  if (localVersion === remoteVersion) return localVersion;
+  return `local ${localVersion}, published ${remoteVersion} — run 'vegastack registry update ${entry}'`;
+}
+
+// ---------- Registry artifact verification ----------
+
 function verifyInstalledRegistry(entries: string[]): VerifyResult[] {
   return entries.map((entry) => verifyRegistryEntry(entry));
 }
@@ -283,25 +371,10 @@ function verifyInstalledRegistry(entries: string[]): VerifyResult[] {
 function verifyRegistryEntry(entry: string): VerifyResult {
   const root = registryEntryDir(entry);
   const errors: string[] = [];
-  const manifestPath = join(root, "MANIFEST.json");
-  const artifactsPath = join(root, "ARTIFACTS.json");
+  const manifest = readJsonObject(join(root, "MANIFEST.json"), errors);
+  if (manifest) verifyManifest(manifest, entry, errors);
 
-  const manifest = readJsonObject(manifestPath, errors);
-  if (manifest) {
-    if (manifest.schema_version !== 2) {
-      errors.push(
-        `MANIFEST.json schema_version must be 2; got ${JSON.stringify(manifest.schema_version)}`,
-      );
-    }
-    if (manifest.id !== entry) {
-      errors.push(`MANIFEST.json id must be ${entry}; got ${JSON.stringify(manifest.id)}`);
-    }
-    if (typeof manifest.pack_version !== "string" || manifest.pack_version.length === 0) {
-      errors.push("MANIFEST.json missing pack_version");
-    }
-  }
-
-  const artifacts = readJsonObject(artifactsPath, errors) as
+  const artifacts = readJsonObject(join(root, "ARTIFACTS.json"), errors) as
     | { schema_version?: unknown; files?: unknown }
     | undefined;
   if (!artifacts) return { entry, ok: errors.length === 0, errors };
@@ -314,36 +387,52 @@ function verifyRegistryEntry(entry: string): VerifyResult {
     errors.push("ARTIFACTS.json files must be an array");
     return { entry, ok: errors.length === 0, errors };
   }
-  for (const item of artifacts.files) {
-    if (!item || typeof item !== "object") {
-      errors.push("ARTIFACTS.json contains a non-object file entry");
-      continue;
-    }
-    const file = item as { path?: unknown; bytes?: unknown; sha256?: unknown };
-    if (typeof file.path !== "string" || !safeRelativePath(file.path)) {
-      errors.push(`unsafe artifact path: ${JSON.stringify(file.path)}`);
-      continue;
-    }
-    if (typeof file.bytes !== "number" || !Number.isInteger(file.bytes) || file.bytes < 0) {
-      errors.push(`invalid byte count for ${file.path}`);
-      continue;
-    }
-    if (typeof file.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(file.sha256)) {
-      errors.push(`invalid sha256 for ${file.path}`);
-      continue;
-    }
-    const target = join(root, file.path);
-    if (!existsSync(target)) {
-      errors.push(`missing artifact ${file.path}`);
-      continue;
-    }
-    const bytes = statSync(target).size;
-    const digest = createHash("sha256").update(readFileSync(target)).digest("hex");
-    if (bytes !== file.bytes || digest !== file.sha256) {
-      errors.push(`checksum mismatch for ${file.path}`);
-    }
-  }
+  for (const item of artifacts.files) verifyArtifactFile(item, root, errors);
   return { entry, ok: errors.length === 0, errors };
+}
+
+function verifyManifest(manifest: Record<string, unknown>, entry: string, errors: string[]): void {
+  if (manifest.schema_version !== 2) {
+    errors.push(
+      `MANIFEST.json schema_version must be 2; got ${JSON.stringify(manifest.schema_version)}`,
+    );
+  }
+  if (manifest.id !== entry) {
+    errors.push(`MANIFEST.json id must be ${entry}; got ${JSON.stringify(manifest.id)}`);
+  }
+  if (typeof manifest.pack_version !== "string" || manifest.pack_version.length === 0) {
+    errors.push("MANIFEST.json missing pack_version");
+  }
+}
+
+function verifyArtifactFile(item: unknown, root: string, errors: string[]): void {
+  if (!item || typeof item !== "object") {
+    errors.push("ARTIFACTS.json contains a non-object file entry");
+    return;
+  }
+  const file = item as { path?: unknown; bytes?: unknown; sha256?: unknown };
+  if (typeof file.path !== "string" || !safeRelativePath(file.path)) {
+    errors.push(`unsafe artifact path: ${JSON.stringify(file.path)}`);
+    return;
+  }
+  if (typeof file.bytes !== "number" || !Number.isInteger(file.bytes) || file.bytes < 0) {
+    errors.push(`invalid byte count for ${file.path}`);
+    return;
+  }
+  if (typeof file.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(file.sha256)) {
+    errors.push(`invalid sha256 for ${file.path}`);
+    return;
+  }
+  const target = join(root, file.path);
+  if (!existsSync(target)) {
+    errors.push(`missing artifact ${file.path}`);
+    return;
+  }
+  const bytes = statSync(target).size;
+  const digest = createHash("sha256").update(readFileSync(target)).digest("hex");
+  if (bytes !== file.bytes || digest !== file.sha256) {
+    errors.push(`checksum mismatch for ${file.path}`);
+  }
 }
 
 function readJsonObject(file: string, errors: string[]): Record<string, unknown> | undefined {
