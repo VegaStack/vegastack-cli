@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -21,15 +21,21 @@ describe("registry-signature module — architectural", () => {
 });
 
 describe("verifyRegistryCatalogSignature — silent-disable warning (#58)", () => {
-  let stderrSpy: ReturnType<typeof vi.spyOn>;
   const ORIGINAL_VERIFY = process.env.VEGASTACK_REGISTRY_VERIFY;
+  const writes: string[] = [];
+  let originalWrite: typeof process.stderr.write;
 
   beforeEach(() => {
-    stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    writes.length = 0;
+    originalWrite = process.stderr.write.bind(process.stderr);
+    process.stderr.write = ((chunk: string | Uint8Array): boolean => {
+      writes.push(typeof chunk === "string" ? chunk : Buffer.from(chunk).toString());
+      return true;
+    }) as typeof process.stderr.write;
     process.env.VEGASTACK_REGISTRY_VERIFY = "0";
   });
   afterEach(() => {
-    stderrSpy.mockRestore();
+    process.stderr.write = originalWrite;
     if (ORIGINAL_VERIFY === undefined) delete process.env.VEGASTACK_REGISTRY_VERIFY;
     else process.env.VEGASTACK_REGISTRY_VERIFY = ORIGINAL_VERIFY;
   });
@@ -38,15 +44,15 @@ describe("verifyRegistryCatalogSignature — silent-disable warning (#58)", () =
     // Why: silent degradation of a security-critical control violates the
     // anti-bluff philosophy. When a user explicitly opts out of signature
     // verification, the CLI must say so (once, on stderr) so it appears in
-    // logs and review trails. See the audit category for security §sigstore.
+    // logs and review trails.
     const mod = await import("../../src/lib/registry-signature.js");
     await mod.verifyRegistryCatalogSignature({
       catalogBytes: Buffer.from("anything"),
       signatureText: '{"placeholder": true}',
       catalogUrl: "https://example.invalid/catalog.json",
     });
-    const writes = stderrSpy.mock.calls.map((c) => String(c[0])).join("");
-    expect(writes).toMatch(/VEGASTACK_REGISTRY_VERIFY/);
-    expect(writes).toMatch(/disabled|skipped|bypass/i);
+    const all = writes.join("");
+    expect(all).toMatch(/VEGASTACK_REGISTRY_VERIFY/);
+    expect(all).toMatch(/disabled|skipped|bypass/i);
   });
 });
