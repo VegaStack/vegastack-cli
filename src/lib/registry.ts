@@ -2,8 +2,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import { createHash } from "node:crypto";
-import { execFileSync } from "node:child_process";
 import { VegaStackError } from "./errors.js";
+import { safeExtractTar, assertSafeRelativePath } from "./safe-extract.js";
 import { fetchWithTimeout, streamDownloadVerified } from "./fetch-with-timeout.js";
 import { projectConfigPath, registryCacheRoot } from "./paths.js";
 import { PACKS, registryEntryCachePath, type PackDefinition } from "./project.js";
@@ -478,24 +478,9 @@ async function downloadVerifiedFile(
 }
 
 function extractVerifiedArchive(archivePath: string, targetDir: string): void {
-  let listing = "";
-  try {
-    listing = execFileSync("tar", ["-tzf", archivePath], {
-      encoding: "utf8",
-      maxBuffer: 50 * 1024 * 1024,
-    });
-  } catch (e) {
-    throw new VegaStackError("ArtifactCorrupt", "failed to list registry archive", { cause: e });
-  }
-  for (const line of listing.split(/\r?\n/)) {
-    if (!line) continue;
-    assertSafeRelativePath(line.replace(/^\.\//, ""));
-  }
-  try {
-    execFileSync("tar", ["-xzf", archivePath, "-C", targetDir], { stdio: "pipe" });
-  } catch (e) {
-    throw new VegaStackError("ArtifactCorrupt", "failed to extract registry archive", { cause: e });
-  }
+  // Delegate to the centralized safe extractor which rejects any
+  // non-regular tar entry (symlinks/hardlinks/devices) and unsafe paths.
+  safeExtractTar(archivePath, targetDir);
 }
 
 function readAndVerifyArtifactIndex(
@@ -566,19 +551,6 @@ function verifyExtractedArtifacts(root: string, artifacts: ArtifactIndex): void 
         },
       );
     }
-  }
-}
-
-function assertSafeRelativePath(value: string): void {
-  if (
-    value === "" ||
-    value.startsWith("/") ||
-    value.includes("\\") ||
-    value.split("/").includes("..")
-  ) {
-    throw new VegaStackError("ArtifactCorrupt", `unsafe registry artifact path '${value}'`, {
-      context: { path: value },
-    });
   }
 }
 
