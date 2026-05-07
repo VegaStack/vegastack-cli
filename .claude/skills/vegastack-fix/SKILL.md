@@ -57,6 +57,8 @@ Validate, fix, and prove a fix with anti-bluff TDD.
 - `--auto` — proceed through all 9 steps without pausing for review at the PLAN gate. Default: pauses at PLAN.
 - `--strict-mutation` — also run stryker on touched files in addition to agentic mutation review.
 - `--dry-run` — execute steps 1–4 only (CONFIRM, REPRODUCE, BLAST, PLAN). No production code edits.
+- `--parallel` — when given multiple issues, fan them out as parallel Opus subagents (one branch each), then run an integration verify on the merged HEAD before posting evidence or closing any issue. Off by default. Auto-degrades to sequential if the eligibility check fails (file overlap, design-call markers, batch size <2). See `references/batch-orchestration.md` for the full spec, eligibility rules, failure recovery, and caveats.
+- `--resume` — when an earlier `--parallel` run was interrupted, resume from `/tmp/orchestrator-state.json` instead of re-spawning subagents that already finished.
 
 ## The 9-step TDD loop
 
@@ -108,12 +110,15 @@ When given a GH issue not labeled `audit`:
 
 ## Batch mode
 
-`/vegastack-fix all sev=high`:
+`/vegastack-fix #65 #68 #69 …` or `/vegastack-fix all sev=high`:
 
-- Lists open issues with label `audit` and `severity:high`.
+- Lists target issues (explicit list or matching the severity selector).
 - Confirms with user before proceeding (unless `--auto`).
-- Runs the 9-step loop sequentially per issue. **Never parallel** — fixes can interact.
-- Each fix is its own branch + PR; the skill does not push.
+- **Default:** runs the 9-step loop sequentially per issue. Safest — guardrails are guaranteed to apply against current HEAD.
+- **With `--parallel`:** fans out as Opus subagents, one per issue, each on its own branch. After all return, runs an integration verify on the merged HEAD before posting evidence or closing any issue. See `references/batch-orchestration.md`.
+- Each fix is its own commit on its own branch; the skill does not push.
+
+The audit skill emits a `## Recommended fix batches` table (see `vegastack-audit/references/fix-grouping.md`) that pre-computes which batches are parallel-eligible. Use it to pick batch sizes that match how the issues actually interact.
 
 ## Ephemeral mode (chained from /ship)
 
@@ -136,15 +141,23 @@ When invoked from `/ship`:
 - `references/blast-radius.md` — grep + ts-morph methodology.
 - `references/anti-bluff.md` — the 12 hard rules in detail.
 - `references/evidence-comment.md` — GH comment template + report verification-log template.
+- `references/batch-orchestration.md` — `--parallel` orchestration: eligibility check, subagent contract, integration verify, failure recovery. Read this before passing `--parallel` to a batch.
 
 ## Quick start
 
 ```
-/vegastack-fix F-007                  # finding from latest audit report
-/vegastack-fix #143                   # GH issue
+/vegastack-fix F-007                       # finding from latest audit report
+/vegastack-fix #143                        # GH issue
 /vegastack-fix https://github.com/vegastack/vegastack-cli/issues/207
-/vegastack-fix all sev=high           # batch, sequential
-/vegastack-fix F-007 --auto           # skip the PLAN review pause
-/vegastack-fix F-007 --dry-run        # only steps 1–4
-/vegastack-fix F-007 --strict-mutation  # add stryker on top of agentic review
+/vegastack-fix all sev=high                # batch, sequential
+/vegastack-fix #65 #68 #69 #71             # explicit batch, sequential
+/vegastack-fix #65 #68 #69 #71 --parallel  # explicit batch, fan out as Opus subagents
+/vegastack-fix F-007 --auto                # skip the PLAN review pause
+/vegastack-fix F-007 --dry-run             # only steps 1–4
+/vegastack-fix F-007 --strict-mutation     # add stryker on top of agentic review
+/vegastack-fix --parallel --resume         # continue an interrupted parallel batch
 ```
+
+The audit skill's `## Recommended fix batches` table (in the tracking issue
+and the local report) shows pre-computed batches with `Parallel-OK` flags —
+copy a row's command directly.

@@ -124,7 +124,25 @@ Run an end-to-end production-readiness audit of `@vegastack/cli`.
    - Labels (minimal): `audit`, `severity:critical|high|medium|low`, `area:<category>`. No status labels — GitHub's open/closed state is authoritative.
    - Update the report's `Issue` column with the resulting issue URLs.
 
-10. **Print summary** to the user: counts by severity, link to the report file, link to the tracking issue (if standalone), validation summary (verified/total + mismatch count).
+9b. **Compute and emit Recommended Fix Batches** (only when `mode=standalone` and at least 1 GitHub issue was created).
+
+   For the set of validated High issues (Critical+High individuals; Mediums and Lows live in their rollups, not in batches), compute a maintainer-friendly fix plan:
+
+   1. Build the file-touch and symbol-touch sets per issue.
+   2. Cluster by interaction (file or symbol overlap → same cluster).
+   3. Tag each issue's effort: mechanical / small / medium / large.
+   4. Pack into recommended sessions: small/mechanical clusters batch (cap 8 per session), medium clusters get their own session, large clusters always solo.
+   5. Mark each batch's `parallel_eligible` flag.
+   6. Add topic labels (`registry-security`, `discover-perf`, `workflow-hygiene`, etc.).
+
+   Emit the resulting table to:
+   - The tracking issue body (replacing any prior `## Recommended fix batches` block on re-runs).
+   - The local audit report's `## Recommended fix batches` section (between Findings and Verification log).
+   - The user summary (step 10) — top batch as a copy-pasteable command.
+
+   Full algorithm + output schema in `references/fix-grouping.md`. The batches table is a contract: `/vegastack-fix --parallel` consumes the `parallel_eligible` flag to decide whether to fan out subagents.
+
+10. **Print summary** to the user: counts by severity, link to the report file, link to the tracking issue (if standalone), validation summary (verified/total + mismatch count), and the **first recommended fix batch** as a copy-pasteable `/vegastack-fix #N #N ...` command.
 
 11. **Anti-bluff verification** of the audit run itself: every finding must cite a specific file:line OR a specific command output. The skill refuses to write a finding with no evidence pointer. Plus: every file:line finding must pass mechanical validation (step 7a) to be eligible for issue creation.
 
@@ -143,6 +161,7 @@ Run an end-to-end production-readiness audit of `@vegastack/cli`.
 - `references/anti-bluff.md` — evidence requirements + secret redaction patterns.
 - `references/gh-issue-flow.md` — dedup logic, native issue types, label scheme, tracking-issue template.
 - `references/report-format.md` — exact filename rules, table schema, header schema, status vocabulary.
+- `references/fix-grouping.md` — algorithm for computing the `## Recommended fix batches` table (step 9b). Defines the cluster + effort-tagging + parallel-eligibility rules consumed by `/vegastack-fix --parallel`.
 
 ## Quick start
 
