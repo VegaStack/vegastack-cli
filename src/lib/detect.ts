@@ -124,7 +124,8 @@ export function detectProject(
   if (packageManager?.ambiguous) {
     questions.push({
       id: "package_manager",
-      message: "Multiple package manager lockfiles were detected. Which package manager should VegaStack use for generated workflow guidance?",
+      message:
+        "Multiple package manager lockfiles were detected. Which package manager should VegaStack use for generated workflow guidance?",
       options: packageManager.candidates ?? [],
     });
   }
@@ -279,7 +280,8 @@ function detectFrameworks(files: Set<string>, pkg: PackageJson | null): Framewor
   add("nuxt", "nuxt");
   if (files.has("next.config.js") || files.has("next.config.mjs") || files.has("next.config.ts"))
     add("nextjs", "next", "next.config");
-  if (files.has("astro.config.mjs") || files.has("astro.config.ts")) add("astro", "astro", "astro.config");
+  if (files.has("astro.config.mjs") || files.has("astro.config.ts"))
+    add("astro", "astro", "astro.config");
   return dedupeFrameworks(out);
 }
 
@@ -304,10 +306,16 @@ function detectRepo(cwd: string): RepoDetection {
 
 function detectCi(files: string[]): ProjectDetection["ci"] {
   const providers: string[] = [];
-  const ciFiles = files.filter((f) =>
-    f.startsWith(".github/workflows/") ||
-    [".gitlab-ci.yml", ".gitlab-ci.yaml", "azure-pipelines.yml", "bitbucket-pipelines.yml"].includes(f) ||
-    f.startsWith(".circleci/"),
+  const ciFiles = files.filter(
+    (f) =>
+      f.startsWith(".github/workflows/") ||
+      [
+        ".gitlab-ci.yml",
+        ".gitlab-ci.yaml",
+        "azure-pipelines.yml",
+        "bitbucket-pipelines.yml",
+      ].includes(f) ||
+      f.startsWith(".circleci/"),
   );
   if (ciFiles.some((f) => f.startsWith(".github/workflows/"))) providers.push("github-actions");
   if (ciFiles.some((f) => f.startsWith(".gitlab-ci."))) providers.push("gitlab-ci");
@@ -339,11 +347,18 @@ function detectContainers(files: string[]): ProjectDetection["containers"] {
 
 function detectIac(files: string[], cwd: string): ProjectDetection["iac"] {
   return {
-    terraform: files.filter((f) => f.endsWith(".tf") || f.endsWith(".tfvars") || f === ".terraform.lock.hcl"),
+    terraform: files.filter(
+      (f) => f.endsWith(".tf") || f.endsWith(".tfvars") || f === ".terraform.lock.hcl",
+    ),
     kubernetes: files.filter((f) => {
       if (!/\.(ya?ml)$/.test(f)) return false;
       const raw = readText(path.join(cwd, f));
-      return Boolean(raw && /\bapiVersion:\s*.+\n[\s\S]*\bkind:\s*(Deployment|Service|Ingress|StatefulSet|DaemonSet|ConfigMap|Secret|Job|CronJob)\b/.test(raw));
+      return Boolean(
+        raw &&
+        /\bapiVersion:\s*.+\n[\s\S]*\bkind:\s*(Deployment|Service|Ingress|StatefulSet|DaemonSet|ConfigMap|Secret|Job|CronJob)\b/.test(
+          raw,
+        ),
+      );
     }),
     helm: files.filter((f) => /(^|\/)(Chart\.yaml|values\.ya?ml)$/.test(f)),
   };
@@ -358,12 +373,26 @@ function baselineRegistryEntries(
   const out = new Set<string>(["docker"]);
   if (repo.host === "github" || ci.providers.includes("github-actions")) out.add("github-actions");
   if (repo.host === "gitlab" || ci.providers.includes("gitlab-ci")) out.add("gitlab-ci");
-  if (deploy.targets.length > 0 || containers.dockerfiles.length > 0 || containers.compose_files.length > 0) out.add("docker");
+  if (
+    deploy.targets.length > 0 ||
+    containers.dockerfiles.length > 0 ||
+    containers.compose_files.length > 0
+  )
+    out.add("docker");
   return [...out];
 }
 
 function listFiles(root: string, maxDepth: number, maxFiles: number): string[] {
-  const ignored = new Set([".git", ".vegastack", "node_modules", "dist", "coverage", ".next", ".turbo", "vendor"]);
+  const ignored = new Set([
+    ".git",
+    ".vegastack",
+    "node_modules",
+    "dist",
+    "coverage",
+    ".next",
+    ".turbo",
+    "vendor",
+  ]);
   const out: string[] = [];
   function walk(dir: string, depth: number): void {
     if (out.length >= maxFiles || depth > maxDepth) return;
@@ -409,7 +438,11 @@ function dedupeFrameworks(items: FrameworkDetection[]): FrameworkDetection[] {
   for (const item of items) {
     const existing = byName.get(item.name);
     if (!existing) byName.set(item.name, item);
-    else byName.set(item.name, { ...existing, evidence: [...new Set([...existing.evidence, ...item.evidence])] });
+    else
+      byName.set(item.name, {
+        ...existing,
+        evidence: [...new Set([...existing.evidence, ...item.evidence])],
+      });
   }
   return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -436,7 +469,9 @@ function readPreviousFingerprint(cwd: string): { exists: boolean; fingerprint?: 
     };
     return {
       exists: true,
-      ...(typeof raw.detection?.fingerprint === "string" ? { fingerprint: raw.detection.fingerprint } : {}),
+      ...(typeof raw.detection?.fingerprint === "string"
+        ? { fingerprint: raw.detection.fingerprint }
+        : {}),
     };
   } catch {
     return { exists: false };

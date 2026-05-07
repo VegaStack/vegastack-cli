@@ -20,11 +20,7 @@ afterEach(() => {
 
 describe("generate-skill-from-registry", () => {
   it("substitutes REGISTRY_VERSION and optional PROVIDER_LIST", () => {
-    const tpl = [
-      "Registry: ${REGISTRY_VERSION}",
-      "Providers: ${PROVIDER_LIST}",
-      "",
-    ].join("\n");
+    const tpl = ["Registry: ${REGISTRY_VERSION}", "Providers: ${PROVIDER_LIST}", ""].join("\n");
 
     const out = renderSkill(tpl, {
       registryVersion: "2026.04.28",

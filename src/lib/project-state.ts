@@ -23,7 +23,8 @@ export function buildProjectRefreshPlan(cwd: string): ProjectRefreshPlan {
   const previous = readProjectConfigIfExists(cwd);
   const detection = detectProject(cwd);
   const next = mergeProjectDetection(previous ?? { schema_version: 1 }, detection);
-  const changed = JSON.stringify(stableComparable(previous)) !== JSON.stringify(stableComparable(next));
+  const changed =
+    JSON.stringify(stableComparable(previous)) !== JSON.stringify(stableComparable(next));
   return {
     cwd,
     project_config: file,

@@ -128,7 +128,8 @@ export const PACKS: readonly PackDefinition[] = Object.freeze([
     title: "Cloudflare",
     shape: "edge-platform+cli-reference",
     status: "available",
-    description: "Cloudflare developer docs for Workers, Wrangler, Pages, R2, D1, KV, Durable Objects, and platform operations.",
+    description:
+      "Cloudflare developer docs for Workers, Wrangler, Pages, R2, D1, KV, Durable Objects, and platform operations.",
     detects: ["wrangler.toml", "wrangler.json", "wrangler.jsonc", ".dev.vars"],
     source: "https://developers.cloudflare.com/",
   },
@@ -137,7 +138,8 @@ export const PACKS: readonly PackDefinition[] = Object.freeze([
     title: "Vercel",
     shape: "deploy-platform+cli-reference",
     status: "available",
-    description: "Vercel docs for projects, deployments, builds, CLI, environment variables, and framework integrations.",
+    description:
+      "Vercel docs for projects, deployments, builds, CLI, environment variables, and framework integrations.",
     detects: ["vercel.json", ".vercel/project.json"],
     source: "https://vercel.com/docs",
   },

@@ -40,8 +40,13 @@ export async function runRefresh(opts: RefreshOptions): Promise<number> {
   }
 }
 
-function printRefreshSummary(plan: ReturnType<typeof buildProjectRefreshPlan>, dryRun: boolean): void {
+function printRefreshSummary(
+  plan: ReturnType<typeof buildProjectRefreshPlan>,
+  dryRun: boolean,
+): void {
   log.info(`${dryRun ? "would update" : "update"} ${plan.project_config}`);
   log.info(`changed: ${plan.changed ? "yes" : "no"}`);
-  log.info(`recommended registry entries: ${plan.detection.registry.recommended_entries.join(", ") || "none"}`);
+  log.info(
+    `recommended registry entries: ${plan.detection.registry.recommended_entries.join(", ") || "none"}`,
+  );
 }

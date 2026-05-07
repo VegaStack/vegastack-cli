@@ -143,7 +143,10 @@ describe("discoverGenericPacks", () => {
     fs.mkdirSync(path.join(packRoot, "index"), { recursive: true });
     fs.writeFileSync(
       path.join(packRoot, "docs", "commands.md"),
-      Array.from({ length: 6 }, (_, i) => `## d1 command ${i}\n\nwrangler d1 binding command\n`).join("\n"),
+      Array.from(
+        { length: 6 },
+        (_, i) => `## d1 command ${i}\n\nwrangler d1 binding command\n`,
+      ).join("\n"),
     );
     fs.writeFileSync(
       path.join(packRoot, "docs", "bindings.md"),
@@ -285,7 +288,10 @@ describe("discoverGenericPacks", () => {
     ];
     for (const section of sections) {
       fs.mkdirSync(path.dirname(path.join(packRoot, section.path)), { recursive: true });
-      fs.writeFileSync(path.join(packRoot, section.path), `# ${section.title}\n\n${section.excerpt}\n`);
+      fs.writeFileSync(
+        path.join(packRoot, section.path),
+        `# ${section.title}\n\n${section.excerpt}\n`,
+      );
     }
     fs.writeFileSync(
       path.join(packRoot, "MANIFEST.json"),

@@ -30,10 +30,15 @@ function printDetectionSummary(detection: ReturnType<typeof detectProject>): voi
   if (detection.stack.frameworks.length > 0) {
     log.info(`frameworks: ${detection.stack.frameworks.map((f) => f.name).join(", ")}`);
   }
-  if (detection.deploy.targets.length > 0) log.info(`deploy: ${detection.deploy.targets.join(", ")}`);
+  if (detection.deploy.targets.length > 0)
+    log.info(`deploy: ${detection.deploy.targets.join(", ")}`);
   if (detection.ci.providers.length > 0) log.info(`ci: ${detection.ci.providers.join(", ")}`);
-  log.info(`recommended registry entries: ${detection.registry.recommended_entries.join(", ") || "none"}`);
+  log.info(
+    `recommended registry entries: ${detection.registry.recommended_entries.join(", ") || "none"}`,
+  );
   if (detection.stale?.changed) {
-    log.warn("cached project detection differs from current repo; run `vegastack refresh` to update .vegastack/vegastack.yml");
+    log.warn(
+      "cached project detection differs from current repo; run `vegastack refresh` to update .vegastack/vegastack.yml",
+    );
   }
 }

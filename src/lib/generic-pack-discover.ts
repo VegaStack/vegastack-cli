@@ -269,7 +269,8 @@ export async function discoverGenericPacks(
   const trimmed = diversifyByRegistryEntry(pruneOverlappingResults(results), packs, max);
   const trimmedKnowledge = knowledge
     .filter(
-      (k) => scoreKnowledgeForFinal(k, baseTokens) >= 3 && knowledgeMatchesDistinctive(k, baseTokens),
+      (k) =>
+        scoreKnowledgeForFinal(k, baseTokens) >= 3 && knowledgeMatchesDistinctive(k, baseTokens),
     )
     .sort(
       (a, b) =>
@@ -886,7 +887,10 @@ function importantConceptTokens(tokens: string[], pack: string): string[] {
 }
 
 function pathHasSegment(fileText: string, token: string): boolean {
-  if ((token.length < 3 && !DISTINCTIVE_SHORT_TOKENS.has(token)) || GENERIC_PATH_TOKENS.has(token)) {
+  if (
+    (token.length < 3 && !DISTINCTIVE_SHORT_TOKENS.has(token)) ||
+    GENERIC_PATH_TOKENS.has(token)
+  ) {
     return false;
   }
   return new RegExp(`(^|[/.@_-])${escapeRegExp(token)}($|[/.@_-])`).test(fileText);

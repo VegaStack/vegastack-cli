@@ -278,14 +278,20 @@ describe("vegastack CLI help / version", () => {
 
   it("`vegastack generate --json` returns an agent contract without writing files", () => {
     const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-generate-"));
-    fs.writeFileSync(path.join(cwd, "package.json"), JSON.stringify({ packageManager: "npm@10.0.0" }));
+    fs.writeFileSync(
+      path.join(cwd, "package.json"),
+      JSON.stringify({ packageManager: "npm@10.0.0" }),
+    );
     const r = spawnSync("node", [CLI, "generate", "github-action", "vercel", "--json"], {
       cwd,
       encoding: "utf8",
       env: isolatedEnv(),
     });
     expect(r.status).toBe(0);
-    const body = JSON.parse(r.stdout) as { files?: { path?: string }[]; agent_instructions?: string[] };
+    const body = JSON.parse(r.stdout) as {
+      files?: { path?: string }[];
+      agent_instructions?: string[];
+    };
     expect(body.files?.[0]?.path).toContain(".github/workflows");
     expect(body.agent_instructions?.join(" ")).toContain("VegaStack");
   });

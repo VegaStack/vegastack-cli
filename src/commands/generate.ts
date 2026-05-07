@@ -41,13 +41,17 @@ function normalizeIntent(words: string[]): string {
   return words.join(" ").trim().toLowerCase().replace(/\s+/g, " ") || "ops-file";
 }
 
-function buildContract(intent: string, detection: ReturnType<typeof detectProject>): GenerateContract {
+function buildContract(
+  intent: string,
+  detection: ReturnType<typeof detectProject>,
+): GenerateContract {
   const files = filesForIntent(intent);
   const required: GenerateQuestion[] = [...detection.questions];
   if (/vercel/.test(intent)) {
     required.push({
       id: "vercel_project",
-      message: "Which Vercel project/org should this deploy to, and are VERCEL_TOKEN, VERCEL_ORG_ID, and VERCEL_PROJECT_ID available as secrets?",
+      message:
+        "Which Vercel project/org should this deploy to, and are VERCEL_TOKEN, VERCEL_ORG_ID, and VERCEL_PROJECT_ID available as secrets?",
     });
   }
   if (/github|action/.test(intent) && !detection.repo.host) {
@@ -96,27 +100,80 @@ function filesForIntent(intent: string): GenerateContract["files"] {
     ];
   }
   if (/gitlab/.test(intent)) {
-    return [{ path: ".gitlab-ci.yml", operation: "create", kind: "gitlab-ci", constraints: ["Use detected package manager commands."] }];
+    return [
+      {
+        path: ".gitlab-ci.yml",
+        operation: "create",
+        kind: "gitlab-ci",
+        constraints: ["Use detected package manager commands."],
+      },
+    ];
   }
   if (/dockerfile|docker/.test(intent)) {
-    return [{ path: "Dockerfile", operation: "create", kind: "dockerfile", constraints: ["Use a production multi-stage build where applicable."] }];
+    return [
+      {
+        path: "Dockerfile",
+        operation: "create",
+        kind: "dockerfile",
+        constraints: ["Use a production multi-stage build where applicable."],
+      },
+    ];
   }
   if (/compose/.test(intent)) {
-    return [{ path: "compose.yaml", operation: "create", kind: "docker-compose", constraints: ["Prefer compose.yaml as the canonical Compose file."] }];
+    return [
+      {
+        path: "compose.yaml",
+        operation: "create",
+        kind: "docker-compose",
+        constraints: ["Prefer compose.yaml as the canonical Compose file."],
+      },
+    ];
   }
   if (/kubernetes|k8s/.test(intent)) {
-    return [{ path: "k8s/deployment.yaml", operation: "create", kind: "kubernetes-manifest", constraints: ["Include probes, labels, and non-secret env references."] }];
+    return [
+      {
+        path: "k8s/deployment.yaml",
+        operation: "create",
+        kind: "kubernetes-manifest",
+        constraints: ["Include probes, labels, and non-secret env references."],
+      },
+    ];
   }
-  return [{ path: "<agent-selected>", operation: "create", kind: "ops-file", constraints: ["Use VegaStack lookup results before writing."] }];
+  return [
+    {
+      path: "<agent-selected>",
+      operation: "create",
+      kind: "ops-file",
+      constraints: ["Use VegaStack lookup results before writing."],
+    },
+  ];
 }
 
 function lookupPlanForIntent(intent: string): GenerateContract["lookup_plan"] {
   const out: GenerateContract["lookup_plan"] = [];
-  if (/github|action/.test(intent)) out.push({ command: 'vegastack ask --entry github-actions "workflow syntax permissions secrets cache package manager"' });
-  if (/gitlab/.test(intent)) out.push({ command: 'vegastack ask --entry gitlab-ci "pipeline syntax cache artifacts secrets"' });
-  if (/vercel/.test(intent)) out.push({ command: 'vegastack ask --entry vercel "cli deploy prebuilt github actions environment variables"' });
-  if (/docker/.test(intent)) out.push({ command: 'vegastack ask --entry docker "Dockerfile multi stage build healthcheck best practices"' });
-  if (/kubernetes|k8s/.test(intent)) out.push({ command: 'vegastack ask --entry kubernetes "Deployment Service probes resources env secrets"' });
+  if (/github|action/.test(intent))
+    out.push({
+      command:
+        'vegastack ask --entry github-actions "workflow syntax permissions secrets cache package manager"',
+    });
+  if (/gitlab/.test(intent))
+    out.push({
+      command: 'vegastack ask --entry gitlab-ci "pipeline syntax cache artifacts secrets"',
+    });
+  if (/vercel/.test(intent))
+    out.push({
+      command:
+        'vegastack ask --entry vercel "cli deploy prebuilt github actions environment variables"',
+    });
+  if (/docker/.test(intent))
+    out.push({
+      command:
+        'vegastack ask --entry docker "Dockerfile multi stage build healthcheck best practices"',
+    });
+  if (/kubernetes|k8s/.test(intent))
+    out.push({
+      command: 'vegastack ask --entry kubernetes "Deployment Service probes resources env secrets"',
+    });
   return out.length > 0 ? out : [{ command: `vegastack ask "${intent}"` }];
 }
 

@@ -1,7 +1,12 @@
 import prompts from "prompts";
 import * as fs from "node:fs";
 import { reconcileDetectedAgentSkills } from "../lib/agent-skill-reconcile.js";
-import { globalConfigPath, registryCacheRoot, toolsCacheRoot, vegastackConfigRoot } from "../lib/paths.js";
+import {
+  globalConfigPath,
+  registryCacheRoot,
+  toolsCacheRoot,
+  vegastackConfigRoot,
+} from "../lib/paths.js";
 import { installManagedTools } from "../lib/managed-tools.js";
 import type { ManagedToolName } from "../lib/managed-tools.js";
 import { binaryOnPath } from "../lib/host-detect.js";
@@ -39,7 +44,11 @@ export async function runSetup(opts: SetupOptions): Promise<number> {
             value: tool,
             selected: true,
           })),
-          ...plan.optional_managed_tools.map((tool) => ({ title: String(tool), value: tool, selected: false })),
+          ...plan.optional_managed_tools.map((tool) => ({
+            title: String(tool),
+            value: tool,
+            selected: false,
+          })),
         ],
       });
       const selected = Array.isArray(tools.items)
@@ -117,7 +126,14 @@ function buildSetupPlan(): SetupPlan {
       helm: binaryOnPath("helm"),
     },
     recommended_managed_tools: ["ripgrep"],
-    optional_managed_tools: ["gitleaks", "trivy", "osv-scanner", "actionlint", "zizmor", "cloudflared"],
+    optional_managed_tools: [
+      "gitleaks",
+      "trivy",
+      "osv-scanner",
+      "actionlint",
+      "zizmor",
+      "cloudflared",
+    ],
   };
 }
 
@@ -126,5 +142,8 @@ function printSetupPlan(plan: SetupPlan): void {
   log.info(`registry cache: ${plan.registry_cache_root}`);
   log.info(`tools cache: ${plan.tools_cache_root}`);
   log.info(`recommended managed tools: ${plan.recommended_managed_tools.join(", ")}`);
-  if (!plan.detected_tools.gh) log.info("GitHub CLI `gh` not found; install it separately if GitHub repo automation is needed");
+  if (!plan.detected_tools.gh)
+    log.info(
+      "GitHub CLI `gh` not found; install it separately if GitHub repo automation is needed",
+    );
 }

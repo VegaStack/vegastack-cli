@@ -212,7 +212,12 @@ program
     "search every locally installed Registry pack instead of project-selected entries",
     false,
   )
-  .option("--entry <names>", "Registry pack override; repeat or comma-separate, e.g. terraform,supabase", collect, [])
+  .option(
+    "--entry <names>",
+    "Registry pack override; repeat or comma-separate, e.g. terraform,supabase",
+    collect,
+    [],
+  )
   .option("--tf-provider <name>", "when --entry includes terraform, force a Terraform provider")
   .option("-m, --max <n>", "max results", parsePositiveInt, 10)
   .option("--raw", "skip pack-specific enrichment when supported", false)
@@ -275,7 +280,12 @@ program
     "search every locally installed Registry pack instead of project-selected entries",
     false,
   )
-  .option("--entry <names>", "Registry pack override; repeat or comma-separate, e.g. jenkins,docker", collect, [])
+  .option(
+    "--entry <names>",
+    "Registry pack override; repeat or comma-separate, e.g. jenkins,docker",
+    collect,
+    [],
+  )
   .option("-m, --max <n>", "max matches", parsePositiveInt, 20)
   .option("--regex", "treat the query as a regular expression", false)
   .option("-i, --ignore-case", "case-insensitive search", false)
@@ -440,7 +450,11 @@ registryCmd
 registryCmd
   .command("update [entry]")
   .description("update installed registry entries from the published Registry")
-  .option("--all", "update every installed Registry pack instead of project-selected entries", false)
+  .option(
+    "--all",
+    "update every installed Registry pack instead of project-selected entries",
+    false,
+  )
   .option("--force", "re-download even if the published manifest hash matches", false)
   .option("--json", "emit machine-readable JSON", false)
   .hook("preAction", applyProjectCommandPrelude)

@@ -1,9 +1,6 @@
 // `vegastack search <query>` — deterministic exact Registry source lookup.
 
-import {
-  allInstalledRegistryEntryNames,
-  ensureProjectInitialized,
-} from "../lib/registry.js";
+import { allInstalledRegistryEntryNames, ensureProjectInitialized } from "../lib/registry.js";
 import { VegaStackError } from "../lib/errors.js";
 import { log, printError } from "../lib/log.js";
 import { searchRegistry } from "../lib/registry-search.js";

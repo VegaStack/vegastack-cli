@@ -308,7 +308,9 @@ function printPlan(
     for (const agent of detectedAgents) {
       process.stderr.write(`  ${agent.agent}: ${agent.evidence}\n`);
     }
-    process.stderr.write("  Project AGENTS.md / CLAUDE.md pointers will be appended when applicable.\n");
+    process.stderr.write(
+      "  Project AGENTS.md / CLAUDE.md pointers will be appended when applicable.\n",
+    );
   }
   const planned = PACKS.filter((p) => p.status === "planned").map((p) => p.name);
   if (planned.length > 0) {

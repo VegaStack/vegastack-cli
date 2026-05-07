@@ -34,7 +34,9 @@ afterEach(() => {
 
 describe("terraformEntryDocsDir", () => {
   it("defaults to Terraform docs inside the registry cache", () => {
-    expect(terraformEntryDocsDir()).toMatch(/[\\/]\.vegastack[\\/]registry[\\/]terraform[\\/]docs$/);
+    expect(terraformEntryDocsDir()).toMatch(
+      /[\\/]\.vegastack[\\/]registry[\\/]terraform[\\/]docs$/,
+    );
   });
 
   it("follows VEGASTACK_REGISTRY_DIR", () => {
@@ -58,7 +60,9 @@ describe("project harness paths", () => {
     const cwd = "/tmp/proj";
     expect(projectVegaStackDir(cwd)).toBe(path.join(cwd, ".vegastack"));
     expect(projectConfigPath(cwd)).toBe(path.join(cwd, ".vegastack", "vegastack.yml"));
-    expect(projectDetectionCachePath(cwd)).toMatch(/[\\/]\.vegastack[\\/]cache[\\/]projects[\\/][a-f0-9]+\.json$/);
+    expect(projectDetectionCachePath(cwd)).toMatch(
+      /[\\/]\.vegastack[\\/]cache[\\/]projects[\\/][a-f0-9]+\.json$/,
+    );
     expect(sharedInstructionsDir()).toMatch(/[\\/]\.vegastack[\\/]instructions$/);
   });
 
