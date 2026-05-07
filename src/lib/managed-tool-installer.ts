@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { VegaStackError } from "./errors.js";
+import { fetchWithTimeout } from "./fetch-with-timeout.js";
 import {
   MANAGED_TOOLS_MANIFEST,
   managedToolTarget,
@@ -150,7 +151,7 @@ function releaseAssetUrl(name: ManagedToolName, target: ManagedToolTarget): stri
 }
 
 async function downloadVerified(url: string, target: string, expectedSha: string): Promise<void> {
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
     redirect: "follow",
     headers: { "User-Agent": "vegastack-cli" },
   });

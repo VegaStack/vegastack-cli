@@ -4,6 +4,7 @@ import * as os from "node:os";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { VegaStackError } from "./errors.js";
+import { fetchWithTimeout } from "./fetch-with-timeout.js";
 import { projectConfigPath, registryCacheRoot } from "./paths.js";
 import { PACKS, registryEntryCachePath, type PackDefinition } from "./project.js";
 import { log } from "./log.js";
@@ -407,7 +408,7 @@ async function fetchRegistryCatalog(): Promise<RegistryCatalog> {
 }
 
 async function fetchText(url: string): Promise<string> {
-  const response = await fetch(url, { redirect: "follow" });
+  const response = await fetchWithTimeout(url, { redirect: "follow" });
   if (!response.ok) {
     throw new VegaStackError("NetworkError", `failed to fetch ${url}: HTTP ${response.status}`, {
       context: { url, status: response.status },
@@ -422,7 +423,7 @@ async function downloadVerifiedFile(
   expectedSha: string,
   expectedBytes: number,
 ): Promise<void> {
-  const response = await fetch(url, { redirect: "follow" });
+  const response = await fetchWithTimeout(url, { redirect: "follow" });
   if (!response.ok) {
     throw new VegaStackError("NetworkError", `failed to fetch ${url}: HTTP ${response.status}`, {
       context: { url, status: response.status },
