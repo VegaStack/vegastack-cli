@@ -2,7 +2,7 @@
   "single-provider-explicit": {
     "input": {
       "query": "s3 bucket",
-      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini",
+      "root": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini",
       "provider": "aws"
     },
     "output": {
@@ -21,7 +21,7 @@
       "registry_version": "2026.04.28",
       "files": [
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
           "score": 480,
           "score_norm": 100,
           "tier": "manifest",
@@ -78,7 +78,7 @@
           "example_usage": "## Example Usage\n\n```terraform\nresource \"aws_s3_bucket\" \"example\" {\n  bucket = \"my-tf-test-bucket\"\n}\n```\n\n... (truncated; pass --full-examples for the rest)"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
           "score": 175,
           "score_norm": 43.8,
           "tier": "manifest",
@@ -114,7 +114,7 @@
           "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
           "score": 175,
           "score_norm": 43.8,
           "tier": "manifest",
@@ -150,7 +150,7 @@
           "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
           "score": 175,
           "score_norm": 43.8,
           "tier": "manifest",
@@ -193,7 +193,7 @@
           "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown",
           "score": 130,
           "score_norm": 32.5,
           "tier": "manifest",
@@ -231,11 +231,11 @@
       "recipes": [],
       "concept_aliases_used": [],
       "citations": [
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown"
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown"
       ],
       "count": 5,
       "mode": "full"
@@ -244,7 +244,7 @@
   "single-provider-detected-aws": {
     "input": {
       "query": "create an aws s3 bucket",
-      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini"
+      "root": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini"
     },
     "output": {
       "status": "ok",
@@ -262,7 +262,7 @@
       "registry_version": "2026.04.28",
       "files": [
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
           "score": 480,
           "score_norm": 100,
           "tier": "manifest",
@@ -319,7 +319,7 @@
           "example_usage": "## Example Usage\n\n```terraform\nresource \"aws_s3_bucket\" \"example\" {\n  bucket = \"my-tf-test-bucket\"\n}\n```\n\n... (truncated; pass --full-examples for the rest)"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
           "score": 175,
           "score_norm": 43.8,
           "tier": "manifest",
@@ -355,7 +355,7 @@
           "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
           "score": 175,
           "score_norm": 43.8,
           "tier": "manifest",
@@ -391,7 +391,7 @@
           "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
           "score": 175,
           "score_norm": 43.8,
           "tier": "manifest",
@@ -434,7 +434,7 @@
           "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown",
           "score": 130,
           "score_norm": 32.5,
           "tier": "manifest",
@@ -472,11 +472,11 @@
       "recipes": [],
       "concept_aliases_used": [],
       "citations": [
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown"
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown"
       ],
       "count": 5,
       "mode": "full"
@@ -485,7 +485,7 @@
   "single-provider-detected-cf": {
     "input": {
       "query": "cloudflare dns record",
-      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini"
+      "root": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini"
     },
     "output": {
       "status": "ok",
@@ -504,7 +504,7 @@
       "registry_version": "2026.04.28",
       "files": [
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/cloudflare/r/dns_record.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/cloudflare/r/dns_record.html.markdown",
           "score": 442.5,
           "score_norm": 100,
           "tier": "manifest+grep",
@@ -578,7 +578,7 @@
       "recipes": [],
       "concept_aliases_used": [],
       "citations": [
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/cloudflare/r/dns_record.html.markdown"
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/cloudflare/r/dns_record.html.markdown"
       ],
       "count": 1,
       "mode": "full"
@@ -587,7 +587,7 @@
   "ambiguous-merge-aws-cf": {
     "input": {
       "query": "s3 bucket on cloudflare",
-      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini"
+      "root": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini"
     },
     "output": {
       "status": "ok",
@@ -606,7 +606,7 @@
       "registry_version": "2026.04.28",
       "files": [
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
           "score": 480,
           "score_norm": 100,
           "tier": "manifest",
@@ -663,7 +663,7 @@
           "example_usage": "## Example Usage\n\n```terraform\nresource \"aws_s3_bucket\" \"example\" {\n  bucket = \"my-tf-test-bucket\"\n}\n```\n\n... (truncated; pass --full-examples for the rest)"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
           "score": 175,
           "score_norm": 43.8,
           "tier": "manifest",
@@ -699,7 +699,7 @@
           "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
           "score": 175,
           "score_norm": 43.8,
           "tier": "manifest",
@@ -735,7 +735,7 @@
           "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
           "score": 175,
           "score_norm": 43.8,
           "tier": "manifest",
@@ -778,7 +778,7 @@
           "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown",
           "score": 130,
           "score_norm": 32.5,
           "tier": "manifest",
@@ -816,11 +816,11 @@
       "recipes": [],
       "concept_aliases_used": [],
       "citations": [
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown"
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown"
       ],
       "count": 5,
       "merged_from_providers": [
@@ -832,7 +832,7 @@
   "provider-undetected": {
     "input": {
       "query": "totally unrelated query",
-      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini"
+      "root": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini"
     },
     "output": {
       "status": "error",
@@ -844,7 +844,7 @@
   "unknown-explicit-provider": {
     "input": {
       "query": "s3 bucket",
-      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini",
+      "root": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini",
       "provider": "nope"
     },
     "output": {
@@ -857,7 +857,7 @@
   "max-cap": {
     "input": {
       "query": "s3",
-      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini",
+      "root": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini",
       "provider": "aws",
       "max": 3
     },
@@ -877,7 +877,7 @@
       "registry_version": "2026.04.28",
       "files": [
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
           "score": 285,
           "score_norm": 71.3,
           "tier": "manifest+grep",
@@ -932,7 +932,7 @@
           "example_usage": "## Example Usage\n\n```terraform\nresource \"aws_s3_bucket\" \"example\" {\n  bucket = \"my-tf-test-bucket\"\n}\n```\n\n... (truncated; pass --full-examples for the rest)"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
           "score": 125,
           "score_norm": 31.3,
           "tier": "manifest",
@@ -966,7 +966,7 @@
           "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
           "score": 125,
           "score_norm": 31.3,
           "tier": "manifest",
@@ -1004,9 +1004,9 @@
       "recipes": [],
       "concept_aliases_used": [],
       "citations": [
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown"
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown"
       ],
       "count": 3,
       "mode": "full"
@@ -1015,7 +1015,7 @@
   "brief-mode": {
     "input": {
       "query": "s3 bucket",
-      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini",
+      "root": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini",
       "provider": "aws",
       "brief": true
     },
@@ -1035,7 +1035,7 @@
       "registry_version": "2026.04.28",
       "files": [
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
           "score": 480,
           "score_norm": 100,
           "tier": "manifest",
@@ -1067,7 +1067,7 @@
           "name": "aws_s3_bucket"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
           "score": 175,
           "score_norm": 43.8,
           "tier": "manifest",
@@ -1099,7 +1099,7 @@
           "name": "aws_s3_bucket_public_access_block"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
           "score": 175,
           "score_norm": 43.8,
           "tier": "manifest",
@@ -1131,7 +1131,7 @@
           "name": "aws_s3_bucket_server_side_encryption_configuration"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
           "score": 175,
           "score_norm": 43.8,
           "tier": "manifest",
@@ -1163,7 +1163,7 @@
           "name": "aws_s3_bucket_versioning"
         },
         {
-          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown",
+          "path": "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown",
           "score": 130,
           "score_norm": 32.5,
           "tier": "manifest",
@@ -1197,11 +1197,11 @@
       "recipes": [],
       "concept_aliases_used": [],
       "citations": [
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
-        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown"
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+        "/Users/mk/projects/vegastack-cli/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown"
       ],
       "count": 5,
       "mode": "brief"
