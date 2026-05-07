@@ -4,7 +4,7 @@ import * as os from "node:os";
 import { createHash } from "node:crypto";
 import { VegaStackError } from "./errors.js";
 import { safeExtractTar, assertSafeRelativePath } from "./safe-extract.js";
-import { fetchWithTimeout, streamDownloadVerified } from "./fetch-with-timeout.js";
+import { fetchTextWithCap, streamDownloadVerified } from "./fetch-with-timeout.js";
 import { projectConfigPath, registryCacheRoot } from "./paths.js";
 import { PACKS, registryEntryCachePath, type PackDefinition } from "./project.js";
 import { log } from "./log.js";
@@ -454,14 +454,14 @@ async function fetchRegistryCatalog(): Promise<RegistryCatalog> {
   }
 }
 
+// Hard byte ceiling for catalog/signature fetches. Defends against a hostile
+// mirror streaming a multi-GB body before signature/JSON parsing happens.
+// 16 MiB easily fits the real catalog (a few hundred KB) plus headroom; the
+// signature blob is well under 1 MiB but we share the same cap for simplicity.
+const REGISTRY_FETCH_TEXT_CAP_BYTES = 16 * 1024 * 1024;
+
 async function fetchText(url: string): Promise<string> {
-  const response = await fetchWithTimeout(url, { redirect: "follow" });
-  if (!response.ok) {
-    throw new VegaStackError("NetworkError", `failed to fetch ${url}: HTTP ${response.status}`, {
-      context: { url, status: response.status },
-    });
-  }
-  return await response.text();
+  return await fetchTextWithCap(url, { maxBytes: REGISTRY_FETCH_TEXT_CAP_BYTES });
 }
 
 async function downloadVerifiedFile(

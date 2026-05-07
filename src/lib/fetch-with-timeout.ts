@@ -143,6 +143,66 @@ export async function streamDownloadVerified(
   fs.renameSync(partPath, target);
 }
 
+export interface FetchTextWithCapOptions extends FetchWithTimeoutOptions {
+  /** Hard byte ceiling for the response body. */
+  maxBytes: number;
+}
+
+/**
+ * fetch the URL as text, but stream the body and abort with ArtifactCorrupt
+ * once the running byte total exceeds `maxBytes`. Defends against a hostile
+ * mirror that streams a multi-GB body to OOM the CLI before any
+ * size/signature/JSON check runs.
+ */
+export async function fetchTextWithCap(
+  url: string,
+  opts: FetchTextWithCapOptions,
+): Promise<string> {
+  const { maxBytes, ...rest } = opts;
+  const response = await fetchWithTimeout(url, { redirect: "follow", ...rest });
+  if (!response.ok) {
+    throw new VegaStackError("NetworkError", `failed to fetch ${url}: HTTP ${response.status}`, {
+      context: { url, status: response.status },
+    });
+  }
+  const body = response.body;
+  if (!body) {
+    // Body-less response (e.g. 204 in tests). Nothing to cap.
+    return "";
+  }
+  const reader = (body as ReadableStream<Uint8Array>).getReader();
+  const chunks: Buffer[] = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        try {
+          await reader.cancel();
+        } catch {
+          /* ignore */
+        }
+        throw new VegaStackError(
+          "ArtifactCorrupt",
+          `response from ${url} exceeded ${maxBytes} bytes`,
+          { context: { url, max_bytes: maxBytes } },
+        );
+      }
+      chunks.push(Buffer.from(value));
+    }
+  } catch (e) {
+    if (e instanceof VegaStackError) throw e;
+    throw new VegaStackError("NetworkError", `failed to read ${url}: ${(e as Error).message}`, {
+      cause: e,
+      context: { url },
+    });
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
 function pickTimeout(explicit: number | undefined): number {
   if (typeof explicit === "number" && Number.isFinite(explicit) && explicit > 0) return explicit;
   const env = process.env.VEGASTACK_FETCH_TIMEOUT_MS;

@@ -16,22 +16,25 @@ describe("fetchTextWithCap", () => {
 
   beforeAll(async () => {
     server = http.createServer((_req, res) => {
-      res.writeHead(200, { "content-type": "text/plain" });
-      // Stream more bytes than the cap.
+      const total = 4 * 1024 * 1024; // 4 MiB
+      res.writeHead(200, {
+        "content-type": "text/plain",
+        "content-length": String(total),
+      });
       const chunk = Buffer.alloc(64 * 1024, 0x61);
       let written = 0;
-      const total = 4 * 1024 * 1024; // 4 MiB
-      const writeMore = (): void => {
+      const pump = (): void => {
         while (written < total) {
-          if (!res.write(chunk)) {
-            res.once("drain", writeMore);
+          const ok = res.write(chunk);
+          written += chunk.byteLength;
+          if (!ok) {
+            res.once("drain", pump);
             return;
           }
-          written += chunk.byteLength;
         }
         res.end();
       };
-      writeMore();
+      pump();
     });
     await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
     port = (server.address() as AddressInfo).port;
