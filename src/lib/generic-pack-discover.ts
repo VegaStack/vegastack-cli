@@ -175,8 +175,7 @@ function preparePackContext(ctx: DiscoverCtx, pack: string): PackContext | null 
     (a) => a.source === "configured" || a.source === "terraform-aliases-yaml",
   );
   const packAliasBoost =
-    ctx.packs.length > 1 &&
-    (routingAliasMatches.length > 0 || queryNamesPack(ctx.query, pack))
+    ctx.packs.length > 1 && (routingAliasMatches.length > 0 || queryNamesPack(ctx.query, pack))
       ? 700
       : 0;
   const aliasTokens = aliasMatches.flatMap((a) => a.tokens);
@@ -361,7 +360,11 @@ function trimDependencies(
 
 function buildFinalResult(ctx: DiscoverCtx): GenericPackResult {
   ctx.results.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path));
-  const trimmed = diversifyByRegistryEntry(pruneOverlappingResults(ctx.results), ctx.packs, ctx.max);
+  const trimmed = diversifyByRegistryEntry(
+    pruneOverlappingResults(ctx.results),
+    ctx.packs,
+    ctx.max,
+  );
   const trimmedKnowledge = trimKnowledge(ctx.knowledge, ctx.baseTokens, ctx.max);
   const trimmedDependencies = trimDependencies(ctx.dependencies, ctx.baseTokens, ctx.max);
   return {

@@ -91,6 +91,7 @@ describe("project harness detection", () => {
         "AWSTemplateFormatVersion: '2010-09-09'\nResources: {}\n",
       );
       fs.writeFileSync(path.join(dir, "serverless.yml"), "service: app\n");
+      fs.writeFileSync(path.join(dir, "netlify.toml"), "[build]\n");
       fs.writeFileSync(path.join(dir, "cdk.json"), "{}\n");
       fs.writeFileSync(path.join(dir, "app.pkr.hcl"), "packer {}\n");
       fs.writeFileSync(path.join(dir, "app.nomad.hcl"), 'job "app" {}\n');
@@ -115,6 +116,7 @@ describe("project harness detection", () => {
         "pulumi",
         "cloudformation",
         "serverless-framework",
+        "netlify",
         "aws-cdk",
         "packer",
         "nomad",
@@ -130,6 +132,106 @@ describe("project harness detection", () => {
       }
       expect(detected.get("cloudflare")?.status).toBe("available");
       expect(detected.get("cloudflare")?.selected).toBe(true);
+    });
+  });
+
+  it("keeps every detector-backed Registry surface detectable from representative files", async () => {
+    await withTmpDir((dir) => {
+      fs.mkdirSync(path.join(dir, ".github", "workflows"), { recursive: true });
+      fs.writeFileSync(path.join(dir, ".github", "workflows", "ci.yml"), "name: ci\n");
+      fs.mkdirSync(path.join(dir, ".circleci"), { recursive: true });
+      fs.writeFileSync(path.join(dir, ".circleci", "config.yml"), "version: 2.1\n");
+      fs.mkdirSync(path.join(dir, ".buildkite"), { recursive: true });
+      fs.writeFileSync(path.join(dir, ".buildkite", "pipeline.yml"), "steps: []\n");
+      fs.mkdirSync(path.join(dir, ".devcontainer"), { recursive: true });
+      fs.writeFileSync(path.join(dir, ".devcontainer", "devcontainer.json"), "{}\n");
+      fs.mkdirSync(path.join(dir, "supabase"), { recursive: true });
+      fs.writeFileSync(path.join(dir, "supabase", "config.toml"), "[project]\n");
+      fs.mkdirSync(path.join(dir, "k8s"), { recursive: true });
+      fs.writeFileSync(
+        path.join(dir, "k8s", "deployment.yaml"),
+        "apiVersion: apps/v1\nkind: Deployment\n",
+      );
+
+      const files: Record<string, string> = {
+        ".gitlab-ci.yml": "stages: [test]\n",
+        "azure-pipelines.yml": "trigger: none\n",
+        "bitbucket-pipelines.yml": "pipelines: {}\n",
+        ".travis.yml": "language: node_js\n",
+        ".drone.yml": "kind: pipeline\n",
+        "cloudbuild.yaml": "steps: []\n",
+        "ansible.cfg": "[defaults]\n",
+        "Pulumi.yaml": "name: app\nruntime: nodejs\n",
+        "template.yaml": "AWSTemplateFormatVersion: '2010-09-09'\nResources: {}\n",
+        "serverless.yml": "service: app\n",
+        "samconfig.toml": "version = 0.1\n",
+        "cdk.json": "{}\n",
+        "main.tofu": "terraform {}\n",
+        "terragrunt.hcl": 'terraform { source = "./module" }\n',
+        "image.pkr.hcl": "packer {}\n",
+        "app.nomad.hcl": 'job "app" {}\n',
+        "kustomization.yaml": "resources: []\n",
+        "argocd-app.yaml": "apiVersion: argoproj.io/v1alpha1\nkind: Application\n",
+        "flux.yaml": "apiVersion: kustomize.toolkit.fluxcd.io/v1\nkind: Kustomization\n",
+        "skaffold.yaml": "apiVersion: skaffold/v4beta1\n",
+        Tiltfile: "# tilt\n",
+        "flake.nix": "{ outputs = { self }: {}; }\n",
+        "MODULE.bazel": 'module(name = "app")\n',
+        "netlify.toml": "[build]\n",
+        "vercel.json": "{}\n",
+        "wrangler.toml": 'name = "worker"\n',
+        Dockerfile: "FROM node:22\n",
+        "Chart.yaml": "apiVersion: v2\nname: app\n",
+        Jenkinsfile: "pipeline { agent any }\n",
+        "main.tf": "terraform {}\n",
+        ".aws/config": "[default]\nregion=us-east-1\n",
+      };
+      fs.mkdirSync(path.join(dir, ".aws"), { recursive: true });
+      for (const [file, body] of Object.entries(files)) {
+        fs.writeFileSync(path.join(dir, file), body);
+      }
+
+      const detected = new Set(scanProject(dir).detected.map((p) => p.name));
+
+      expect([...detected].sort()).toEqual([
+        "ansible",
+        "argo-cd",
+        "aws-cdk",
+        "aws-cli",
+        "aws-sam",
+        "azure-pipelines",
+        "bazel",
+        "bitbucket-pipelines",
+        "buildkite",
+        "circleci",
+        "cloudflare",
+        "cloudformation",
+        "devcontainer",
+        "docker",
+        "drone-ci",
+        "flux",
+        "github-actions",
+        "gitlab-ci",
+        "google-cloud-build",
+        "helm",
+        "jenkins",
+        "kubernetes",
+        "kustomize",
+        "netlify",
+        "nix",
+        "nomad",
+        "opentofu",
+        "packer",
+        "pulumi",
+        "serverless-framework",
+        "skaffold",
+        "supabase",
+        "terraform",
+        "terragrunt",
+        "tilt",
+        "travis-ci",
+        "vercel",
+      ]);
     });
   });
 

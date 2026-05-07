@@ -439,7 +439,10 @@ ${end}
     const realParent = fs.realpathSync(path.dirname(file));
     const cwdReal = fs.realpathSync(process.cwd());
     const candidate = path.join(realParent, path.basename(file));
-    if (!candidate.startsWith(cwdReal + path.sep) && candidate !== path.join(cwdReal, path.basename(file))) {
+    if (
+      !candidate.startsWith(cwdReal + path.sep) &&
+      candidate !== path.join(cwdReal, path.basename(file))
+    ) {
       throw new Error(`refusing to write outside project: ${file}`);
     }
     if (fs.existsSync(file) && fs.lstatSync(file).isSymbolicLink()) {

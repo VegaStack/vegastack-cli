@@ -110,7 +110,7 @@ export const PACKS: readonly PackDefinition[] = Object.freeze([
     shape: "cli-flags",
     status: "available",
     description: "AWS CLI command tree, flags, outputs, and cloudops recipes.",
-    detects: [".aws/", "aws"],
+    detects: [".aws/**"],
     source: "https://github.com/aws/aws-cli",
   },
   {

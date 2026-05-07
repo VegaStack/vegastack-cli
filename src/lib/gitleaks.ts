@@ -150,9 +150,13 @@ async function downloadVerified(url: string, target: string, expectedSha: string
   });
   if (!response.ok) {
     const safeUrl = stripUrlQuery(url);
-    throw new VegaStackError("NetworkError", `failed to fetch ${safeUrl}: HTTP ${response.status}`, {
-      context: { url, status: response.status },
-    });
+    throw new VegaStackError(
+      "NetworkError",
+      `failed to fetch ${safeUrl}: HTTP ${response.status}`,
+      {
+        context: { url, status: response.status },
+      },
+    );
   }
   const bytes = Buffer.from(await response.arrayBuffer());
   const actual = sha256(bytes);
