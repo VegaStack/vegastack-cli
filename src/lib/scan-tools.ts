@@ -80,7 +80,7 @@ export function runTool(
   // tool-internal failure. Returning status 127 (the conventional shell
   // exit code for "command not found") lets the caller route via the
   // tool-failure path rather than masquerading as a finding.
-  const err = result.error as NodeJS.ErrnoException | undefined;
+  const err = result.error as (Error & { code?: string }) | undefined;
   if (err && err.code === "ENOENT") {
     return {
       status: 127,

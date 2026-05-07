@@ -503,7 +503,7 @@ async function scanSecrets(
     // Surface ENOBUFS / git failure as a tool-level failure rather than
     // silently piping a truncated diff into gitleaks (which would then exit 0
     // and produce a false-negative).
-    if (diff.error || (diff.status ?? 0) !== 0) {
+    if (diff.error != null || (diff.status ?? 0) !== 0) {
       const reason = diff.error?.message ?? `git diff --cached exited ${diff.status ?? "?"}`;
       return result(
         "secrets",
