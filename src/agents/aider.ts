@@ -421,6 +421,9 @@ class AiderRenderer implements AgentRenderer {
         // (legacy installs from before F-005). We deliberately do *not*
         // match `path.basename(conv)` alone, since a user's separate
         // `vendor/CONVENTIONS.vegastack.md` would share that basename.
+        // The `removeReadEntry` text-edit approach (vs parse+rewrite) is
+        // chosen so user comments and formatting in `.aider.conf.yml` are
+        // preserved — see audit issue resolution for code-review/agents F-004.
         const raw = fs.readFileSync(conf, "utf8");
         const rel = relativeToConfDir(ctx.scope, conf, conv);
         const next = removeReadEntry(raw, [rel, conv]);

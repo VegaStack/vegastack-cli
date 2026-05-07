@@ -112,10 +112,7 @@ describe("scan command entry points (smoke)", () => {
       // Seed a minimal scan config so scanToolsForConfig has something to enumerate.
       const cfgDir = path.join(dir, ".vegastack");
       fs.mkdirSync(cfgDir, { recursive: true });
-      fs.writeFileSync(
-        path.join(dir, ".vegastack", "vegastack.yml"),
-        "schema_version: 1\n",
-      );
+      fs.writeFileSync(path.join(dir, ".vegastack", "vegastack.yml"), "schema_version: 1\n");
       const prevCwd = process.cwd();
       process.chdir(dir);
       try {

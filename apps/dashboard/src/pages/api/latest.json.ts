@@ -55,5 +55,14 @@ function jsonHeaders(maxAge: number): Record<string, string> {
     "cache-control": `public, max-age=${maxAge}, s-maxage=${maxAge}`,
     "access-control-allow-origin": "*",
     "access-control-allow-methods": "GET, OPTIONS",
+    // Vary on origin so any future origin-narrowing also requires a
+    // per-origin cache key; harmless today with `*` but cheap to set.
+    vary: "origin",
   };
 }
+
+export const OPTIONS: APIRoute = () =>
+  new Response(null, {
+    status: 204,
+    headers: jsonHeaders(300),
+  });

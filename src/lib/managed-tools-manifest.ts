@@ -582,9 +582,7 @@ export function detectLinuxLibc(
   if (override === "glibc" || override === "musl") return override;
   try {
     const report = (process as unknown as { report?: { getReport?: () => unknown } }).report;
-    const got = report?.getReport?.() as
-      | { header?: { glibcVersionRuntime?: string } }
-      | undefined;
+    const got = report?.getReport?.() as { header?: { glibcVersionRuntime?: string } } | undefined;
     if (got?.header && typeof got.header.glibcVersionRuntime === "string") return "glibc";
     if (got?.header && got.header.glibcVersionRuntime === undefined) {
       // Header is present but the field is absent → musl-built Node.

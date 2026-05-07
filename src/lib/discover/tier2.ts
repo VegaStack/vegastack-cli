@@ -87,7 +87,7 @@ function runSafe(cmd: string, args: string[], timeoutMs: number): string[] {
     maxBuffer: 50 * 1024 * 1024,
   });
   if (r.error !== undefined || r.status !== 0) return [];
-  return r.stdout.split("\n").filter((s) => s.length > 0);
+  return r.stdout.split(/\r?\n/).filter((s) => s.length > 0);
 }
 
 function grepFixed(fixed: string, providerDir: string): string[] {

@@ -41,7 +41,13 @@ describe("agent-skill-reconcile (smoke)", () => {
   });
 
   it("print helpers do not throw on an empty inspection", () => {
-    const empty = { scope: "project" as const, cwd: "/tmp", detected: [], missing: [], skipped: [] };
+    const empty = {
+      scope: "project" as const,
+      cwd: "/tmp",
+      detected: [],
+      missing: [],
+      skipped: [],
+    };
     expect(() => printAgentSkillInspection(empty)).not.toThrow();
     expect(() => printAgentSkillReconcile({ ...empty, installed: [] })).not.toThrow();
   });

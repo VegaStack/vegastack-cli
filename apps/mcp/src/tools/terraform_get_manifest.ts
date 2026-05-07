@@ -3,7 +3,7 @@
 // name and wants the schema directly without running a search.
 
 import { z } from "zod";
-import { readProviderManifest } from "../lib/r2-registry.js";
+import { ArtifactCorrupt, RegistryKeyNotFound, readProviderManifest } from "../lib/r2-registry.js";
 import type { ManifestResourceEntry, ProviderManifest } from "../lib/types.js";
 import { jsonContent } from "./_shared.js";
 
@@ -32,10 +32,29 @@ export async function handleTerraformGetManifest(env: Env, args: TerraformGetMan
   try {
     manifest = await readProviderManifest(env, args.provider);
   } catch (e) {
+    // Branch on the typed errors so an ArtifactCorrupt (JSON parse failure)
+    // is not misreported as RegistryEntryMissing, and an unexpected error
+    // does not leak raw `e.message` (which can include CF internal request
+    // IDs from R2 binding failures) to the client.
+    if (e instanceof RegistryKeyNotFound) {
+      return jsonContent({
+        status: "error",
+        error: `provider manifest not found: ${args.provider}`,
+        code: "RegistryEntryMissing",
+      });
+    }
+    if (e instanceof ArtifactCorrupt) {
+      return jsonContent({
+        status: "error",
+        error: `provider manifest is corrupt: ${args.provider}`,
+        code: "ArtifactCorrupt",
+      });
+    }
+    console.error("terraform_get_manifest unexpected error", e);
     return jsonContent({
       status: "error",
-      error: e instanceof Error ? e.message : String(e),
-      code: "RegistryEntryMissing",
+      error: "internal error reading provider manifest",
+      code: "InternalError",
     });
   }
 

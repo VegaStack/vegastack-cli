@@ -128,5 +128,7 @@ Current Terraform behavior is documented in the existing references:
 - [references/manifest-schema.md](references/manifest-schema.md)
 - [references/concept-aliases.md](references/concept-aliases.md)
 - [references/troubleshooting.md](references/troubleshooting.md)
+- [references/knowledge-cards.md](references/knowledge-cards.md)
+- [references/eval-baseline.md](references/eval-baseline.md)
 
 Load those references only when the query specifically needs that Terraform detail.

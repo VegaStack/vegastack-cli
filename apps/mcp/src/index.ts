@@ -24,6 +24,10 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { listProviders, readRootManifest } from "./lib/r2-registry.js";
 import { createBearerAuth, createRateLimiter, readMiddlewareConfig } from "./middleware.js";
 
+// Single source of truth for the worker version string. Bumped in lockstep
+// with apps/mcp/package.json#version (CI repo-meta test enforces equality).
+const WORKER_VERSION = "0.1.13-next.0";
+
 import {
   handleTerraformDiscover,
   terraformDiscoverDescription,
@@ -55,7 +59,7 @@ import {
 export class VegaStackMcp extends McpAgent<Env> {
   server = new McpServer({
     name: "vegastack-mcp",
-    version: "0.1.13-next.0",
+    version: WORKER_VERSION,
   });
 
   override async init(): Promise<void> {
@@ -153,6 +157,13 @@ const SSE_HANDLER: McpHandler = VegaStackMcp.serveSSE("/sse") as unknown as McpH
 
 const CORS_HEADERS: Record<string, string> = {
   // v0.1: anonymous public read. Tightens to per-tenant in v0.2 if we add auth.
+  // TODO(v0.2): when auth lands, drop "*" and source Allow-Origin from
+  // env.ALLOWED_ORIGINS; leaving "*" while accepting `Authorization`
+  // would let any origin trigger preflight and have the browser attach
+  // a bearer token (CORS-spec credentials gate is bypassed by token-in-
+  // explicit-header). This must be flipped in the same patch as the auth
+  // path -- any reviewer landing auth without narrowing this constant
+  // should reject the change.
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, Mcp-Session-Id",
@@ -222,7 +233,7 @@ export default {
       }
       return json({
         name: "vegastack-mcp",
-        version: "0.1.13-next.0",
+        version: WORKER_VERSION,
         registry_version: registryVersion,
         schema_version: 1,
       });

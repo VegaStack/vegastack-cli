@@ -6,10 +6,7 @@
 // dispatch but still exercises the entry point.
 
 import { describe, expect, it } from "vitest";
-import {
-  installManagedTools,
-  type ManagedToolsUpdateResult,
-} from "../../src/lib/managed-tools.js";
+import { installManagedTools, type ManagedToolsUpdateResult } from "../../src/lib/managed-tools.js";
 
 describe("installManagedTools (smoke)", () => {
   it("returns a manifest_generated_at timestamp and an empty tools map for an empty include list", async () => {

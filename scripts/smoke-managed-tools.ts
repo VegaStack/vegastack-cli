@@ -9,6 +9,10 @@ import { resolveRipgrepBin, ripgrepVersion } from "../src/lib/ripgrep.js";
 import { resolveScanToolBin, scanToolVersion } from "../src/lib/scan-tools.js";
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-managed-tools-smoke-"));
+// Save the original so the finally block restores it; otherwise running
+// the smoke script in-process leaks a temp path into any caller that
+// re-uses process.env after the script returns.
+const previousConfigDir = process.env.VEGASTACK_CONFIG_DIR;
 process.env.VEGASTACK_CONFIG_DIR = path.join(tmp, "config");
 
 try {
@@ -38,7 +42,12 @@ try {
 
   const repo = path.join(tmp, "repo");
   fs.mkdirSync(repo, { recursive: true });
-  spawnSync("git", ["init", "-q"], { cwd: repo });
+  const gitInit = spawnSync("git", ["init", "-q"], { cwd: repo });
+  if (gitInit.error || (gitInit.status ?? 0) !== 0) {
+    throw new Error(
+      `git init failed: ${gitInit.error?.message ?? `exit ${gitInit.status ?? "?"}`}`,
+    );
+  }
   fs.writeFileSync(
     path.join(repo, "leak.env"),
     "GITHUB_TOKEN=ghp_1234567890abcdefghijklmnopqrstuvwx\n",
@@ -85,4 +94,9 @@ try {
   process.stdout.write(`${JSON.stringify({ ok: true, installed, versions }, null, 2)}\n`);
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true });
+  if (previousConfigDir === undefined) {
+    delete process.env.VEGASTACK_CONFIG_DIR;
+  } else {
+    process.env.VEGASTACK_CONFIG_DIR = previousConfigDir;
+  }
 }

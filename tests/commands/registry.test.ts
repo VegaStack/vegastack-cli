@@ -2,10 +2,7 @@
 // to fail silently (the implementation falls back to the static PACKS list).
 
 import { describe, expect, it } from "vitest";
-import {
-  runRegistryList,
-  runRegistryStatus,
-} from "../../src/commands/registry.js";
+import { runRegistryList, runRegistryStatus } from "../../src/commands/registry.js";
 import { withTmpDir } from "../setup.js";
 
 describe("vegastack registry (smoke)", () => {

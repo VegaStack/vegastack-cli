@@ -281,7 +281,10 @@ function searchWithRipgrep(args: {
   ];
   const r = spawnSync(args.bin, rgArgs, {
     encoding: "utf8",
-    maxBuffer: 80 * 1024 * 1024,
+    // Node applies maxBuffer to BOTH stdout and stderr independently; 32 MiB
+    // each gives a 64 MiB worst-case ceiling per ripgrep invocation, which
+    // is plenty for SHA-pinned doc caches and bounds wedged stderr.
+    maxBuffer: 32 * 1024 * 1024,
   });
   if (r.status !== 0 && r.status !== 1) {
     args.skipped.push({
