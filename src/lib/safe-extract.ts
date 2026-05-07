@@ -32,11 +32,7 @@ export function assertSafeRelativePath(value: string): void {
   while (trimmed.startsWith("./")) trimmed = trimmed.slice(2);
   if (trimmed.endsWith("/")) trimmed = trimmed.slice(0, -1);
   if (trimmed === "" || trimmed === ".") return;
-  if (
-    trimmed.startsWith("/") ||
-    trimmed.includes("\\") ||
-    trimmed.split("/").includes("..")
-  ) {
+  if (trimmed.startsWith("/") || trimmed.includes("\\") || trimmed.split("/").includes("..")) {
     throw new VegaStackError("ArtifactCorrupt", `unsafe archive entry path '${value}'`, {
       context: { path: value },
     });
@@ -138,7 +134,7 @@ const S_IFMT = 0o170000;
 const S_IFLNK = 0o120000;
 
 function entryIsDirectory(entry: Entry): boolean {
-  return /\/$/.test(entry.fileName);
+  return entry.fileName.endsWith("/");
 }
 
 function entryIsSymlink(entry: Entry): boolean {
@@ -161,7 +157,7 @@ export function safeExtractZip(archivePath: string, targetDir: string): Promise<
   return new Promise<void>((resolve, reject) => {
     fs.mkdirSync(targetDir, { recursive: true });
     yauzl.open(archivePath, { lazyEntries: true }, (err, zipfile) => {
-      if (err || !zipfile) {
+      if (err ?? !zipfile) {
         reject(
           new VegaStackError("ArtifactCorrupt", "failed to open zip archive", {
             cause: err ?? undefined,
@@ -169,7 +165,7 @@ export function safeExtractZip(archivePath: string, targetDir: string): Promise<
         );
         return;
       }
-      const zf = zipfile as ZipFile;
+      const zf: ZipFile = zipfile;
       let settled = false;
       const fail = (e: unknown): void => {
         if (settled) return;
@@ -231,7 +227,7 @@ export function safeExtractZip(archivePath: string, targetDir: string): Promise<
 
           fs.mkdirSync(path.dirname(dest), { recursive: true });
           zf.openReadStream(entry, (rsErr, readStream) => {
-            if (rsErr || !readStream) {
+            if (rsErr ?? !readStream) {
               fail(rsErr ?? new Error("openReadStream returned null"));
               return;
             }

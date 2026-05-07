@@ -72,7 +72,7 @@ describe("safeExtractZip — issue #76 (zip-slip defense)", () => {
       // first via its own central-directory validator. In both cases the
       // error chain mentions the offending path or rejects extraction.
       const top = (caught as Error).message;
-      const cause = ((caught as { cause?: Error }).cause)?.message ?? "";
+      const cause = (caught as { cause?: Error }).cause?.message ?? "";
       expect(`${top} :: ${cause}`).toMatch(/unsafe|escape|traversal|path|zip archive/i);
       // Post-condition: nothing escaped.
       expect(fs.existsSync(witness)).toBe(false);
