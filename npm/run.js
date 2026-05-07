@@ -24,5 +24,8 @@ if (!existsSync(CLI_PATH)) {
 const url = pathToFileURL(CLI_PATH).href;
 import(url).catch((e) => {
   process.stderr.write(`vegastack: failed to load CLI: ${e?.message ?? e}\n`);
-  process.exit(1);
+  // If the CLI threw a structured error with an `exitCode`, preserve it
+  // so callers see the documented exit code instead of a hard 1.
+  const code = typeof e?.exitCode === "number" ? e.exitCode : 1;
+  process.exit(code);
 });
