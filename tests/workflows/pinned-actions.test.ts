@@ -72,7 +72,9 @@ describe("workflow action pinning (#64)", () => {
         const ref = m[1];
         if (!ref || isLocalReference(ref)) return;
         if (!/#\s*v?\d/.test(line)) {
-          violations.push(`${path.basename(file)}:${idx + 1} missing version comment: ${line.trim()}`);
+          violations.push(
+            `${path.basename(file)}:${idx + 1} missing version comment: ${line.trim()}`,
+          );
         }
       });
     }
