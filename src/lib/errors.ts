@@ -18,6 +18,7 @@ export type VegaStackErrorKind =
   | "AgentInstallError"
   | "ValidationError"
   | "DiscoverError"
+  | "Ambiguous"
   | "PythonMissing"
   | "Unsupported"
   | "Unknown";
@@ -32,6 +33,7 @@ export const EXIT_CODES: Readonly<Record<VegaStackErrorKind, number>> = Object.f
   AgentInstallError: 9,
   ValidationError: 10,
   DiscoverError: 2,
+  Ambiguous: 3,
   PythonMissing: 11,
   Unsupported: 12,
   Unknown: 1,
@@ -119,6 +121,8 @@ function hintFor(kind: VegaStackErrorKind, ctx: Readonly<Record<string, unknown>
       return "Check the input you passed. CLI args are validated for path traversal and control characters.";
     case "DiscoverError":
       return "The discovery harness exited non-zero. Run `vegastack doctor` to verify the Registry pack, then re-run with --raw if the issue persists.";
+    case "Ambiguous":
+      return "The query matched more than one candidate. Disambiguate with a more specific term, or pass an explicit selector flag (e.g. `--tf-provider <name>` for terraform-discover).";
     case "PythonMissing":
       return "python3 is not required for the CLI. If you see this, a development-only script is being run in the wrong environment.";
     case "Unsupported":
