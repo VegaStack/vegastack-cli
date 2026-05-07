@@ -7,6 +7,7 @@ import * as path from "node:path";
 import { VegaStackError } from "./errors.js";
 import {
   MANAGED_TOOLS_MANIFEST,
+  assertManagedToolLibcSupported,
   managedToolTarget,
   type ManagedToolTarget,
 } from "./managed-tools-manifest.js";
@@ -124,6 +125,14 @@ export function gitleaksVersion(bin: string): string | null {
 }
 
 function currentTarget(): Target {
+  // Reject Alpine-musl up front with a clear stderr message before we try to
+  // download a glibc-linked binary that cannot run on musl. See
+  // managed-tools-manifest.ts#detectLinuxLibc.
+  try {
+    assertManagedToolLibcSupported("gitleaks");
+  } catch (e) {
+    throw new VegaStackError("Unsupported", e instanceof Error ? e.message : String(e));
+  }
   const target = managedToolTarget("gitleaks");
   if (!target) {
     throw new VegaStackError(

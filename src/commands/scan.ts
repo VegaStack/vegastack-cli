@@ -304,6 +304,16 @@ ${end}
   }
   fs.writeFileSync(hookPath, raw, { mode: 0o755 });
   if (process.platform !== "win32") fs.chmodSync(hookPath, 0o755);
+  if (process.platform === "win32") {
+    // The hook starts with `#!/bin/sh` and is invoked by Git via its bundled
+    // `bash.exe`. PowerShell-only Git installs (e.g. `scoop install
+    // git.install --without-bash`) and TortoiseGit hosts without Git Bash
+    // will not execute it. Surface this loudly so Windows users without Git
+    // Bash know to install it (or run `vegastack scan --staged` manually).
+    log.warn(
+      "vegastack scan pre-commit hook requires Git Bash on Windows; install Git for Windows (https://git-scm.com/download/win) or invoke `vegastack scan --staged` manually before commit.",
+    );
+  }
   return true;
 }
 
