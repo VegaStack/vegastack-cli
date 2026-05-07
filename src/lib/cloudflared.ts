@@ -13,9 +13,7 @@ import {
 /** @deprecated retained for compatibility — prefer `ManagedToolInstall`. */
 export type CloudflaredInstall = ManagedToolInstall;
 
-export function installCloudflared(
-  opts: { force?: boolean } = {},
-): Promise<CloudflaredInstall> {
+export function installCloudflared(opts: { force?: boolean } = {}): Promise<CloudflaredInstall> {
   return installManagedTool("cloudflared", opts);
 }
 
