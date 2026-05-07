@@ -1,0 +1,770 @@
+{
+  "aws-s3": {
+    "input": {
+      "tokens": [
+        "s3"
+      ],
+      "provider": "aws",
+      "aliasMatches": null
+    },
+    "fixture": "tests/fixtures/registry-mini/aws",
+    "entries": [
+      [
+        "r/s3_bucket_public_access_block.html.markdown",
+        {
+          "score": 125,
+          "reasons": [
+            {
+              "kind": "subcat_keyword",
+              "detail": "s3→S3"
+            },
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            },
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_s3_bucket→aws_s3_bucket_public_access_block"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket_server_side_encryption_configuration.html.markdown",
+        {
+          "score": 125,
+          "reasons": [
+            {
+              "kind": "subcat_keyword",
+              "detail": "s3→S3"
+            },
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            },
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_s3_bucket→aws_s3_bucket_server_side_encryption_configuration"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket_versioning.html.markdown",
+        {
+          "score": 125,
+          "reasons": [
+            {
+              "kind": "subcat_keyword",
+              "detail": "s3→S3"
+            },
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            },
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_s3_bucket→aws_s3_bucket_versioning"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket_website_configuration.html.markdown",
+        {
+          "score": 95,
+          "reasons": [
+            {
+              "kind": "subcat_keyword",
+              "detail": "s3→S3"
+            },
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket.html.markdown",
+        {
+          "score": 170,
+          "reasons": [
+            {
+              "kind": "subcat_keyword",
+              "detail": "s3→S3"
+            },
+            {
+              "kind": "primary_resource",
+              "detail": "aws_s3_bucket"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ]
+    ]
+  },
+  "aws-s3_bucket": {
+    "input": {
+      "tokens": [
+        "s3_bucket"
+      ],
+      "provider": "aws",
+      "aliasMatches": null
+    },
+    "fixture": "tests/fixtures/registry-mini/aws",
+    "entries": [
+      [
+        "r/s3_bucket_public_access_block.html.markdown",
+        {
+          "score": 75,
+          "reasons": [
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            },
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_s3_bucket→aws_s3_bucket_public_access_block"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket_server_side_encryption_configuration.html.markdown",
+        {
+          "score": 75,
+          "reasons": [
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            },
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_s3_bucket→aws_s3_bucket_server_side_encryption_configuration"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket_versioning.html.markdown",
+        {
+          "score": 75,
+          "reasons": [
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            },
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_s3_bucket→aws_s3_bucket_versioning"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket_website_configuration.html.markdown",
+        {
+          "score": 25,
+          "reasons": [
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket.html.markdown",
+        {
+          "score": 100,
+          "reasons": [
+            {
+              "kind": "exact_resource",
+              "detail": "aws_s3_bucket"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ]
+    ]
+  },
+  "aws-aws_s3_bucket": {
+    "input": {
+      "tokens": [
+        "aws_s3_bucket"
+      ],
+      "provider": "aws",
+      "aliasMatches": null
+    },
+    "fixture": "tests/fixtures/registry-mini/aws",
+    "entries": [
+      [
+        "r/s3_bucket_public_access_block.html.markdown",
+        {
+          "score": 75,
+          "reasons": [
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            },
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_s3_bucket→aws_s3_bucket_public_access_block"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket_server_side_encryption_configuration.html.markdown",
+        {
+          "score": 75,
+          "reasons": [
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            },
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_s3_bucket→aws_s3_bucket_server_side_encryption_configuration"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket_versioning.html.markdown",
+        {
+          "score": 75,
+          "reasons": [
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            },
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_s3_bucket→aws_s3_bucket_versioning"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket_website_configuration.html.markdown",
+        {
+          "score": 25,
+          "reasons": [
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket.html.markdown",
+        {
+          "score": 100,
+          "reasons": [
+            {
+              "kind": "exact_resource",
+              "detail": "aws_s3_bucket"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ]
+    ]
+  },
+  "aws-eks": {
+    "input": {
+      "tokens": [
+        "eks"
+      ],
+      "provider": "aws",
+      "aliasMatches": null
+    },
+    "fixture": "tests/fixtures/registry-mini/aws",
+    "entries": [
+      [
+        "r/eks_cluster.html.markdown",
+        {
+          "score": 245,
+          "reasons": [
+            {
+              "kind": "subcat_keyword",
+              "detail": "eks→EKS"
+            },
+            {
+              "kind": "primary_resource",
+              "detail": "aws_eks_cluster"
+            },
+            {
+              "kind": "subcategory",
+              "detail": "EKS"
+            },
+            {
+              "kind": "name_partial",
+              "detail": "aws_eks_cluster"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/eks_node_group.html.markdown",
+        {
+          "score": 200,
+          "reasons": [
+            {
+              "kind": "subcat_keyword",
+              "detail": "eks→EKS"
+            },
+            {
+              "kind": "subcategory_peer",
+              "detail": "EKS"
+            },
+            {
+              "kind": "subcategory",
+              "detail": "EKS"
+            },
+            {
+              "kind": "name_partial",
+              "detail": "aws_eks_node_group"
+            },
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_eks_cluster→aws_eks_node_group"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/iam_openid_connect_provider.html.markdown",
+        {
+          "score": 30,
+          "reasons": [
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_eks_cluster→aws_iam_openid_connect_provider"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/iam_role.html.markdown",
+        {
+          "score": 30,
+          "reasons": [
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_eks_cluster→aws_iam_role"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ]
+    ]
+  },
+  "aws-cluster": {
+    "input": {
+      "tokens": [
+        "cluster"
+      ],
+      "provider": "aws",
+      "aliasMatches": null
+    },
+    "fixture": "tests/fixtures/registry-mini/aws",
+    "entries": [
+      [
+        "r/eks_cluster.html.markdown",
+        {
+          "score": 50,
+          "reasons": [
+            {
+              "kind": "name_partial",
+              "detail": "aws_eks_cluster"
+            },
+            {
+              "kind": "description",
+              "detail": "cluster"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/eks_node_group.html.markdown",
+        {
+          "score": 20,
+          "reasons": [
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_eks_cluster→aws_eks_node_group"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/iam_openid_connect_provider.html.markdown",
+        {
+          "score": 20,
+          "reasons": [
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_eks_cluster→aws_iam_openid_connect_provider"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/iam_role.html.markdown",
+        {
+          "score": 20,
+          "reasons": [
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_eks_cluster→aws_iam_role"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ]
+    ]
+  },
+  "aws-function_name": {
+    "input": {
+      "tokens": [
+        "function_name"
+      ],
+      "provider": "aws",
+      "aliasMatches": null
+    },
+    "fixture": "tests/fixtures/registry-mini/aws",
+    "entries": [
+      [
+        "r/cloudwatch_log_group.html.markdown",
+        {
+          "score": 20,
+          "reasons": [
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_lambda_function→aws_cloudwatch_log_group"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/iam_role.html.markdown",
+        {
+          "score": 20,
+          "reasons": [
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_lambda_function→aws_iam_role"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/lambda_function.html.markdown",
+        {
+          "score": 40,
+          "reasons": [
+            {
+              "kind": "argument_index",
+              "detail": "function_name"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ]
+    ]
+  },
+  "aws-lambda-create": {
+    "input": {
+      "tokens": [
+        "lambda",
+        "create"
+      ],
+      "provider": "aws",
+      "aliasMatches": null
+    },
+    "fixture": "tests/fixtures/registry-mini/aws",
+    "entries": [
+      [
+        "r/cloudwatch_log_group.html.markdown",
+        {
+          "score": 30,
+          "reasons": [
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_lambda_function→aws_cloudwatch_log_group"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/iam_role.html.markdown",
+        {
+          "score": 30,
+          "reasons": [
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_lambda_function→aws_iam_role"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/lambda_function.html.markdown",
+        {
+          "score": 260,
+          "reasons": [
+            {
+              "kind": "subcat_keyword",
+              "detail": "lambda→Lambda"
+            },
+            {
+              "kind": "primary_resource",
+              "detail": "aws_lambda_function"
+            },
+            {
+              "kind": "subcategory",
+              "detail": "Lambda"
+            },
+            {
+              "kind": "name_partial",
+              "detail": "aws_lambda_function"
+            },
+            {
+              "kind": "description",
+              "detail": "lambda"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ]
+    ]
+  },
+  "aws-s3_versioning": {
+    "input": {
+      "tokens": [
+        "s3_bucket_versioning"
+      ],
+      "provider": "aws",
+      "aliasMatches": null
+    },
+    "fixture": "tests/fixtures/registry-mini/aws",
+    "entries": [
+      [
+        "r/s3_bucket_public_access_block.html.markdown",
+        {
+          "score": 40,
+          "reasons": [
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            },
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_s3_bucket→aws_s3_bucket_public_access_block"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket_server_side_encryption_configuration.html.markdown",
+        {
+          "score": 40,
+          "reasons": [
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            },
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_s3_bucket→aws_s3_bucket_server_side_encryption_configuration"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket_versioning.html.markdown",
+        {
+          "score": 115,
+          "reasons": [
+            {
+              "kind": "exact_resource",
+              "detail": "aws_s3_bucket_versioning"
+            },
+            {
+              "kind": "recommended_companion",
+              "detail": "aws_s3_bucket→aws_s3_bucket_versioning"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket_website_configuration.html.markdown",
+        {
+          "score": 25,
+          "reasons": [
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ],
+      [
+        "r/s3_bucket.html.markdown",
+        {
+          "score": 25,
+          "reasons": [
+            {
+              "kind": "subcategory_peer",
+              "detail": "S3"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ]
+    ]
+  },
+  "cf-dns": {
+    "input": {
+      "tokens": [
+        "dns"
+      ],
+      "provider": "cloudflare",
+      "aliasMatches": null
+    },
+    "fixture": "tests/fixtures/registry-mini/cloudflare",
+    "entries": [
+      [
+        "r/dns_record.html.markdown",
+        {
+          "score": 135,
+          "reasons": [
+            {
+              "kind": "primary_resource",
+              "detail": "cloudflare_dns_record"
+            },
+            {
+              "kind": "name_partial",
+              "detail": "cloudflare_dns_record"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ]
+    ]
+  },
+  "cf-record-create": {
+    "input": {
+      "tokens": [
+        "dns",
+        "record",
+        "create"
+      ],
+      "provider": "cloudflare",
+      "aliasMatches": null
+    },
+    "fixture": "tests/fixtures/registry-mini/cloudflare",
+    "entries": [
+      [
+        "r/dns_record.html.markdown",
+        {
+          "score": 185,
+          "reasons": [
+            {
+              "kind": "primary_resource",
+              "detail": "cloudflare_dns_record"
+            },
+            {
+              "kind": "name_partial",
+              "detail": "cloudflare_dns_record"
+            },
+            {
+              "kind": "name_partial",
+              "detail": "cloudflare_dns_record"
+            },
+            {
+              "kind": "description",
+              "detail": "record"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ]
+    ]
+  },
+  "aws-alias": {
+    "input": {
+      "tokens": [
+        "dummy"
+      ],
+      "provider": "aws",
+      "aliasMatches": [
+        {
+          "phrase": "static website",
+          "alias": "s3_static_site",
+          "provider": "aws",
+          "resources": [
+            "aws_s3_bucket_website_configuration"
+          ]
+        }
+      ]
+    },
+    "fixture": "tests/fixtures/registry-mini/aws",
+    "entries": [
+      [
+        "r/s3_bucket_website_configuration.html.markdown",
+        {
+          "score": 60,
+          "reasons": [
+            {
+              "kind": "alias_resource",
+              "detail": "s3_static_site→aws_s3_bucket_website_configuration"
+            }
+          ],
+          "tier": "manifest"
+        }
+      ]
+    ]
+  },
+  "aws-empty": {
+    "input": {
+      "tokens": [
+        "zzznothing"
+      ],
+      "provider": "aws",
+      "aliasMatches": null
+    },
+    "fixture": "tests/fixtures/registry-mini/aws",
+    "entries": []
+  }
+}
