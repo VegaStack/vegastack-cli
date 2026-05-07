@@ -141,6 +141,15 @@ describe("runDoctor characterization (JSON output contract)", () => {
         "cloudflared (optional)",
       ].sort(),
     );
+    // Per-check semantic anchors (kill mutants on individual helper bodies).
+    const byName = new Map(checks.map((c) => [c.name, c]));
+    expect(byName.get("Node.js")?.ok).toBe(true); // tests run on Node >= 18
+    expect(byName.get("Node.js")?.detail).toMatch(/^v\d+\.\d+/);
+    expect(byName.get("VegaStack Registry cache")?.ok).toBe(false); // empty registry
+    expect(byName.get("VegaStack Registry cache")?.detail).toMatch(/no Registry entries/);
+    expect(byName.get("jq (optional)")?.ok).toBe(false); // empty PATH
+    expect(byName.get("ripgrep")?.ok).toBe(false); // no managed rg in tmp tools dir
+    expect(byName.get("cloudflared (optional)")?.ok).toBe(false);
   });
 
   it("is deterministic across repeated invocations (same env, same JSON)", async () => {
@@ -165,5 +174,76 @@ describe("runDoctor characterization (JSON output contract)", () => {
     await runDoctor({ json: true, verifyRegistry: true });
     const out = JSON.parse(captured.join("")) as Record<string, unknown>;
     expect(Array.isArray(out.verify)).toBe(true);
+    // Empty registry -> 0 entries verified -> aggregate check passes (failed===0).
+    const checks = out.checks as { name: string; ok: boolean; detail: string }[];
+    const agg = checks.find((c) => c.name === "Registry artifact verification");
+    expect(agg?.ok).toBe(true);
+    expect(agg?.detail).toBe("0 entries verified");
+  });
+
+  it("non-JSON renderer routes ok/warn/err to the correct log channels", async () => {
+    // Captures stderr lines; passing checks must use the green '✓' prefix and
+    // failing required checks must use red '✗'. Optional failing checks warn
+    // (yellow ⚠). Kills mutants that swap log.ok ↔ log.err in printCheckLine.
+    const paths = await import("../../src/lib/paths.js");
+    paths._clearTrustedRootCacheForTests();
+    const { runDoctor } = await import("../../src/commands/doctor.js");
+    const stderrChunks: string[] = [];
+    const origStderr = process.stderr.write.bind(process.stderr);
+    process.stderr.write = ((chunk: unknown) => {
+      stderrChunks.push(
+        typeof chunk === "string" ? chunk : Buffer.from(chunk as Uint8Array).toString(),
+      );
+      return true;
+    }) as typeof process.stderr.write;
+    try {
+      await runDoctor({ json: false });
+    } finally {
+      process.stderr.write = origStderr;
+    }
+    const out = stderrChunks.join("");
+    // Node.js check passes -> green ✓ on its line.
+    expect(out).toMatch(/✓.*Node\.js: v\d+/);
+    // Registry cache fails (required, not optional) -> red ✗.
+    expect(out).toMatch(/✗.*VegaStack Registry cache/);
+    // jq is optional and missing -> yellow ⚠ (warn), NOT ✗.
+    expect(out).toMatch(/⚠.*jq \(optional\)/);
+    expect(out).not.toMatch(/✗.*jq \(optional\)/);
+  });
+
+  it("registry cache check flips ok=true when entries are installed", async () => {
+    // Stage a fake installed entry so `installedEntries.length > 0` is true.
+    // This kills mutants that flip the > 0 comparison (e.g. > 0 -> < 0): with
+    // length===1 and `< 0` the check would still report ok=false.
+    const entryDir = path.join(process.env.VEGASTACK_REGISTRY_DIR!, "fake-pack");
+    fs.mkdirSync(entryDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(entryDir, "MANIFEST.json"),
+      JSON.stringify({ schema_version: 2, id: "fake-pack", pack_version: "0.0.1" }),
+    );
+    // fetchPublishedRegistryCatalog will fail with the empty PATH/network state,
+    // so the catalog check appears as "(optional)" failure — required checks
+    // are still the registry cache + ripgrep + node.
+    const paths = await import("../../src/lib/paths.js");
+    paths._clearTrustedRootCacheForTests();
+    const { runDoctor } = await import("../../src/commands/doctor.js");
+    captured.length = 0;
+    await runDoctor({ json: true });
+    const out = JSON.parse(captured.join("")) as Record<string, unknown>;
+    const checks = out.checks as { name: string; ok: boolean; detail: string }[];
+    const cache = checks.find((c) => c.name === "VegaStack Registry cache");
+    expect(cache?.ok).toBe(true);
+    expect(cache?.detail).toMatch(/1 installed: fake-pack/);
+  });
+
+  it("aggregates exitCode across all required checks (some-vs-every guard)", async () => {
+    // ok must be false because at least one required check fails (registry +
+    // ripgrep). With `every` mutated to `some`, having any passing check (Node)
+    // would flip ok to true — this test pins the correct quantifier.
+    const out = await runOnce();
+    const checks = out.checks as { name: string; ok: boolean }[];
+    const requiredFailures = checks.filter((c) => !c.name.includes("optional") && !c.ok);
+    expect(requiredFailures.length).toBeGreaterThan(0);
+    expect(out.ok).toBe(false);
   });
 });
