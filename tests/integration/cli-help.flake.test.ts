@@ -39,9 +39,7 @@ describe("cli-help parallel safety (issue #60)", () => {
       return { status: r.status, stdout: r.stdout, stderr: r.stderr };
     });
 
-    const failures = children
-      .map((c, i) => ({ ...c, i }))
-      .filter((c) => c.status !== 0);
+    const failures = children.map((c, i) => ({ ...c, i })).filter((c) => c.status !== 0);
     if (failures.length > 0) {
       // eslint-disable-next-line no-console
       console.error(
