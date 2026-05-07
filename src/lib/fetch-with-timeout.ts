@@ -5,6 +5,21 @@ import { VegaStackError } from "./errors.js";
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes total per request.
 
+/**
+ * Return the URL with its query and fragment stripped, for use in user-facing
+ * error messages. Falls back to the raw input if it is not a parseable URL.
+ */
+function stripUrlQuery(url: string): string {
+  try {
+    const u = new URL(url);
+    u.search = "";
+    u.hash = "";
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
 export interface FetchWithTimeoutOptions extends Omit<globalThis.RequestInit, "signal"> {
   /** Total timeout in ms. Falls back to VEGASTACK_FETCH_TIMEOUT_MS env, else 5 min. */
   timeoutMs?: number;
@@ -127,16 +142,20 @@ export async function streamDownloadVerified(
     throw e;
   }
 
+  // Strip query/fragment from URL before formatting into user-visible
+  // messages so a future signed-URL or token-bearing query string cannot
+  // leak via logs. Full URL is preserved in `context` for debugging.
+  const safeUrl = stripUrlQuery(url);
   if (expectedBytes !== undefined && total !== expectedBytes) {
     cleanupPart();
-    throw new VegaStackError("ArtifactCorrupt", `size mismatch for ${url}`, {
+    throw new VegaStackError("ArtifactCorrupt", `size mismatch for ${safeUrl}`, {
       context: { url, expected: expectedBytes, actual: total },
     });
   }
   const actualSha = hash.digest("hex");
   if (expectedSha !== undefined && actualSha !== expectedSha) {
     cleanupPart();
-    throw new VegaStackError("ChecksumMismatch", `checksum mismatch for ${url}`, {
+    throw new VegaStackError("ChecksumMismatch", `checksum mismatch for ${safeUrl}`, {
       context: { url, expected: expectedSha, actual: actualSha },
     });
   }

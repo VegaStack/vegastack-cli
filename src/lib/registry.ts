@@ -539,8 +539,10 @@ function readAndVerifyArtifactIndex(
 }
 
 function verifyExtractedArtifacts(root: string, artifacts: ArtifactIndex): void {
+  const expected = new Set<string>();
   for (const file of artifacts.files) {
     assertSafeRelativePath(file.path);
+    expected.add(path.normalize(file.path));
     const target = path.join(root, file.path);
     if (!fs.existsSync(target)) {
       throw new VegaStackError("ArtifactCorrupt", `registry archive missing ${file.path}`, {
@@ -565,6 +567,39 @@ function verifyExtractedArtifacts(root: string, artifacts: ArtifactIndex): void 
       );
     }
   }
+  // Reject any extra files in the staging dir not listed in ARTIFACTS.json.
+  // The artifact-index hash is signed at the REGISTRY.json layer, so the
+  // index is trustworthy — but the underlying archive can still over-deliver
+  // (e.g. a malicious tar that smuggles `post-install.sh` past the index).
+  // Extras would otherwise survive promotion into the cache where downstream
+  // tooling (agents listing docs, recipes) could pick them up.
+  const actualFiles = listFilesRelative(root);
+  for (const rel of actualFiles) {
+    if (!expected.has(rel)) {
+      throw new VegaStackError("ArtifactCorrupt", `unexpected file in registry archive: ${rel}`, {
+        context: { path: rel },
+      });
+    }
+  }
+}
+
+function listFilesRelative(root: string): string[] {
+  const out: string[] = [];
+  const walk = (dir: string, prefix: string): void => {
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      const sub = prefix === "" ? e.name : path.join(prefix, e.name);
+      if (e.isDirectory()) walk(path.join(dir, e.name), sub);
+      else if (e.isFile()) out.push(path.normalize(sub));
+    }
+  };
+  walk(root, "");
+  return out;
 }
 
 function fileSha256(file: string): string {

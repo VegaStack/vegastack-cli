@@ -13,7 +13,11 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
-if (process.env.VEGASTACK_SKIP_POSTINSTALL === "1") {
+if (process.env.npm_config_ignore_scripts === "true") {
+  // npm normally short-circuits before invoking us when --ignore-scripts is
+  // set, but some wrappers (yarn classic, shell scripts forwarding env) call
+  // postinstall directly. Honour the user's intent defensively.
+} else if (process.env.VEGASTACK_SKIP_POSTINSTALL === "1") {
   process.stderr.write("vegastack postinstall: VEGASTACK_SKIP_POSTINSTALL=1 set; nothing to do.\n");
 } else {
   process.stderr.write(

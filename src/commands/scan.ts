@@ -74,6 +74,13 @@ interface ToolResult {
   stdout: string;
   stderr: string;
   findings: ScanFinding[];
+  /**
+   * True when the underlying tool exited non-zero but findings were
+   * nonetheless extracted. Surfaced in `payload.failures` independent of
+   * finding count so a partial scanner failure does not get masked by the
+   * presence of findings.
+   */
+  partialFailure?: boolean;
 }
 
 const SCAN_TOOL_URLS = {
@@ -421,7 +428,12 @@ function buildScanReportPayload(
   selected: CanonicalScanCategory[],
 ): ScanReportPayload {
   const findings = results.flatMap((r) => r.findings);
-  const failedTools = results.filter((r) => r.status !== 0 && r.findings.length === 0);
+  // Include both no-finding failures AND partial-failure tools (non-zero exit
+  // but still produced findings) in the failures list. Otherwise a tool that
+  // emits one finding then crashes never appears in `payload.failures`.
+  const failedTools = results.filter(
+    (r) => (r.status !== 0 && r.findings.length === 0) || r.partialFailure === true,
+  );
   const blocking = findings.filter((finding) => shouldFail(finding, config));
   return {
     ok: blocking.length === 0 && failedTools.length === 0,
@@ -457,6 +469,22 @@ async function scanSecrets(
       encoding: "utf8",
       maxBuffer: 50 * 1024 * 1024,
     });
+    // Surface ENOBUFS / git failure as a tool-level failure rather than
+    // silently piping a truncated diff into gitleaks (which would then exit 0
+    // and produce a false-negative).
+    if (diff.error || (diff.status ?? 0) !== 0) {
+      const reason = diff.error?.message ?? `git diff --cached exited ${diff.status ?? "?"}`;
+      return result(
+        "secrets",
+        "gitleaks",
+        {
+          status: 2,
+          stdout: "",
+          stderr: `vegastack scan: staged-diff capture failed (${reason}). Re-run without --staged or reduce staged size.`,
+        },
+        [],
+      );
+    }
     const r = runTool(bin, ["stdin", "--redact", ...reportArgs, ...configArgs, ...extraArgs], {
       cwd,
       input: diff.stdout,
@@ -1006,6 +1034,10 @@ function result(
   r: { status: number; stdout: string; stderr: string },
   findings: ScanFinding[],
 ): ToolResult {
+  // A tool that produced findings AND exited non-zero (partial failure) used
+  // to be collapsed to status 1 with the underlying error hidden in stderr.
+  // Track it explicitly so buildScanReportPayload can surface it in failures.
+  const partialFailure = findings.length > 0 && r.status !== 0;
   return {
     check,
     tool,
@@ -1013,6 +1045,7 @@ function result(
     stdout: r.stdout,
     stderr: r.stderr,
     findings,
+    partialFailure,
   };
 }
 

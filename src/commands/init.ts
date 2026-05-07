@@ -430,16 +430,56 @@ Use the project config at \`.vegastack/vegastack.yml\`.
 
 ${end}
 `;
+  // Refuse to follow symlinks pointing outside cwd. Prevents `vegastack init`
+  // from silently rewriting a sensitive shared file if a user (or attacker
+  // with write access to the project) has replaced AGENTS.md/CLAUDE.md with
+  // a symlink. We resolve the realpath of the parent dir + basename so a
+  // missing file is still allowed (creating it under cwd is fine).
+  try {
+    const realParent = fs.realpathSync(path.dirname(file));
+    const cwdReal = fs.realpathSync(process.cwd());
+    const candidate = path.join(realParent, path.basename(file));
+    if (!candidate.startsWith(cwdReal + path.sep) && candidate !== path.join(cwdReal, path.basename(file))) {
+      throw new Error(`refusing to write outside project: ${file}`);
+    }
+    if (fs.existsSync(file) && fs.lstatSync(file).isSymbolicLink()) {
+      const target = fs.realpathSync(file);
+      if (!target.startsWith(cwdReal + path.sep)) {
+        throw new Error(`refusing to follow out-of-tree symlink: ${file} -> ${target}`);
+      }
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message.startsWith("refusing")) throw e;
+    /* parent dir or cwd missing — fall through and let writeFileSync surface it */
+  }
+
   let raw = "";
+  let mode: number | undefined;
   try {
     raw = fs.readFileSync(file, "utf8");
+    try {
+      mode = fs.statSync(file).mode & 0o777;
+    } catch {
+      /* ignore */
+    }
   } catch {
     /* file absent */
   }
   const next = raw.includes(begin)
     ? raw.replace(new RegExp(`${escapeRegExp(begin)}[\\s\\S]*?${escapeRegExp(end)}\\n?`), block)
     : `${raw.trimEnd()}${raw.trim() ? "\n\n" : ""}${block}`;
-  fs.writeFileSync(file, next, "utf8");
+  // Atomic write: tmp file + rename. Avoids a torn read if an editor saves the
+  // file concurrently with init.
+  const tmp = `${file}.vegastack-tmp`;
+  fs.writeFileSync(tmp, next, "utf8");
+  if (mode !== undefined) {
+    try {
+      fs.chmodSync(tmp, mode);
+    } catch {
+      /* best-effort */
+    }
+  }
+  fs.renameSync(tmp, file);
 }
 
 function displaySharedInstructionPath(file: string): string {
