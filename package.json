@@ -97,7 +97,7 @@
     "yauzl": "^3.3.0"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.90.0",
+    "@anthropic-ai/sdk": "^0.91.1",
     "@changesets/changelog-github": "^0.6.0",
     "@changesets/cli": "^2.27.1",
     "@eslint/js": "^9.39.4",
