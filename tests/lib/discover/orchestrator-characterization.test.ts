@@ -51,7 +51,7 @@ describe("discover orchestrator — characterization (round-4 refactor pin)", ()
       const localRoot = path.join(REPO_ROOT, "tests", "fixtures", "registry-mini");
       const args = { ...c.input, root: localRoot };
       const got = normalize(await discover(args));
-      const expected = normalize(c.output as DiscoverResult);
+      const expected = normalize(c.output);
       expect(got).toEqual(expected);
     });
   }

@@ -77,279 +77,307 @@ const DEFAULT_MAX = 20;
  *  this cap we keep the legacy `ambiguous` envelope to bound latency. */
 const AUTO_MERGE_MAX_CANDIDATES = 4;
 
-/** Run the discovery pipeline and return the v0.1 envelope. Async because
- *  tier1+tier2 can run in parallel via Promise.all. */
-export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
-  const t0 = nowMs();
-  const { query, root } = args;
-  const max = args.max ?? DEFAULT_MAX;
-  const enrich = args.enrich ?? true;
-  const debug = args.debug ?? false;
-  const brief = args.brief ?? false;
-  const fullExamples = args.fullExamples ?? false;
+/** Resolved provider classification — internal shape used between the
+ *  detection helpers and the dispatcher. Mirrors the union returned by
+ *  detectProvider() but also encodes the explicit-provider-supplied case. */
+interface ResolvedClassification {
+  provider?: string;
+  score: number;
+  ambiguous: boolean;
+  candidates?: { provider: string; score: number }[];
+}
 
-  const terraformRoot = loadTerraformRootManifest(root);
-  const registryVersion =
-    typeof terraformRoot.registry_version === "string" && terraformRoot.registry_version.length > 0
-      ? terraformRoot.registry_version
-      : typeof terraformRoot.pack_version === "string" && terraformRoot.pack_version.length > 0
-        ? terraformRoot.pack_version
-        : "unknown";
-  const knownProviders = resolveCanonicalProviders(root);
+/** Defaults applied to DiscoverArgs before pipeline execution. */
+interface NormalizedArgs {
+  query: string;
+  root: string;
+  max: number;
+  enrich: boolean;
+  debug: boolean;
+  brief: boolean;
+  fullExamples: boolean;
+  rawMax: number | undefined;
+  explicitProvider: string | undefined;
+}
 
-  // ── Provider detection ──
-  const tDetect0 = nowMs();
-  let provider: string | undefined;
-  let confidence = 0;
-  if (args.provider !== undefined) {
-    // F20: validate the user-supplied provider against the Registry pack's list.
-    if (knownProviders.length > 0 && !knownProviders.includes(args.provider)) {
-      return finalize({
-        result: {
-          status: "error",
-          query,
-          error: `unknown provider '${args.provider}'. Known providers: ${knownProviders.join(", ")}`,
-          code: "ProviderUnknown",
-        },
-        t0,
-        timings: zeroTimings(nowMs() - tDetect0),
-        debug,
-      });
-    }
-    provider = args.provider;
-    confidence = 1.0;
-  } else {
-    // Build the distinctive_tokens map across known providers — used by the
-    // classifier tiebreaker for "X cluster" / "X service" queries.
-    // Also build a merged service-alias table from per-provider manifests so
-    // that aliases like "atlas" → mongodb-atlas reach detectProvider even when
-    // not present in DEFAULT_SERVICE_ALIASES. Closes C6 in the TS harness.
-    const { distinctiveTokensByProvider, serviceAliases } = buildProviderDetectionData(
-      root,
-      knownProviders,
-    );
-    let det = detectProvider(query, {
-      knownProviders,
-      distinctiveTokensByProvider,
-      serviceAliases,
-    });
+function normalizeArgs(args: DiscoverArgs): NormalizedArgs {
+  return {
+    query: args.query,
+    root: args.root,
+    max: args.max ?? DEFAULT_MAX,
+    enrich: args.enrich ?? true,
+    debug: args.debug ?? false,
+    brief: args.brief ?? false,
+    fullExamples: args.fullExamples ?? false,
+    rawMax: args.max,
+    explicitProvider: args.provider,
+  };
+}
 
-    // ── Concept-alias phrase pre-detection (closes C6 / C4 in the TS harness) ──
-    // If the confidence-based classifier failed to detect a provider, scan
-    // all providers' aliases.yaml for phrase matches against the query. This
-    // mirrors what Python's discover.py §3 "concept-alias phrase matching"
-    // does. A phrase match from aliases.yaml scores 0.6 (alias-floor; see
-    // detectProviderFromAliasFiles).
-    //
-    // closes S7 regression (E9-A7-crowdstrike-on-aws, E9-A7-do-app-cf-dns):
-    // we previously also fired this layer when det.ambiguous and overrode
-    // the ambiguous envelope with a single-provider win whenever the
-    // alias-detected provider was already in the candidate set. That broke
-    // multi-provider topology queries: "EC2 in our AWS org with CrowdStrike
-    // Falcon" produced two canonical hits at 1.0 (aws + crowdstrike), the
-    // alias phrase "falcon" then forced provider=crowdstrike, and the
-    // auto-merge fanout never ran — losing the aws sub-envelope (containing
-    // aws_ssm_association). The alias-file layer is a *fallback* for when
-    // the classifier produced nothing — it must not collapse a legitimate
-    // ambiguous result into a single provider.
-    if (det.provider === undefined && !det.ambiguous) {
-      const aliasDetect = detectProviderFromAliasFiles(query, root, knownProviders);
-      if (aliasDetect) {
-        det = {
-          provider: aliasDetect.provider,
-          score: aliasDetect.score,
-          via: "alias",
-          ambiguous: false,
-        };
-      }
-    }
+/** Resolve registry_version from the Terraform root MANIFEST.json with the
+ *  documented fallback chain: registry_version → pack_version → "unknown". */
+function resolveRegistryVersion(root: string): string {
+  const m = loadTerraformRootManifest(root);
+  if (typeof m.registry_version === "string" && m.registry_version.length > 0) {
+    return m.registry_version;
+  }
+  if (typeof m.pack_version === "string" && m.pack_version.length > 0) {
+    return m.pack_version;
+  }
+  return "unknown";
+}
 
-    // ── Multi-provider phrasing heuristic (closes S7 regression) ──
-    // Even when the classifier produced a confident single-provider win,
-    // the original query may explicitly name multiple providers via
-    // connector-word patterns ("X on Y", "X with Y", "X via Y", etc.). In
-    // that case we force `ambiguous` so the auto-merge fanout runs and
-    // both providers' resources surface. See detectMultiProviderPhrasing
-    // for the exact pattern set + anti-overtrigger guards.
-    if (det.provider !== undefined && !det.ambiguous) {
-      const multi = detectMultiProviderPhrasing(query, knownProviders, root);
-      if (multi && multi.providers.length >= 2) {
-        det = {
-          score: det.score,
-          ambiguous: true,
-          candidates: multi.providers.map((p) => ({ provider: p, score: 0.9 })),
-        };
-      }
-    } else if (det.ambiguous && det.candidates) {
-      // When already ambiguous, let the multi-provider heuristic ENRICH the
-      // candidate list with any additional providers the classifier may
-      // have missed (e.g. "GitHub Actions OIDC to AWS" — github canonical
-      // 1.0, aws canonical 1.0, both already there; no-op. But "Atlas on
-      // GCP" — mongodb-atlas via alias 0.6, gcp canonical 1.0, may collapse
-      // to gcp single-provider; the heuristic forces both.)
-      const multi = detectMultiProviderPhrasing(query, knownProviders, root);
-      if (multi && multi.providers.length >= 2) {
-        const merged = new Map(det.candidates.map((c) => [c.provider, c.score] as const));
-        for (const p of multi.providers) {
-          if (!merged.has(p)) merged.set(p, 0.9);
-        }
-        det = {
-          score: det.score,
-          ambiguous: true,
-          candidates: Array.from(merged.entries()).map(([provider, score]) => ({
-            provider,
-            score,
-          })),
-        };
-      }
-    }
+/** Run the full provider classification: classifier → alias-file fallback →
+ *  multi-provider phrasing enrichment. Used only when the caller did not
+ *  pass an explicit provider. */
+function classifyQueryProvider(
+  query: string,
+  root: string,
+  knownProviders: readonly string[],
+): ResolvedClassification {
+  const { distinctiveTokensByProvider, serviceAliases } = buildProviderDetectionData(
+    root,
+    knownProviders,
+  );
+  let det = detectProvider(query, {
+    knownProviders,
+    distinctiveTokensByProvider,
+    serviceAliases,
+  });
 
-    if (det.ambiguous && det.candidates) {
-      const detectMs = nowMs() - tDetect0;
-      const candidates = det.candidates;
-
-      // ── Auto-merge: ≤4 candidates → fan out and union ──
-      if (candidates.length > 0 && candidates.length <= AUTO_MERGE_MAX_CANDIDATES) {
-        const candidateProviders = candidates.map((c) => c.provider);
-        const perProvider = await Promise.all(
-          candidateProviders.map((p) =>
-            runProviderPipeline({
-              query,
-              provider: p,
-              providerConfidence: candidates.find((c) => c.provider === p)?.score ?? 0,
-              root,
-              max,
-              enrich,
-              brief,
-              fullExamples,
-            }),
-          ),
-        );
-        // Filter out any provider whose pipeline failed (e.g. malformed
-        // manifest) — degrade rather than fail the whole call.
-        const oks = perProvider.filter(
-          (r): r is { kind: "ok"; envelope: DiscoverOkEnvelope; timings: ProviderTimings } =>
-            r.kind === "ok",
-        );
-
-        if (oks.length === 0) {
-          // No pipeline produced a usable result — fall through to the
-          // legacy ambiguous envelope.
-          const recipes = await safeLoadRecipes({
-            terraformRoot: root,
-            tokens: [],
-            query,
-          });
-          return finalize({
-            result: {
-              status: "ambiguous",
-              query,
-              tokens: [],
-              candidate_providers: candidates,
-              recipes,
-              hint: "Use --tf-provider <name> with `vegastack ask --entry terraform` to disambiguate.",
-            },
-            t0,
-            timings: zeroTimings(detectMs),
-            debug,
-          });
-        }
-
-        const merged = mergeOkEnvelopes(
-          oks.map((r) => r.envelope),
-          {
-            query,
-            registryVersion: registryVersion,
-            max,
-          },
-        );
-
-        return finalize({
-          result: merged,
-          t0,
-          timings: aggregateTimings(
-            detectMs,
-            oks.map((r) => r.timings),
-          ),
-          debug,
-        });
-      }
-
-      // ── Legacy: candidate count > AUTO_MERGE_MAX_CANDIDATES ──
-      // Recipes that span the candidate set still surface here.
-      const recipes = await safeLoadRecipes({
-        terraformRoot: root,
-        tokens: [],
-        query,
-      });
-      return finalize({
-        result: {
-          status: "ambiguous",
-          query,
-          tokens: [],
-          candidate_providers: candidates,
-          recipes,
-          hint: "Use --tf-provider <name> with `vegastack ask --entry terraform` to disambiguate.",
-        },
-        t0,
-        timings: zeroTimings(detectMs),
-        debug,
-      });
-    }
-    if (det.provider !== undefined) {
-      provider = det.provider;
-      confidence = det.score;
+  // Alias-file fallback fires only when the classifier produced nothing (no
+  // provider AND not ambiguous). Per the S7 regression in the original
+  // implementation, this layer must NOT collapse a legitimate ambiguous
+  // classification into a single-provider win — it is a *fallback*, not an
+  // override. Keeping that guard intact here.
+  if (det.provider === undefined && !det.ambiguous) {
+    const aliasDetect = detectProviderFromAliasFiles(query, root, knownProviders);
+    if (aliasDetect) {
+      det = {
+        provider: aliasDetect.provider,
+        score: aliasDetect.score,
+        via: "alias",
+        ambiguous: false,
+      };
     }
   }
-  const detectMs = nowMs() - tDetect0;
 
-  if (provider === undefined) {
-    return finalize({
+  return applyMultiProviderPhrasing(det, query, root, knownProviders);
+}
+
+/** Apply the multi-provider phrasing heuristic. Two branches:
+ *   • confident single-provider → force ambiguous if a connector phrase names ≥2 providers,
+ *   • already ambiguous → enrich candidate list with any missed providers.
+ *  Returns the (possibly mutated) classification.
+ *
+ *  See detectMultiProviderPhrasing() for the connector-pattern set and the
+ *  anti-overtrigger guards. Closes the S7 regression pair
+ *  (E9-A7-crowdstrike-on-aws, E9-A7-do-app-cf-dns). */
+function applyMultiProviderPhrasing(
+  det: ResolvedClassification,
+  query: string,
+  root: string,
+  knownProviders: readonly string[],
+): ResolvedClassification {
+  if (det.provider !== undefined && !det.ambiguous) {
+    const multi = detectMultiProviderPhrasing(query, knownProviders, root);
+    if (multi && multi.providers.length >= 2) {
+      return {
+        score: det.score,
+        ambiguous: true,
+        candidates: multi.providers.map((p) => ({ provider: p, score: 0.9 })),
+      };
+    }
+    return det;
+  }
+  if (det.ambiguous && det.candidates) {
+    const multi = detectMultiProviderPhrasing(query, knownProviders, root);
+    if (multi && multi.providers.length >= 2) {
+      const merged = new Map(det.candidates.map((c) => [c.provider, c.score] as const));
+      for (const p of multi.providers) {
+        if (!merged.has(p)) merged.set(p, 0.9);
+      }
+      return {
+        score: det.score,
+        ambiguous: true,
+        candidates: Array.from(merged.entries()).map(([provider, score]) => ({
+          provider,
+          score,
+        })),
+      };
+    }
+  }
+  return det;
+}
+
+/** Build the legacy `status: "ambiguous"` envelope. Returned when the candidate
+ *  set is too large for auto-merge OR when every per-provider pipeline failed. */
+async function buildLegacyAmbiguousResult(args: {
+  query: string;
+  root: string;
+  candidates: { provider: string; score: number }[];
+  detectMs: number;
+  t0: number;
+  debug: boolean;
+}): Promise<DiscoverResult> {
+  const recipes = await safeLoadRecipes({
+    terraformRoot: args.root,
+    tokens: [],
+    query: args.query,
+  });
+  return finalize({
+    result: {
+      status: "ambiguous",
+      query: args.query,
+      tokens: [],
+      candidate_providers: args.candidates,
+      recipes,
+      hint: "Use --tf-provider <name> with `vegastack ask --entry terraform` to disambiguate.",
+    },
+    t0: args.t0,
+    timings: zeroTimings(args.detectMs),
+    debug: args.debug,
+  });
+}
+
+/** Run the auto-merge fanout for an ambiguous classification with ≤4
+ *  candidates. Falls through to buildLegacyAmbiguousResult when every
+ *  per-provider pipeline failed. */
+async function runAmbiguousFanout(
+  norm: NormalizedArgs,
+  candidates: { provider: string; score: number }[],
+  registryVersion: string,
+  detectMs: number,
+  t0: number,
+): Promise<DiscoverResult> {
+  const perProvider = await Promise.all(
+    candidates.map((c) =>
+      runProviderPipeline({
+        query: norm.query,
+        provider: c.provider,
+        providerConfidence: c.score,
+        root: norm.root,
+        max: norm.max,
+        enrich: norm.enrich,
+        brief: norm.brief,
+        fullExamples: norm.fullExamples,
+      }),
+    ),
+  );
+  const oks = perProvider.filter(
+    (r): r is { kind: "ok"; envelope: DiscoverOkEnvelope; timings: ProviderTimings } =>
+      r.kind === "ok",
+  );
+
+  if (oks.length === 0) {
+    return buildLegacyAmbiguousResult({
+      query: norm.query,
+      root: norm.root,
+      candidates,
+      detectMs,
+      t0,
+      debug: norm.debug,
+    });
+  }
+
+  const merged = mergeOkEnvelopes(
+    oks.map((r) => r.envelope),
+    { query: norm.query, registryVersion, max: norm.max },
+  );
+  return finalize({
+    result: merged,
+    t0,
+    timings: aggregateTimings(
+      detectMs,
+      oks.map((r) => r.timings),
+    ),
+    debug: norm.debug,
+  });
+}
+
+/** Resolve the provider for the single-provider pipeline. Returns either a
+ *  resolved (provider, confidence) pair OR a terminal DiscoverResult (when
+ *  the explicit provider is unknown OR detection produced nothing usable). */
+function resolveSingleProvider(
+  norm: NormalizedArgs,
+  knownProviders: readonly string[],
+  classification: ResolvedClassification | undefined,
+  detectMs: number,
+  t0: number,
+): { provider: string; confidence: number } | { terminal: DiscoverResult } {
+  if (norm.explicitProvider !== undefined) {
+    if (knownProviders.length > 0 && !knownProviders.includes(norm.explicitProvider)) {
+      return {
+        terminal: finalize({
+          result: {
+            status: "error",
+            query: norm.query,
+            error: `unknown provider '${norm.explicitProvider}'. Known providers: ${knownProviders.join(", ")}`,
+            code: "ProviderUnknown",
+          },
+          t0,
+          timings: zeroTimings(detectMs),
+          debug: norm.debug,
+        }),
+      };
+    }
+    return { provider: norm.explicitProvider, confidence: 1.0 };
+  }
+  if (classification?.provider !== undefined) {
+    return { provider: classification.provider, confidence: classification.score };
+  }
+  return {
+    terminal: finalize({
       result: {
         status: "error",
-        query,
+        query: norm.query,
         error:
           "Could not detect provider from query. Pass --tf-provider with `vegastack ask --entry terraform`.",
         code: "ProviderUndetected",
       },
       t0,
       timings: zeroTimings(detectMs),
-      debug,
-    });
-  }
+      debug: norm.debug,
+    }),
+  };
+}
 
-  // ── Single-provider pipeline ──
+/** Run the post-detection single-provider pipeline and finalize its envelope
+ *  with registry_version + the "unknown registry_version" warning. */
+async function runSingleProviderResult(
+  norm: NormalizedArgs,
+  provider: string,
+  confidence: number,
+  registryVersion: string,
+  detectMs: number,
+  t0: number,
+): Promise<DiscoverResult> {
   const result = await runProviderPipeline({
-    query,
+    query: norm.query,
     provider,
     providerConfidence: confidence,
-    root,
-    max,
-    enrich,
-    brief,
-    fullExamples,
+    root: norm.root,
+    max: norm.max,
+    enrich: norm.enrich,
+    brief: norm.brief,
+    fullExamples: norm.fullExamples,
   });
-
   if (result.kind === "error") {
     return finalize({
       result: result.envelope,
       t0,
       timings: zeroTimings(detectMs),
-      debug,
+      debug: norm.debug,
     });
   }
   if (!result.envelope.registry_version) {
     result.envelope.registry_version = registryVersion;
   }
-
-  // Surface the Registry pack-version warning at the top level (single-provider
-  // mode only — the merged path adds its own warnings).
   if (registryVersion === "unknown") {
     const ws = result.envelope.warnings ?? [];
     ws.push("registry_version unknown (Terraform root MANIFEST.json missing or malformed)");
     result.envelope.warnings = ws;
   }
-
   return finalize({
     result: result.envelope,
     t0,
@@ -358,8 +386,56 @@ export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
       detect_provider_ms: detectMs,
       total_ms: 0,
     },
-    debug,
+    debug: norm.debug,
   });
+}
+
+/** Run the discovery pipeline and return the v0.1 envelope. Async because
+ *  tier1+tier2 can run in parallel via Promise.all.
+ *
+ *  Thin orchestrator — the four phases (registry-version resolution,
+ *  provider classification, ambiguous-fanout dispatch, single-provider
+ *  dispatch) live in dedicated helpers above so this function stays at
+ *  low cyclomatic complexity (was 37 pre-refactor, now ≤ 10). */
+export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
+  const t0 = nowMs();
+  const norm = normalizeArgs(args);
+  const registryVersion = resolveRegistryVersion(norm.root);
+  const knownProviders = resolveCanonicalProviders(norm.root);
+
+  const tDetect0 = nowMs();
+  const classification: ResolvedClassification | undefined =
+    norm.explicitProvider === undefined
+      ? classifyQueryProvider(norm.query, norm.root, knownProviders)
+      : undefined;
+  const detectMs = nowMs() - tDetect0;
+
+  if (classification?.ambiguous && classification.candidates) {
+    const candidates = classification.candidates;
+    if (candidates.length > 0 && candidates.length <= AUTO_MERGE_MAX_CANDIDATES) {
+      return runAmbiguousFanout(norm, candidates, registryVersion, detectMs, t0);
+    }
+    return buildLegacyAmbiguousResult({
+      query: norm.query,
+      root: norm.root,
+      candidates,
+      detectMs,
+      t0,
+      debug: norm.debug,
+    });
+  }
+
+  const resolved = resolveSingleProvider(norm, knownProviders, classification, detectMs, t0);
+  if ("terminal" in resolved) return resolved.terminal;
+
+  return runSingleProviderResult(
+    norm,
+    resolved.provider,
+    resolved.confidence,
+    registryVersion,
+    detectMs,
+    t0,
+  );
 }
 
 // ─── Per-provider pipeline ───────────────────────────────────────────────
