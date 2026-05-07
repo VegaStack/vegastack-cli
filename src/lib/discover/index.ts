@@ -247,7 +247,7 @@ export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
               tokens: [],
               candidate_providers: candidates,
               recipes,
-              hint: "Use --provider <name> to disambiguate.",
+              hint: "Use --tf-provider <name> with `vegastack ask --entry terraform` to disambiguate.",
             },
             t0,
             timings: zeroTimings(detectMs),
@@ -289,7 +289,7 @@ export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
           tokens: [],
           candidate_providers: candidates,
           recipes,
-          hint: "Use --provider <name> to disambiguate.",
+          hint: "Use --tf-provider <name> with `vegastack ask --entry terraform` to disambiguate.",
         },
         t0,
         timings: zeroTimings(detectMs),
@@ -308,7 +308,8 @@ export async function discover(args: DiscoverArgs): Promise<DiscoverResult> {
       result: {
         status: "error",
         query,
-        error: "Could not detect provider from query. Pass --provider explicitly.",
+        error:
+          "Could not detect provider from query. Pass --tf-provider with `vegastack ask --entry terraform`.",
         code: "ProviderUndetected",
       },
       t0,
@@ -622,7 +623,7 @@ export function mergeOkEnvelopes(
   // topology query explicitly requests.
   //
   // P5 regressions.md items #2–#5 (E9-A5-clickhouse-soft-deps,
-  // E9-A7-pinecone-vault-1password, E9-A7-vercel-cloudflare-workers-ab,
+  // E9-A7-pinecone-vault-1password, E9-A7-vercel-cloudflare-ab,
   // E9-A7-auth0-action-external-claim): pre-P1, the Python runner re-ran
   // each provider independently with --max 15, so each provider got 15
   // slots; the union could be up to 45 files before the top-k cut.  Post-P1,

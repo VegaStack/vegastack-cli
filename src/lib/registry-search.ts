@@ -2,7 +2,6 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { tokenize } from "./discover/tokenize.js";
 import { VegaStackError } from "./errors.js";
 import { log } from "./log.js";
 import { registryEntryCachePath } from "./project.js";
@@ -37,6 +36,18 @@ const QUERY_STOPWORDS = new Set([
   "why",
   "can",
   "should",
+]);
+const SHORT_DOMAIN_TOKENS = new Set([
+  "ai",
+  "d1",
+  "ec2",
+  "ecr",
+  "eks",
+  "gke",
+  "iam",
+  "kv",
+  "r2",
+  "s3",
 ]);
 
 export interface RegistrySearchOptions {
@@ -177,9 +188,10 @@ export function searchTermsForQuery(query: string, maxTerms = 4): string[] {
   const quoted = [...query.matchAll(/"([^"]{2,80})"/g)].map((m) => m[1]!).filter(Boolean);
   const hyphenated = [...query.matchAll(/[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)+/g)].map((m) => m[0]);
   const rawTokens = rawQueryTokens(query);
-  const tokens = tokenize(query)
-    .filter((t) => t.length > 2 && !/^\d+$/.test(t) && !QUERY_STOPWORDS.has(t))
-    .filter((t) => lower.includes(t));
+  const tokens =
+    rawTokens.length === 1
+      ? rawTokens.filter((t) => usefulStandaloneSearchToken(t) && lower.includes(t))
+      : [];
   const phrases: string[] = [];
   for (let size = Math.min(4, rawTokens.length); size >= 2; size--) {
     for (let i = 0; i + size <= rawTokens.length; i++) {
@@ -190,8 +202,24 @@ export function searchTermsForQuery(query: string, maxTerms = 4): string[] {
 }
 
 function rawQueryTokens(query: string): string[] {
-  return (query.toLowerCase().match(/[a-z0-9]+(?:[_-][a-z0-9]+)*/g) ?? []).filter(
-    (t) => t.length > 2 && !/^\d+$/.test(t) && !QUERY_STOPWORDS.has(t),
+  return (query.toLowerCase().match(/[a-z0-9]+(?:[_-][a-z0-9]+)*/g) ?? []).filter((t) =>
+    usefulSearchToken(t),
+  );
+}
+
+function usefulSearchToken(token: string): boolean {
+  return (
+    !/^\d+$/.test(token) &&
+    !QUERY_STOPWORDS.has(token) &&
+    (token.length > 2 || SHORT_DOMAIN_TOKENS.has(token))
+  );
+}
+
+function usefulStandaloneSearchToken(token: string): boolean {
+  return (
+    !/^\d+$/.test(token) &&
+    !QUERY_STOPWORDS.has(token) &&
+    (token.length > 2 || SHORT_DOMAIN_TOKENS.has(token))
   );
 }
 

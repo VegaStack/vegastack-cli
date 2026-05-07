@@ -97,8 +97,7 @@ function loadPackManifestVersionFallback(manifestPath: string): TerraformRootMan
   }
 }
 
-/** Resolve the canonical provider list from the Terraform root MANIFEST.json.
- *  Closes F20 — the CLI no longer hard-codes 31 providers. */
+/** Resolve the canonical provider list from the Terraform root MANIFEST.json. */
 export function resolveCanonicalProviders(terraformRoot: string): string[] {
   const root = loadTerraformRootManifest(terraformRoot);
   if (Array.isArray(root.providers)) return [...root.providers];

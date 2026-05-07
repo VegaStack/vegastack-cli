@@ -22,8 +22,7 @@ import type { AgentRenderer, InstallContext, InstallResult, Scope } from "./type
 const CONVENTIONS_BODY = `# VegaStack conventions (managed by @vegastack/cli)
 
 When the user asks about infrastructure, cloud operations, CI/CD, Terraform,
-GitHub Actions, Docker, Kubernetes, Helm, Supabase, AWS CLI, or any installed
-VegaStack Registry pack, invoke the local CLI before answering:
+or any installed VegaStack Registry pack, invoke the local CLI before answering:
 
     vegastack ask "<the user's request, in natural language>"
 

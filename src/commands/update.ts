@@ -5,11 +5,18 @@
 // for the doctor flow and for CI scripts that want to know without installing.
 
 import { spawnSync } from "node:child_process";
+import prompts from "prompts";
 import {
   allInstalledRegistryEntryNames,
   readProjectRegistryEntryNames,
   syncRegistryEntry,
 } from "../lib/registry.js";
+import {
+  inspectDetectedAgentSkills,
+  printAgentSkillInspection,
+  printAgentSkillReconcile,
+  reconcileDetectedAgentSkills,
+} from "../lib/agent-skill-reconcile.js";
 import { installManagedTools } from "../lib/managed-tools.js";
 import { log, printError } from "../lib/log.js";
 import {
@@ -29,6 +36,7 @@ export interface UpdateOpts {
   tools: boolean;
   allRegistry: boolean;
   force: boolean;
+  yes: boolean;
   json: boolean;
 }
 
@@ -70,8 +78,10 @@ export async function runUpdate(opts: UpdateOpts): Promise<number> {
       tools = await installManagedTools({ force: opts.force });
     }
 
+    const agents = await updateDetectedAgentSkills(opts);
+
     if (opts.json) {
-      log.json({ ok: true, registry, cli_updated: cliUpdated, tools });
+      log.json({ ok: true, registry, cli_updated: cliUpdated, tools, agents });
     } else {
       if (registry.updated.length > 0)
         log.ok(`updated registry entries: ${registry.updated.join(", ")}`);
@@ -82,6 +92,64 @@ export async function runUpdate(opts: UpdateOpts): Promise<number> {
   } catch (e) {
     return printError(e);
   }
+}
+
+async function updateDetectedAgentSkills(
+  opts: UpdateOpts,
+): Promise<Awaited<ReturnType<typeof reconcileDetectedAgentSkills>> | null> {
+  const inspected = await inspectDetectedAgentSkills({ cwd: process.cwd(), scope: "global" });
+
+  if (opts.json) {
+    if (opts.yes && inspected.missing.length > 0) {
+      return reconcileDetectedAgentSkills({
+        cwd: process.cwd(),
+        scope: "global",
+        force: opts.force,
+        dryRun: false,
+      });
+    }
+    return { ...inspected, installed: [] };
+  }
+
+  if (inspected.detected.length === 0) {
+    log.info("no detected agent hosts for global skill reconciliation");
+    return { ...inspected, installed: [] };
+  }
+
+  if (inspected.missing.length === 0) {
+    printAgentSkillInspection(inspected);
+    return { ...inspected, installed: [] };
+  }
+
+  if (!opts.yes && process.stdin.isTTY && process.stderr.isTTY) {
+    printAgentSkillInspection(inspected);
+    const r = await prompts({
+      type: "confirm",
+      name: "install",
+      message: `Install VegaStack skill for ${inspected.missing
+        .map((a) => a.displayName)
+        .join(", ")}?`,
+      initial: true,
+    });
+    if (r.install !== true) {
+      log.info("agent skill reconciliation skipped");
+      return { ...inspected, installed: [] };
+    }
+  } else if (!opts.yes) {
+    log.info(
+      "detected agent hosts missing VegaStack skill; run `vegastack update --yes` or `vegastack skills reconcile` to install",
+    );
+    return { ...inspected, installed: [] };
+  }
+
+  const reconciled = await reconcileDetectedAgentSkills({
+    cwd: process.cwd(),
+    scope: "global",
+    force: opts.force,
+    dryRun: false,
+  });
+  printAgentSkillReconcile(reconciled);
+  return reconciled;
 }
 
 function updateCli(opts: UpdateOpts): boolean {
@@ -134,6 +202,7 @@ function resolveRegistryEntries(opts: UpdateOpts): string[] {
 function runPostCliToolUpdate(opts: UpdateOpts): boolean {
   const args = ["update", "--no-cli", "--no-registry"];
   if (opts.force) args.push("--force");
+  if (opts.yes) args.push("--yes");
   if (opts.json) args.push("--json");
   log.step(`running post-upgrade managed tool reconciliation: vegastack ${args.join(" ")}`);
   const r = spawnSync("vegastack", args, { stdio: "inherit" });

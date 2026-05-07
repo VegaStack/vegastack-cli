@@ -38,9 +38,11 @@ severity = "warn"
 
 `triggers[]` semantics match knowledge-card triggers (any-fires, AND within `tokens`, substring for `phrase`). Recipes also fire when the query mentions ≥2 of the recipe's `providers[]` explicitly.
 
-## Recipe inventory (10 recipes in v0.1)
+## Recipe examples
 
-The Terraform Registry pack includes these recipes. The IDs are stable; eval prompts (`evals/evals.json`) reference them by ID.
+The Terraform Registry pack includes generated recipe metadata in its installed
+indexes. Use the installed pack as the source of truth; the rows below are
+examples that eval prompts may reference.
 
 | id | providers | one-line summary |
 |---|---|---|

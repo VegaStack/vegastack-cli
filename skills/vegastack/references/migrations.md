@@ -12,7 +12,10 @@ vegastack ask --entry terraform --tf-provider <provider> "<old_resource_name>"  
 
 The envelope's `knowledge[]` returns matching migration cards. Cards with `overrides_training: true` are explicitly authoritative over your model memory.
 
-## Migration cards by provider (v0.1 inventory)
+## Migration card examples
+
+The installed pack's `index/knowledge.json` is the source of truth for current
+migration cards. These examples show the expected shape.
 
 | Card ID | Provider | What changed |
 |---|---|---|

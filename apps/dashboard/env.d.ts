@@ -1,8 +1,7 @@
 /// <reference types="astro/client" />
 
-// Astro v6 + @astrojs/cloudflare v13 — `Astro.locals.runtime.env` was
-// removed; bindings are now imported from "cloudflare:workers". The
-// adapter still exposes its own narrow `Runtime` (just `cfContext`).
+// Cloudflare Workers bindings are imported from "cloudflare:workers". The
+// Astro adapter also exposes its own narrow `Runtime` for request context.
 type Runtime = import("@astrojs/cloudflare").Runtime;
 
 declare namespace App {

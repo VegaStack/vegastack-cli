@@ -4,22 +4,15 @@ import * as os from "node:os";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { VegaStackError } from "./errors.js";
-import { projectLockPath, projectManifestPath, registryCacheRoot } from "./paths.js";
+import { projectConfigPath, registryCacheRoot } from "./paths.js";
 import { PACKS, registryEntryCachePath, type PackDefinition } from "./project.js";
 import { log } from "./log.js";
 import { verifyRegistryCatalogSignature } from "./registry-signature.js";
-
-export interface ProjectRegistryLock {
-  schema_version: number;
-  packs?: Record<string, { version?: string; cache_path?: string; digest?: string }>;
-  registry_entries?: Record<string, { version?: string; cache_path?: string; digest?: string }>;
-}
-
-export interface ProjectManifest {
-  schema_version: number;
-  packs?: Record<string, unknown>;
-  registry_entries?: Record<string, unknown>;
-}
+import {
+  projectConfigExists,
+  projectRegistryEntryNames,
+  readProjectConfig,
+} from "./project-config.js";
 
 export interface RegistryEntryStatus {
   name: string;
@@ -65,19 +58,18 @@ interface ArtifactIndex {
 const DEFAULT_REGISTRY_BASE_URL = "https://cli-registry.vegastack.com/cli";
 
 export function ensureProjectInitialized(cwd: string): void {
-  if (!fs.existsSync(projectManifestPath(cwd)) || !fs.existsSync(projectLockPath(cwd))) {
+  if (!projectConfigExists(cwd)) {
     throw new VegaStackError(
       "ValidationError",
       "VegaStack project harness not initialized in this directory.",
-      { context: { cwd, expected: ".vegastack/project.json + .vegastack/vegastack-lock.json" } },
+      { context: { cwd, expected: ".vegastack/vegastack.yml" } },
     );
   }
 }
 
 export function readProjectRegistryEntryNames(cwd: string): string[] {
   ensureProjectInitialized(cwd);
-  const lock = readJson<ProjectRegistryLock>(projectLockPath(cwd));
-  return Object.keys(lock.registry_entries ?? lock.packs ?? {}).sort();
+  return projectRegistryEntryNames(readProjectConfig(cwd));
 }
 
 export function registryEntryDefinition(name: string): PackDefinition | undefined {
@@ -134,6 +126,7 @@ function sourceLabel(source: unknown): string | undefined {
     branch?: unknown;
     path?: unknown;
     paths?: unknown;
+    sitemap_url?: unknown;
   };
   if (value.type === "github-archive" && typeof value.repo === "string") {
     const branch = typeof value.branch === "string" ? value.branch : "main";
@@ -144,6 +137,7 @@ function sourceLabel(source: unknown): string | undefined {
     return `https://github.com/${value.repo}/tree/${branch}`;
   }
   if (value.type === "local" && typeof value.path === "string") return value.path;
+  if (value.type === "web-docs" && typeof value.sitemap_url === "string") return value.sitemap_url;
   return JSON.stringify(source);
 }
 
@@ -163,14 +157,13 @@ function listRegistryEntryStatusesForDefinitions(
   cwd = process.cwd(),
 ): RegistryEntryStatus[] {
   const selected = new Set<string>();
-  if (fs.existsSync(projectLockPath(cwd))) {
+  if (fs.existsSync(projectConfigPath(cwd))) {
     try {
-      const lock = readJson<ProjectRegistryLock>(projectLockPath(cwd));
-      for (const name of Object.keys(lock.registry_entries ?? lock.packs ?? {})) {
+      for (const name of projectRegistryEntryNames(readProjectConfig(cwd))) {
         selected.add(name);
       }
     } catch {
-      // Status should still be useful if the project lock is partially written.
+      // Status should still be useful if the project config is partially written.
     }
   }
   const statuses = packs.map((p) => {
@@ -373,21 +366,6 @@ function readRegistryManifestSummary(cachePath: string): {
     return summary;
   } catch {
     return {};
-  }
-}
-
-function readJson<T>(file: string): T {
-  try {
-    return JSON.parse(fs.readFileSync(file, "utf8")) as T;
-  } catch (e) {
-    throw new VegaStackError(
-      "ValidationError",
-      `failed to read ${path.relative(process.cwd(), file)}`,
-      {
-        cause: e,
-        context: { file },
-      },
-    );
   }
 }
 

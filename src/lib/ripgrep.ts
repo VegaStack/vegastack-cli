@@ -22,6 +22,9 @@ export interface RipgrepInstall {
   version: string;
   bin: string;
   asset: string;
+  asset_sha256: string;
+  bin_sha256: string;
+  /** @deprecated use asset_sha256 or bin_sha256 */
   sha256: string;
   installed_at: string;
 }
@@ -36,17 +39,12 @@ export async function installRipgrep(opts: { force?: boolean } = {}): Promise<Ri
     if (
       existing?.version === RIPGREP_VERSION &&
       existing.asset === asset &&
-      existing.bin === binPath
+      existing.bin === binPath &&
+      existing.asset_sha256 === target.sha256 &&
+      existing.bin_sha256 === fileSha256(binPath)
     ) {
       return existing;
     }
-    return writeMetadata({
-      version: RIPGREP_VERSION,
-      bin: binPath,
-      asset,
-      sha256: fileSha256(binPath),
-      installed_at: new Date().toISOString(),
-    });
   }
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-ripgrep-"));
@@ -64,23 +62,39 @@ export async function installRipgrep(opts: { force?: boolean } = {}): Promise<Ri
     fs.mkdirSync(destDir, { recursive: true });
     fs.copyFileSync(extracted, binPath);
     if (process.platform !== "win32") fs.chmodSync(binPath, 0o755);
-    return writeMetadata({
-      version: RIPGREP_VERSION,
-      bin: binPath,
-      asset,
-      sha256: fileSha256(binPath),
-      installed_at: new Date().toISOString(),
-    });
+    return writeMetadata(metadataFor(target, binPath));
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
+}
+
+function metadataFor(target: Target, binPath: string): RipgrepInstall {
+  return {
+    version: RIPGREP_VERSION,
+    bin: binPath,
+    asset: target.asset,
+    asset_sha256: target.sha256,
+    bin_sha256: fileSha256(binPath),
+    sha256: target.sha256,
+    installed_at: new Date().toISOString(),
+  };
 }
 
 export function resolveRipgrepBin(): string | null {
   const override = process.env.VEGASTACK_RG_BIN;
   if (override && fs.existsSync(override)) return override;
   const metadata = readRipgrepMetadata();
-  if (metadata && fs.existsSync(metadata.bin)) return metadata.bin;
+  const target = managedToolTarget("ripgrep");
+  if (
+    metadata &&
+    target &&
+    fs.existsSync(metadata.bin) &&
+    metadata.version === RIPGREP_VERSION &&
+    metadata.asset === target.asset &&
+    metadata.asset_sha256 === target.sha256 &&
+    metadata.bin_sha256 === fileSha256(metadata.bin)
+  )
+    return metadata.bin;
   return findOnPath(process.platform === "win32" ? "rg.exe" : "rg");
 }
 

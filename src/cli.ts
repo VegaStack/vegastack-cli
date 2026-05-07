@@ -2,21 +2,34 @@
 // vegastack — CLI entry point.
 
 import { Command, InvalidArgumentError } from "commander";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ALL_RENDERER_NAMES } from "./agents/index.js";
 import { runAsk } from "./commands/ask.js";
+import { runDetect } from "./commands/detect.js";
 import { runDoctor } from "./commands/doctor.js";
+import { runGenerate } from "./commands/generate.js";
 import { runInit } from "./commands/init.js";
 import { runPreview } from "./commands/preview.js";
+import { runRefresh } from "./commands/refresh.js";
 import { runRegistryList, runRegistryStatus, runRegistryUpdate } from "./commands/registry.js";
+import {
+  installScanPreCommitHook,
+  removeScanPreCommitHook,
+  runScan,
+  runScanDoctor,
+  runScanEnable,
+  runScanUpdateDb,
+} from "./commands/scan.js";
 import { runSearch } from "./commands/search.js";
-import { runSecretsDoctor, runSecretsEnable, runSecretsScan } from "./commands/secrets.js";
-import { runSkills } from "./commands/skills.js";
+import { runSkills, runSkillsReconcile } from "./commands/skills.js";
+import { runSetup } from "./commands/setup.js";
 import { runUpdate } from "./commands/update.js";
 import { VegaStackError } from "./lib/errors.js";
 import { log, printError, setJsonMode, setQuiet } from "./lib/log.js";
+import { globalConfigPath } from "./lib/paths.js";
+import { autoRefreshProjectState } from "./lib/project-state.js";
 import { printUpdateNagIfStale } from "./lib/update-check.js";
 
 function readVersion(): string {
@@ -34,6 +47,12 @@ function readVersion(): string {
 
 const VALID_AGENTS = `${ALL_RENDERER_NAMES.join(", ")}, all`;
 
+if (process.argv.length <= 2 && !existsSync(globalConfigPath())) {
+  process.stderr.write(
+    "vegastack: global setup has not been completed. Run `vegastack setup` to configure tools and agent skills.\n\n",
+  );
+}
+
 /** Hook called by every command's preAction to apply --quiet / --json. */
 function applyGlobalFlags(cmd: Command): void {
   const opts = cmd.optsWithGlobals<{ quiet?: boolean; json?: boolean }>();
@@ -42,6 +61,12 @@ function applyGlobalFlags(cmd: Command): void {
   // Cached, network-free nag — silent unless a newer version was discovered
   // by the last `vegastack doctor` / `vegastack update --check` (24h cache).
   printUpdateNagIfStale(readVersion(), { quiet: Boolean(opts.quiet ?? opts.json) });
+}
+
+function applyProjectCommandPrelude(cmd: Command): void {
+  applyGlobalFlags(cmd);
+  const opts = cmd.optsWithGlobals<{ quiet?: boolean; json?: boolean }>();
+  autoRefreshProjectState(process.cwd(), { quiet: Boolean(opts.quiet ?? opts.json) });
 }
 
 function parseScope(value: string): "global" | "project" {
@@ -72,7 +97,11 @@ program
     "after",
     `
 Examples:
+  vegastack setup                                  configure global ~/.vegastack tools and skills
   vegastack init                                   initialize this repo's local agent harness
+  vegastack detect --json                          detect current repo stack without writing
+  vegastack refresh --dry-run --json               show shared config refresh changes
+  vegastack generate github-action vercel --json   return an agent workflow contract
   vegastack ask "how should this repo deploy safely?" build grounded evidence from selected entries
   vegastack ask --all "github actions oidc to aws" search every locally installed Registry pack
   vegastack search --entry jenkins "withCredentials" exact source lookup in a Registry pack
@@ -81,22 +110,33 @@ Examples:
   vegastack registry update                           update project-selected Registry entries
   vegastack update                                    update CLI + registry + managed tools
   vegastack preview --tunnel                       start a local preview and temporary Cloudflare URL
-  vegastack secrets enable                         enable Gitleaks secret scanning for this project
-  vegastack secrets scan --history                 scan git history for secrets
+  vegastack scan                                   run enabled security scans for this project
+  vegastack scan secrets actions                   run selected scan categories
+  vegastack scan --staged                          run the fast staged pre-commit scan
   vegastack ask --entry terraform --tf-provider aws "create an S3 bucket with versioning"
                                               Terraform-specific registry query
   vegastack skills install --agent all             register the skill with every detected agent
+  vegastack skills reconcile                       install missing global skills for detected agents
   vegastack skills install --agent cursor --scope project
                                               drop a Cursor rule into the current project
   vegastack skills uninstall --agent all           clean up everywhere
 
+Project-mode commands automatically cache current repo detection when .vegastack/vegastack.yml is present.
+Project-mode ask/search also include already-installed supplemental Registry entries when the repo changed.
+
 Environment variables:
-  VEGASTACK_CONFIG_DIR    Override the VegaStack config root (default: ~/.config/vegastack).
-  VEGASTACK_REGISTRY_DIR  Override the registry cache directory (default: ~/.config/vegastack/registry).
-  VEGASTACK_TOOLS_DIR     Override the external tools cache directory (default: ~/.config/vegastack/tools).
+  VEGASTACK_CONFIG_DIR    Override the VegaStack config root (default: ~/.vegastack).
+  VEGASTACK_REGISTRY_DIR  Override the registry cache directory (default: ~/.vegastack/registry).
+  VEGASTACK_TOOLS_DIR     Override the external tools cache directory (default: ~/.vegastack/tools).
   VEGASTACK_GITLEAKS_BIN  Use an existing Gitleaks binary instead of the VegaStack-managed one.
+  VEGASTACK_TRIVY_BIN     Use an existing Trivy binary instead of the VegaStack-managed one.
+  VEGASTACK_OSV_SCANNER_BIN Use an existing OSV-Scanner binary instead of the VegaStack-managed one.
+  VEGASTACK_ACTIONLINT_BIN Use an existing actionlint binary instead of the VegaStack-managed one.
+  VEGASTACK_ZIZMOR_BIN    Use an existing zizmor binary instead of the VegaStack-managed one.
   VEGASTACK_CLOUDFLARED_BIN Use an existing cloudflared binary instead of the VegaStack-managed one.
   VEGASTACK_SKIP_POSTINSTALL=1   Silence postinstall guidance. Registry data is never downloaded during postinstall.
+  VEGASTACK_SKIP_SKILL_INSTALL=1 Skip best-effort agent skill registration during postinstall.
+  VEGASTACK_POSTINSTALL_TIMEOUT_MS Milliseconds before postinstall skill registration is skipped (default: 15000).
   NO_COLOR           Disable colored output.
 
 Exit codes:
@@ -118,16 +158,61 @@ Report bugs at https://github.com/vegastack/vegastack-cli/issues.
 `,
   );
 
+// vegastack setup
+program
+  .command("setup")
+  .description("configure global VegaStack tools, cache, and detected agent skills")
+  .option("-y, --yes", "accept recommended defaults", false)
+  .option("--dry-run", "show setup plan without writing", false)
+  .option("--json", "emit machine-readable JSON", false)
+  .hook("preAction", applyGlobalFlags)
+  .action(async (opts: { yes: boolean; dryRun: boolean; json: boolean }) => {
+    process.exit(await runSetup({ yes: opts.yes, dryRun: opts.dryRun, json: opts.json }));
+  });
+
+// vegastack detect
+program
+  .command("detect")
+  .description("detect current project stack and recommended Registry entries without writing")
+  .option("--json", "emit machine-readable JSON", false)
+  .hook("preAction", applyGlobalFlags)
+  .action(async (opts: { json: boolean }) => {
+    process.exit(await runDetect({ json: opts.json }));
+  });
+
+// vegastack refresh
+program
+  .command("refresh")
+  .description("refresh .vegastack/vegastack.yml with current project detection")
+  .option("-y, --yes", "write detected defaults without prompting", false)
+  .option("--dry-run", "show refresh plan without writing", false)
+  .option("--json", "emit machine-readable JSON", false)
+  .hook("preAction", applyGlobalFlags)
+  .action(async (opts: { yes: boolean; dryRun: boolean; json: boolean }) => {
+    process.exit(await runRefresh({ yes: opts.yes, dryRun: opts.dryRun, json: opts.json }));
+  });
+
+// vegastack generate
+program
+  .command("generate <intent...>")
+  .description("return an agent workflow contract for creating ops files")
+  .option("--dry-run", "alias for default read-only behavior", false)
+  .option("--json", "emit machine-readable JSON", false)
+  .hook("preAction", applyProjectCommandPrelude)
+  .action(async (intent: string[], opts: { dryRun: boolean; json: boolean }) => {
+    process.exit(await runGenerate(intent, { dryRun: opts.dryRun, json: opts.json }));
+  });
+
 // vegastack ask <query>
 program
   .command("ask <query...>")
   .description("build grounded evidence from project-selected registry entries")
   .option(
     "--all",
-    "search every locally installed Registry pack instead of the project lock",
+    "search every locally installed Registry pack instead of project-selected entries",
     false,
   )
-  .option("--entry <names>", "comma-separated Registry pack override, e.g. terraform,supabase")
+  .option("--entry <names>", "Registry pack override; repeat or comma-separate, e.g. terraform,supabase", collect, [])
   .option("--tf-provider <name>", "when --entry includes terraform, force a Terraform provider")
   .option("-m, --max <n>", "max results", parsePositiveInt, 10)
   .option("--raw", "skip pack-specific enrichment when supported", false)
@@ -137,13 +222,13 @@ program
   .option("--no-pretty", "emit minified JSON")
   .option("--debug", "include per-stage timings when supported", false)
   .option("--json", "alias for default JSON output (kept for consistency)", false)
-  .hook("preAction", applyGlobalFlags)
+  .hook("preAction", applyProjectCommandPrelude)
   .action(
     async (
       queryWords: string[],
       opts: {
         all: boolean;
-        entry?: string;
+        entry?: string[];
         max?: number;
         raw: boolean;
         brief: boolean;
@@ -156,7 +241,7 @@ program
     ) => {
       const qOpts: {
         all: boolean;
-        entries?: string;
+        entries?: string[];
         tfProvider?: string;
         max?: number;
         raw: boolean;
@@ -187,23 +272,23 @@ program
   .description("exact source lookup across local VegaStack Registry entries")
   .option(
     "--all",
-    "search every locally installed Registry pack instead of the project lock",
+    "search every locally installed Registry pack instead of project-selected entries",
     false,
   )
-  .option("--entry <names>", "comma-separated Registry pack override, e.g. jenkins,docker")
+  .option("--entry <names>", "Registry pack override; repeat or comma-separate, e.g. jenkins,docker", collect, [])
   .option("-m, --max <n>", "max matches", parsePositiveInt, 20)
   .option("--regex", "treat the query as a regular expression", false)
   .option("-i, --ignore-case", "case-insensitive search", false)
   .option("--no-install-tools", "do not auto-install managed search tools such as ripgrep")
   .option("--no-pretty", "emit minified JSON")
   .option("--json", "alias for default JSON output (kept for consistency)", false)
-  .hook("preAction", applyGlobalFlags)
+  .hook("preAction", applyProjectCommandPrelude)
   .action(
     async (
       queryWords: string[],
       opts: {
         all: boolean;
-        entry?: string;
+        entry?: string[];
         max?: number;
         regex: boolean;
         ignoreCase: boolean;
@@ -213,7 +298,7 @@ program
     ) => {
       const searchOpts: {
         all: boolean;
-        entries?: string;
+        entries?: string[];
         max?: number;
         regex: boolean;
         ignoreCase: boolean;
@@ -238,11 +323,11 @@ program
   .description("initialize a project-local VegaStack harness in .vegastack/")
   .option("-y, --yes", "accept prompts and write detected defaults", false)
   .option("--dry-run", "show the init plan without writing files", false)
-  .option("--no-download", "do not download missing registry entries during init", false)
+  .option("--no-download", "do not download missing registry entries during init")
   .option("--no-tunnels", "skip managed cloudflared install during init")
-  .option("--secrets", "enable Gitleaks secret scanning without prompting")
-  .option("--no-secrets", "skip Gitleaks secret scanning")
-  .option("--secrets-hook", "also install a local git pre-commit secret scanning hook", false)
+  .option("--scan", "enable VegaStack scan without prompting")
+  .option("--no-scan", "skip VegaStack scan")
+  .option("--scan-hook", "also install a local git pre-commit scan hook", false)
   .option("--no-skills", "skip automatic skill installation for detected agent hosts")
   .option("--json", "emit machine-readable JSON", false)
   .hook("preAction", applyGlobalFlags)
@@ -252,8 +337,8 @@ program
       dryRun: boolean;
       json: boolean;
       download: boolean;
-      secrets?: boolean;
-      secretsHook: boolean;
+      scan?: boolean;
+      scanHook: boolean;
       tunnels: boolean;
       skills: boolean;
     }) => {
@@ -263,8 +348,8 @@ program
           dryRun: opts.dryRun,
           json: opts.json,
           noDownload: !opts.download,
-          secrets: opts.secrets,
-          secretsHook: opts.secretsHook,
+          scan: opts.scan,
+          scanHook: opts.scanHook,
           tunnels: opts.tunnels,
           skills: opts.skills,
         }),
@@ -285,7 +370,6 @@ program
   .option("--timeout <seconds>", "seconds to wait for local/tunnel readiness", parsePositiveInt, 60)
   .option("-y, --yes", "accept notices in non-interactive contexts", false)
   .option("--json", "emit machine-readable JSON", false)
-  .hook("preAction", applyGlobalFlags)
   .addHelpText(
     "after",
     `
@@ -296,6 +380,7 @@ Cloudflare notice:
   --hostname requires Cloudflare login and a domain/zone you control.
 `,
   )
+  .hook("preAction", applyProjectCommandPrelude)
   .action(
     async (opts: {
       command?: string;
@@ -355,10 +440,10 @@ registryCmd
 registryCmd
   .command("update [entry]")
   .description("update installed registry entries from the published Registry")
-  .option("--all", "update every installed Registry pack instead of the project lock", false)
+  .option("--all", "update every installed Registry pack instead of project-selected entries", false)
   .option("--force", "re-download even if the published manifest hash matches", false)
   .option("--json", "emit machine-readable JSON", false)
-  .hook("preAction", applyGlobalFlags)
+  .hook("preAction", applyProjectCommandPrelude)
   .action(
     async (entry: string | undefined, opts: { all: boolean; force: boolean; json: boolean }) => {
       const updateOpts: {
@@ -385,68 +470,150 @@ registryCmd
     process.exit(await runRegistryStatus({ json: opts.json }));
   });
 
-// vegastack secrets enable|scan|doctor
-const secretsCmd = program
-  .command("secrets")
-  .description("manage secret scanning with Gitleaks (https://github.com/gitleaks/gitleaks)")
+// vegastack scan [categories...]
+const scanCmd = program
+  .command("scan [categories...]")
+  .description("run local-first security scans with OSS tools")
+  .option("--staged", "scan staged changes for pre-commit usage", false)
+  .option("--history", "include full git history for secret scanning", false)
+  .option("--image <ref>", "container image reference to scan", collect, [])
+  .option("--severity <list>", "comma-separated severity filter where supported")
+  .option("--format <format>", "text | json | sarif", "text")
+  .option("--output <path>", "write JSON scan report to a file")
+  .option("--offline", "use cached scanner databases and avoid online vulnerability lookups", false)
+  .option("--no-install-tools", "fail instead of installing missing scanner tools")
+  .option("--json", "emit machine-readable JSON", false)
   .addHelpText(
     "after",
     `
 Disclosure:
-  VegaStack wraps Gitleaks for secret detection. Gitleaks is an open-source
-  scanner maintained at https://github.com/gitleaks/gitleaks.
+  VegaStack scan wraps open-source scanners and discloses upstream engines:
+  Gitleaks https://github.com/gitleaks/gitleaks
+  Trivy https://github.com/aquasecurity/trivy
+  OSV-Scanner https://github.com/google/osv-scanner
+  actionlint https://github.com/rhysd/actionlint
+  zizmor https://github.com/zizmorcore/zizmor
 `,
+  )
+  .hook("preAction", applyProjectCommandPrelude)
+  .action(
+    async (
+      categories: string[] | undefined,
+      opts: {
+        staged: boolean;
+        history: boolean;
+        image: string[];
+        severity?: string;
+        format: string;
+        output?: string;
+        offline: boolean;
+        installTools: boolean;
+        json: boolean;
+      },
+    ) => {
+      const format = opts.json ? "json" : opts.format;
+      if (format !== "text" && format !== "json" && format !== "sarif") {
+        throw new InvalidArgumentError(`expected text, json, or sarif, got '${format}'`);
+      }
+      const scanOpts: {
+        categories: string[];
+        staged: boolean;
+        history: boolean;
+        image: string[];
+        severity?: string;
+        format: "text" | "json" | "sarif";
+        output?: string;
+        offline: boolean;
+        installTools: boolean;
+      } = {
+        categories: categories ?? [],
+        staged: opts.staged,
+        history: opts.history,
+        image: opts.image,
+        format,
+        offline: opts.offline,
+        installTools: opts.installTools,
+      };
+      if (opts.severity !== undefined) scanOpts.severity = opts.severity;
+      if (opts.output !== undefined) scanOpts.output = opts.output;
+      process.exit(await runScan(scanOpts));
+    },
   );
 
-secretsCmd
+scanCmd
   .command("enable")
-  .description("enable Gitleaks secret scanning for this project and install the pinned binary")
-  .option("--no-install", "write project files without installing Gitleaks")
-  .option("--no-ci", "do not write the GitHub Actions workflow")
+  .description("enable VegaStack scan for this project and install pinned scanner tools")
+  .option("--no-install", "write project config without installing scanner tools")
   .option("--hook", "install a local git pre-commit hook", false)
-  .option("--force", "overwrite existing generated files and reinstall Gitleaks", false)
+  .option("--force", "overwrite existing generated hooks and reinstall scanner tools", false)
   .option("--json", "emit machine-readable JSON", false)
-  .hook("preAction", applyGlobalFlags)
+  .hook("preAction", applyProjectCommandPrelude)
   .action(
-    async (opts: {
-      install: boolean;
-      ci: boolean;
-      hook: boolean;
-      force: boolean;
-      json: boolean;
-    }) => {
+    async (
+      opts: { install: boolean; hook: boolean; force: boolean; json: boolean },
+      cmd: Command,
+    ) => {
+      const json = Boolean(opts.json || cmd.optsWithGlobals<{ json?: boolean }>().json);
       process.exit(
-        await runSecretsEnable({
+        await runScanEnable({
           install: opts.install,
           force: opts.force,
-          noCi: !opts.ci,
           hook: opts.hook,
-          json: opts.json,
+          json,
         }),
       );
     },
   );
 
-secretsCmd
-  .command("scan")
-  .description("run Gitleaks locally, installing it first if needed")
-  .option("--history", "scan full git history instead of the working tree", false)
-  .option("--staged", "scan the staged git diff for pre-commit usage", false)
-  .option("--json", "emit Gitleaks JSON report to stdout when supported", false)
-  .hook("preAction", applyGlobalFlags)
-  .action(async (opts: { history: boolean; staged: boolean; json: boolean }) => {
+scanCmd
+  .command("doctor")
+  .description("show scan setup status")
+  .option("--json", "emit machine-readable JSON", false)
+  .hook("preAction", applyProjectCommandPrelude)
+  .action(async (opts: { json: boolean }, cmd: Command) => {
     process.exit(
-      await runSecretsScan({ history: opts.history, staged: opts.staged, json: opts.json }),
+      await runScanDoctor({
+        json: Boolean(opts.json || cmd.optsWithGlobals<{ json?: boolean }>().json),
+      }),
     );
   });
 
-secretsCmd
-  .command("doctor")
-  .description("show secret scanning setup status")
+scanCmd
+  .command("update-db")
+  .description("refresh scanner vulnerability databases")
+  .option("--offline", "reserved for consistency; update-db needs network for fresh data", false)
+  .option("--no-install-tools", "fail instead of installing missing scanner tools")
   .option("--json", "emit machine-readable JSON", false)
+  .hook("preAction", applyProjectCommandPrelude)
+  .action(
+    async (opts: { offline: boolean; installTools: boolean; json: boolean }, cmd: Command) => {
+      process.exit(
+        await runScanUpdateDb({
+          offline: opts.offline,
+          installTools: opts.installTools,
+          json: Boolean(opts.json || cmd.optsWithGlobals<{ json?: boolean }>().json),
+        }),
+      );
+    },
+  );
+
+const scanHookCmd = scanCmd.command("hook").description("manage the VegaStack scan git hook");
+
+scanHookCmd
+  .command("install")
+  .description("install the local pre-commit hook")
+  .option("--force", "append/replace VegaStack hook block in an existing hook", false)
   .hook("preAction", applyGlobalFlags)
-  .action(async (opts: { json: boolean }) => {
-    process.exit(await runSecretsDoctor({ json: opts.json }));
+  .action((opts: { force: boolean }) => {
+    process.exit(installScanPreCommitHook(process.cwd(), opts.force) ? 0 : 1);
+  });
+
+scanHookCmd
+  .command("remove")
+  .description("remove the VegaStack-managed pre-commit hook block")
+  .hook("preAction", applyGlobalFlags)
+  .action(() => {
+    process.exit(removeScanPreCommitHook(process.cwd()) ? 0 : 1);
   });
 
 // vegastack update
@@ -463,8 +630,9 @@ program
     false,
   )
   .option("--force", "force registry/tool reinstall where supported", false)
+  .option("-y, --yes", "accept non-destructive update prompts such as skill registration", false)
   .option("--json", "emit machine-readable JSON", false)
-  .hook("preAction", applyGlobalFlags)
+  .hook("preAction", applyProjectCommandPrelude)
   .action(
     async (opts: {
       check: boolean;
@@ -473,6 +641,7 @@ program
       tools: boolean;
       allRegistry: boolean;
       force: boolean;
+      yes: boolean;
       json: boolean;
     }) => {
       process.exit(
@@ -484,6 +653,7 @@ program
           tools: opts.tools,
           allRegistry: opts.allRegistry,
           force: opts.force,
+          yes: opts.yes,
           json: opts.json,
         }),
       );
@@ -503,6 +673,7 @@ Scopes (--scope): global (~/.claude, ~/.agents, ~/.codex), project (cwd)
 Examples:
   vegastack skills install --agent all
   vegastack skills install --agent claude-code,codex
+  vegastack skills reconcile
   vegastack skills install --agent cursor --scope project
   vegastack skills status --agent all --json
   vegastack skills uninstall --agent gemini --scope project
@@ -583,6 +754,32 @@ skillsCmd
       }),
     );
   });
+
+skillsCmd
+  .command("reconcile")
+  .description("install missing global skills for detected agent hosts")
+  .option("-s, --scope <scope>", "global | project", parseScope, "global")
+  .option("--force", "overwrite existing files / symlinks", false)
+  .option("--dry-run", "print what would be done without writing", false)
+  .option("--json", "emit machine-readable JSON", false)
+  .hook("preAction", applyGlobalFlags)
+  .action(
+    async (opts: {
+      scope: "global" | "project";
+      force: boolean;
+      dryRun: boolean;
+      json: boolean;
+    }) => {
+      process.exit(
+        await runSkillsReconcile({
+          scope: opts.scope,
+          force: opts.force,
+          dryRun: opts.dryRun,
+          json: opts.json,
+        }),
+      );
+    },
+  );
 
 function collect(value: string, prev: string[]): string[] {
   return [...prev, value];

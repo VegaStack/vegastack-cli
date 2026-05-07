@@ -1,26 +1,24 @@
 # `vegastack ask --entry terraform --tf-provider <provider>` CLI reference
 
-This is the full reference for the Terraform-specific Registry engine. Load it when the user wants flag-level detail (e.g. `--max`, `--debug`, `--raw`, `--json-schema`), or when you need the exhaustive scoring stages and ambiguity-handling contract. For general cloudops / CI / Docker / Kubernetes / Jenkins / Supabase questions, prefer `vegastack ask`.
+This is the full reference for the Terraform-specific Registry engine. Load it when the user wants flag-level detail (e.g. `--max`, `--debug`, `--raw`), or when you need the exhaustive scoring stages and ambiguity-handling contract. For general cloudops / CI / Docker / Kubernetes / Jenkins / Supabase questions, prefer `vegastack ask`.
 
-`vegastack ask --entry terraform --tf-provider <provider>` is the deterministic Terraform discovery harness shipped in `@vegastack/cli`. It resolves the installed Terraform Registry pack under `~/.config/vegastack/registry/terraform/`, auto-detects the provider, runs an 11-stage manifest scoring pass plus a parallel grep fallback, enriches each top-K hit with `manifest_entry` + `example_usage` inline, and emits a single JSON envelope on stdout.
+`vegastack ask --entry terraform --tf-provider <provider>` is the deterministic Terraform discovery harness shipped in `@vegastack/cli`. It resolves the installed Terraform Registry pack under `~/.vegastack/registry/terraform/`, auto-detects the provider, runs an 11-stage manifest scoring pass plus a parallel grep fallback, enriches each top-K hit with `manifest_entry` + `example_usage` inline, and emits a single JSON envelope on stdout.
 
 ## Synopsis
 
 ```
-vegastack ask --entry terraform --tf-provider <provider> "<query>" [--provider <name>] [--max <N>] [--raw] [--debug]
-                              [--json-schema]
+vegastack ask --entry terraform --tf-provider <provider> "<query>" [--max <N>] [--raw] [--debug]
 ```
 
 | Flag | Default | Notes |
 |---|---|---|
 | `<query>` (positional) | — | **Required.** Free-text natural-language description of the user's intent. |
-| `--provider <name>` | auto-detect | Force the provider scope. Skips the ambiguity check. Must be one of the providers in the Terraform Registry pack root `MANIFEST.json`. |
+| `--tf-provider <name>` | auto-detect | Public CLI flag for forcing the Terraform provider scope. Must be one of the providers in the Terraform Registry pack root `MANIFEST.json`. |
 | `--max <N>` | `10` | Cap on `files[]` length. Use `--max 5` for tight context, `--max 20` for surveys. |
 | `--raw` | off | Disables enrichment: omits `manifest_entry`, `example_usage`, and the four side-channel arrays. Use only when you specifically need the raw scoring output. |
 | `--brief` | off | Strips `manifest_entry` and `example_usage` from each `files[]` entry, adds a `name` field (resource name, e.g. `"aws_s3_bucket"`), and sets `mode: "brief"` in the envelope. Envelope is typically ~80% smaller than default. Use for survey / multi-call dispatch where you only need to know which resources exist. |
 | `--full-examples` | off | Restores the full `## Example Usage` section. Default output truncates `example_usage` to the first HCL fenced block plus a `... (truncated; pass --full-examples for the rest)` marker. |
 | `--debug` | off | Includes `timings: {…}` and the raw `score` fields in `files[]`. Power-user diagnostic; default UIs should ignore `score` and use `score_norm`. |
-| `--json-schema` | off | Prints the JSON schema of the response envelope and exits. Useful for tooling. |
 
 ## Output schema (v0.1)
 
@@ -68,7 +66,7 @@ Side-channel arrays (`knowledge`, `recipes`, `concept_aliases_used`) are always 
   "tokens": [...],
   "candidate_providers": [{"provider": "aws", "score": 0.6}, {"provider": "azure", "score": 0.55}],
   "recipes": [...],
-  "hint": "Use --provider <name> to disambiguate."
+  "hint": "Use --tf-provider <name> with `vegastack ask --entry terraform` to disambiguate."
 }
 ```
 
@@ -89,10 +87,10 @@ Two options: ask the user which provider they meant, or call `vegastack ask --en
 
 | `code` | Meaning |
 |---|---|
-| `RegistryEntryMissing` | `~/.config/vegastack/registry/terraform/` doesn't exist or is empty. User should run `vegastack init` or `vegastack registry update terraform`. |
+| `RegistryEntryMissing` | `~/.vegastack/registry/terraform/` doesn't exist or is empty. User should run `vegastack init` or `vegastack registry update terraform`. |
 | `RegistryVersionMismatch` | Installed Registry metadata is not compatible with this CLI. Run `vegastack registry update --force`. |
-| `ProviderUnknown` | `--provider <name>` was given but `<name>` isn't in the Terraform Registry pack root `MANIFEST.json.providers`. |
-| `ProviderUndetectable` | No `--provider` and the query has no detectable provider signal. Re-tokenize with the user. |
+| `ProviderUnknown` | `--tf-provider <name>` was given but `<name>` isn't in the Terraform Registry pack root `MANIFEST.json.providers`. |
+| `ProviderUndetectable` | No provider could be detected and no `--tf-provider` was provided. Re-tokenize with the user. |
 | `ManifestMalformed` | A per-provider MANIFEST.json failed schema validation. Run `vegastack doctor --verify-registry`. |
 
 ## Tier-1 manifest stages (in order)

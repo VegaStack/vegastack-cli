@@ -10,7 +10,6 @@
 // first launch, so the dir-exists check often catches GUI agents that don't
 // ship a CLI binary (Cursor, Continue).
 
-import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -26,17 +25,31 @@ export interface HostStatus {
 
 const HOME = os.homedir();
 
-/** Returns true if `name` resolves on $PATH. Cross-platform via `which`/`where`. */
+/** Returns true if `name` resolves on $PATH without invoking a shell. */
 export function binaryOnPath(name: string): boolean {
-  const cmd = process.platform === "win32" ? "where" : "command";
-  const args = process.platform === "win32" ? [name] : ["-v", name];
-  const r = spawnSync(cmd, args, {
-    stdio: ["ignore", "pipe", "ignore"],
-    encoding: "utf8",
-    shell: process.platform !== "win32",
-  });
-  if (r.status !== 0) return false;
-  return (r.stdout ?? "").trim().length > 0;
+  if (!name || /[/\\]/.test(name)) return false;
+  const pathValue = process.env.PATH ?? "";
+  const pathDirs = pathValue.split(path.delimiter).filter(Boolean);
+  const extensions =
+    process.platform === "win32"
+      ? (process.env.PATHEXT ?? ".EXE;.CMD;.BAT;.COM")
+          .split(";")
+          .filter(Boolean)
+          .flatMap((ext) => [ext, ext.toLowerCase()])
+      : [""];
+
+  for (const dir of pathDirs) {
+    for (const ext of extensions) {
+      const candidate = path.join(dir, `${name}${ext}`);
+      try {
+        fs.accessSync(candidate, fs.constants.X_OK);
+        return true;
+      } catch {
+        /* keep scanning */
+      }
+    }
+  }
+  return false;
 }
 
 function dirExists(p: string): boolean {

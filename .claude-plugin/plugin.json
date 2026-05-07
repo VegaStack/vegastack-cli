@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/hesreallyhim/claude-code-json-schema/main/plugin.schema.json",
   "name": "vegastack-cli",
-  "version": "0.1.11-next.0",
+  "version": "0.1.13-next.0",
   "description": "Local-first VegaStack Registry harness for coding agents. Installs project-selected Registry entries such as Terraform, Kubernetes, Helm, Docker, GitHub Actions, Supabase, AWS CLI, and Jenkins; agents query them with `vegastack ask` for grounded citations instead of guessing from model memory.",
   "author": {
     "name": "VegaStack Engineering",

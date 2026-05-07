@@ -8,10 +8,9 @@
  * Reads are cached in Workers KV with a 1h TTL so the homepage TTFB stays
  * under 100ms even on cold edges.
  *
- * Astro 6 + @astrojs/cloudflare v13: env bindings are read via
- * `import { env } from "cloudflare:workers"` — `Astro.locals.runtime.env`
- * was removed. We accept an explicit `env` arg so the same helpers are
- * usable from both pages and the test suite.
+ * Env bindings are read via `import { env } from "cloudflare:workers"`. We
+ * accept an explicit `env` arg so the same helpers are usable from both pages
+ * and the test suite.
  *
  * Registry publishing owns `cli-registry.vegastack.com/cli`; eval workflows write the JSON.
  * If the prefix moves, change `REPORTS_PREFIX` only.

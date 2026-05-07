@@ -1,8 +1,7 @@
 // `vegastack init` — project-local harness setup.
 //
 // This command keeps heavy registry content in the user cache and writes only
-// project state + instructions under .vegastack/ so users can inspect what agents
-// are being asked to read.
+// committed .vegastack/vegastack.yml plus small pointers in project agent files.
 
 import prompts from "prompts";
 import * as fs from "node:fs";
@@ -14,11 +13,10 @@ import {
   writeInitFiles,
 } from "../lib/project.js";
 import { log, printError } from "../lib/log.js";
-import { enableProjectSecretScanning } from "./secrets.js";
-import { ALL_RENDERER_NAMES, getRenderer } from "../agents/index.js";
-import type { InstallResult, Scope } from "../agents/index.js";
+import { installScanPreCommitHook } from "./scan.js";
+import { ALL_RENDERER_NAMES } from "../agents/index.js";
 import { detectHost } from "../lib/host-detect.js";
-import { projectInstructionsDir } from "../lib/paths.js";
+import { sharedInstructionsDir } from "../lib/paths.js";
 import { installCloudflared, type CloudflaredInstall } from "../lib/cloudflared.js";
 import {
   isRegistryEntryInstalled,
@@ -27,14 +25,19 @@ import {
 } from "../lib/registry.js";
 import { installRipgrep, type RipgrepInstall } from "../lib/ripgrep.js";
 import { VegaStackError } from "../lib/errors.js";
+import { defaultScanConfig, writeProjectScanConfig } from "../lib/scan/config.js";
+import { detectScanChecks } from "../lib/scan/detect.js";
+import { installScanTool, type ScanToolName } from "../lib/scan-tools.js";
+import { buildProjectRefreshPlan, writeProjectRefreshPlan } from "../lib/project-state.js";
+import { readProjectConfigIfExists, writeProjectConfig } from "../lib/project-config.js";
 
 export interface InitOptions {
   yes: boolean;
   dryRun: boolean;
   json: boolean;
   noDownload: boolean;
-  secrets?: boolean | undefined;
-  secretsHook: boolean;
+  scan?: boolean | undefined;
+  scanHook: boolean;
   tunnels: boolean;
   skills: boolean;
 }
@@ -72,23 +75,26 @@ export async function runInit(opts: InitOptions): Promise<number> {
       }
     }
 
-    let enableSecrets = opts.secrets ?? opts.yes;
+    const scanDetection = detectScanChecks(cwd);
+    let enableScan = opts.scan ?? true;
+    let scanHook = opts.scanHook;
     if (!opts.json)
       printPlan(
         plan,
         installed,
         opts.noDownload,
-        enableSecrets,
-        opts.secretsHook,
+        enableScan,
+        scanHook,
         opts.tunnels,
         detectedAgents,
+        scanDetection,
       );
 
     if (!opts.yes && !opts.dryRun) {
       const r = await prompts({
         type: "confirm",
         name: "apply",
-        message: "Write .vegastack project state and instruction files?",
+        message: "Write .vegastack/vegastack.yml and shared instruction pointers?",
         initial: true,
       });
       if (r.apply !== true) {
@@ -96,15 +102,24 @@ export async function runInit(opts: InitOptions): Promise<number> {
         return 0;
       }
 
-      if (opts.secrets === undefined) {
-        const secrets = await prompts({
+      if (opts.scan === undefined) {
+        const scan = await prompts({
           type: "confirm",
           name: "enable",
           message:
-            "Enable secret scanning with Gitleaks? This writes .gitleaks.toml, GitHub Actions CI, and installs Gitleaks.",
+            "Enable VegaStack scan? This installs pinned OSS scanners for secrets, actions, dependencies, containers, Kubernetes, and IaC based on this repo.",
           initial: true,
         });
-        enableSecrets = secrets.enable === true;
+        enableScan = scan.enable === true;
+      }
+      if (enableScan && !scanHook) {
+        const hook = await prompts({
+          type: "confirm",
+          name: "enable",
+          message: "Install the fast staged pre-commit scan hook?",
+          initial: true,
+        });
+        scanHook = hook.enable === true;
       }
     }
 
@@ -114,10 +129,10 @@ export async function runInit(opts: InitOptions): Promise<number> {
           dry_run: true,
           plan,
           installed_registry_entries: [...installed].sort(),
-          secret_scanning: {
-            enabled: enableSecrets,
-            engine: enableSecrets ? "gitleaks" : undefined,
-            pre_commit_hook: enableSecrets ? opts.secretsHook : false,
+          scan: {
+            enabled: enableScan,
+            detected_checks: scanDetection.checks,
+            pre_commit_hook: enableScan ? scanHook : false,
           },
           skills: {
             enabled: opts.skills,
@@ -144,14 +159,12 @@ export async function runInit(opts: InitOptions): Promise<number> {
 
     let ripgrep: RipgrepInstall | { error: string } | null = null;
     let cloudflared: CloudflaredInstall | { error: string } | null = null;
-    if (!opts.noDownload) {
-      try {
-        log.step("installing managed ripgrep for deterministic registry search");
-        ripgrep = await installRipgrep();
-      } catch (e) {
-        ripgrep = { error: e instanceof Error ? e.message : String(e) };
-        log.warn(`managed ripgrep install skipped: ${ripgrep.error}`);
-      }
+    try {
+      log.step("installing managed ripgrep for deterministic registry search");
+      ripgrep = await installRipgrep();
+    } catch (e) {
+      ripgrep = { error: e instanceof Error ? e.message : String(e) };
+      log.warn(`managed ripgrep install skipped: ${ripgrep.error}`);
     }
 
     if (!opts.noDownload && opts.tunnels) {
@@ -165,32 +178,37 @@ export async function runInit(opts: InitOptions): Promise<number> {
     }
 
     writeInitFiles(plan);
+    writeProjectRefreshPlan(buildProjectRefreshPlan(cwd));
     writePreviewMetadata(cwd, opts.tunnels, cloudflared);
 
-    const secretScanning = enableSecrets
-      ? await enableProjectSecretScanning(cwd, {
-          install: true,
-          force: false,
-          noCi: false,
-          hook: opts.secretsHook,
+    const scanSetup = enableScan
+      ? await enableProjectScan(cwd, {
+          install: !opts.noDownload,
+          hook: scanHook,
+          detection: scanDetection.checks,
         })
       : null;
-    const skills = opts.skills ? await installDetectedAgentSkills(cwd, detectedAgents) : [];
     const instructionEntrypoints = opts.skills
       ? appendProjectInstructionEntrypoints(cwd, detectedAgents)
       : [];
 
     const result = {
       ok: true,
-      project_dir: path.join(cwd, ".vegastack"),
+      project_config: path.join(cwd, ".vegastack", "vegastack.yml"),
       selected_registry_entries: plan.selected.map((p) => p.name),
       registry_cache_root: plan.registryCacheRoot,
-      instructions: plan.files.instructions,
-      secret_scanning: secretScanning
+      shared_instructions: {
+        directory: sharedInstructionsDir(),
+        files: [
+          path.join(sharedInstructionsDir(), "AGENTS.md"),
+          path.join(sharedInstructionsDir(), "CLAUDE.md"),
+        ],
+      },
+      scan: scanSetup
         ? {
             enabled: true,
-            written: secretScanning.written,
-            gitleaks: secretScanning.gitleaks,
+            written: scanSetup.written,
+            tools: scanSetup.tools,
           }
         : { enabled: false },
       ripgrep,
@@ -206,15 +224,14 @@ export async function runInit(opts: InitOptions): Promise<number> {
           agent: a.agent,
           evidence: a.evidence,
         })),
-        installed: skills,
         instruction_entrypoints: instructionEntrypoints,
       },
     };
 
     if (opts.json) log.json(result);
     else {
-      log.ok(`wrote ${result.project_dir}`);
-      log.info(`agents can read project instructions in ${projectInstructionsDir(cwd)}`);
+      log.ok(`wrote ${result.project_config}`);
+      log.info(`agents can read shared VegaStack instructions in ${sharedInstructionsDir()}`);
     }
     return 0;
   } catch (e) {
@@ -226,10 +243,11 @@ function printPlan(
   plan: ReturnType<typeof buildInitPlan>,
   installed: Set<string>,
   noDownload: boolean,
-  enableSecrets: boolean,
-  secretsHook: boolean,
+  enableScan: boolean,
+  scanHook: boolean,
   tunnels: boolean,
   detectedAgents: ReturnType<typeof detectInstalledAgents>,
+  scanDetection: ReturnType<typeof detectScanChecks>,
 ): void {
   process.stderr.write("\nDetected project stack:\n\n");
   if (plan.scan.detected.length === 0) {
@@ -254,18 +272,23 @@ function printPlan(
     process.stderr.write(`  ${note}\n`);
   }
   process.stderr.write("\nProject files:\n");
-  process.stderr.write(`  ${plan.files.projectJson}\n`);
-  process.stderr.write(`  ${plan.files.lockJson}\n`);
-  process.stderr.write(`  ${plan.files.instructions.join("\n  ")}\n`);
-  process.stderr.write("\nSecret scanning:\n");
+  process.stderr.write(`  ${plan.files.projectConfig}\n`);
+  process.stderr.write(`  shared instructions: ${sharedInstructionsDir()}\n`);
+  process.stderr.write("\nVegaStack scan:\n");
   process.stderr.write(
-    enableSecrets
-      ? "  Gitleaks secret scanning will be enabled and installed.\n"
-      : "  Gitleaks secret scanning will be skipped.\n",
+    enableScan
+      ? "  Security scanning will be enabled with pinned open-source scanners.\n"
+      : "  Security scanning will be skipped.\n",
   );
-  if (enableSecrets) {
-    process.stderr.write("  Writes .gitleaks.toml and .github/workflows/secret-scanning.yml.\n");
-    process.stderr.write(`  Pre-commit hook: ${secretsHook ? "yes" : "no"}\n`);
+  if (enableScan) {
+    const checks = Object.keys(scanDetection.checks);
+    process.stderr.write(
+      `  Detected checks: ${checks.length > 0 ? checks.join(", ") : "secrets"}\n`,
+    );
+    process.stderr.write(
+      "  Uses Gitleaks, Trivy, OSV-Scanner, actionlint, and zizmor where applicable.\n",
+    );
+    process.stderr.write(`  Pre-commit hook: ${scanHook ? "yes" : "no"}\n`);
   }
   process.stderr.write("\nPreview tunnels:\n");
   process.stderr.write(
@@ -285,7 +308,7 @@ function printPlan(
     for (const agent of detectedAgents) {
       process.stderr.write(`  ${agent.agent}: ${agent.evidence}\n`);
     }
-    process.stderr.write("  Matching skills will be installed automatically.\n");
+    process.stderr.write("  Project AGENTS.md / CLAUDE.md pointers will be appended when applicable.\n");
   }
   const planned = PACKS.filter((p) => p.status === "planned").map((p) => p.name);
   if (planned.length > 0) {
@@ -306,33 +329,59 @@ function detectInstalledAgents(): DetectedAgent[] {
     .map((status) => ({ agent: status.agent, evidence: status.evidence }));
 }
 
-async function installDetectedAgentSkills(
+async function enableProjectScan(
   cwd: string,
-  agents: DetectedAgent[],
-): Promise<InstallResult[]> {
-  const out: InstallResult[] = [];
-  for (const agent of agents) {
-    const renderer = getRenderer(agent.agent);
-    if (!renderer) continue;
-    if (!renderer.supportsScope("project")) {
-      out.push({
-        agent: agent.agent,
-        installed: false,
-        paths: [],
-        notes: [
-          "Skipped automatic skill install because this agent only supports global install. Project instructions were still appended when applicable.",
-        ],
-        warnings: [],
-      });
-      continue;
+  opts: {
+    install: boolean;
+    hook: boolean;
+    detection: Partial<Record<ScanToolConfigKey, boolean>>;
+  },
+): Promise<{ written: string[]; tools: Record<string, unknown> }> {
+  const written: string[] = [];
+  const scan = defaultScanConfig(opts.detection);
+  scan.pre_commit.enabled = opts.hook;
+  scan.pre_commit.mode = opts.hook ? "fast-staged" : "none";
+  if (writeProjectScanConfig(cwd, scan)) written.push(".vegastack/vegastack.yml");
+  if (opts.hook && installScanPreCommitHook(cwd, false)) written.push(".git/hooks/pre-commit");
+
+  const tools: Record<string, unknown> = {};
+  if (opts.install) {
+    for (const tool of toolsForScanConfig(scan)) {
+      try {
+        log.step(`installing managed ${tool} for VegaStack scan`);
+        tools[tool] = await installScanTool(tool);
+      } catch (e) {
+        tools[tool] = { error: e instanceof Error ? e.message : String(e) };
+        log.warn(`managed ${tool} install skipped: ${(tools[tool] as { error: string }).error}`);
+      }
     }
-    const scope: Scope = "project";
-    const result = await renderer.install({ cwd, scope, force: false, dryRun: false });
-    out.push(result);
-    if (result.installed) log.ok(`${renderer.displayName}: skill installed (${scope})`);
-    for (const warning of result.warnings) log.warn(`${renderer.displayName}: ${warning}`);
   }
-  return out;
+  return { written, tools };
+}
+
+type ScanToolConfigKey =
+  | "actions"
+  | "containers"
+  | "dependencies"
+  | "iac"
+  | "kubernetes"
+  | "secrets";
+
+function toolsForScanConfig(scan: ReturnType<typeof defaultScanConfig>): ScanToolName[] {
+  const out = new Set<ScanToolName>();
+  if (scan.checks.secrets.enabled) out.add("gitleaks");
+  if (scan.checks.actions.enabled) {
+    out.add("actionlint");
+    out.add("zizmor");
+  }
+  if (scan.checks.dependencies.enabled) {
+    out.add("osv-scanner");
+    out.add("trivy");
+  }
+  if (scan.checks.containers.enabled || scan.checks.kubernetes.enabled || scan.checks.iac.enabled) {
+    out.add("trivy");
+  }
+  return [...out];
 }
 
 function appendProjectInstructionEntrypoints(cwd: string, agents: DetectedAgent[]): string[] {
@@ -342,7 +391,7 @@ function appendProjectInstructionEntrypoints(cwd: string, agents: DetectedAgent[
     appendManagedInstructionBlock(
       path.join(cwd, "AGENTS.md"),
       "AGENTS.md-compatible agents",
-      displayProjectInstructionPath(cwd, "AGENTS.md"),
+      displaySharedInstructionPath("AGENTS.md"),
     );
     written.push("AGENTS.md");
   }
@@ -350,7 +399,7 @@ function appendProjectInstructionEntrypoints(cwd: string, agents: DetectedAgent[
     appendManagedInstructionBlock(
       path.join(cwd, "CLAUDE.md"),
       "Claude Code",
-      displayProjectInstructionPath(cwd, "CLAUDE.md"),
+      displaySharedInstructionPath("CLAUDE.md"),
     );
     written.push("CLAUDE.md");
   }
@@ -364,7 +413,18 @@ function appendManagedInstructionBlock(file: string, label: string, target: stri
 
 ## VegaStack
 
-${label} should read \`${target}\` before infrastructure, cloud, CI/CD, Terraform, Kubernetes, Docker, Supabase, or deployment work.
+This project uses VegaStack for grounded infrastructure, cloud, CI/CD, Terraform, Kubernetes, Docker, Supabase, deployment, and security guidance.
+
+${label} should read shared VegaStack instructions at \`${target}\`.
+
+If \`vegastack\` or that instruction file is missing, ask the user to install and set up VegaStack:
+
+\`\`\`bash
+npm i -g @vegastack/cli
+vegastack setup
+\`\`\`
+
+Use the project config at \`.vegastack/vegastack.yml\`.
 
 ${end}
 `;
@@ -380,8 +440,8 @@ ${end}
   fs.writeFileSync(file, next, "utf8");
 }
 
-function displayProjectInstructionPath(cwd: string, file: string): string {
-  return path.join(projectInstructionsDir(cwd), file);
+function displaySharedInstructionPath(file: string): string {
+  return `~/.vegastack/instructions/${file}`;
 }
 
 function writePreviewMetadata(
@@ -389,13 +449,7 @@ function writePreviewMetadata(
   enabled: boolean,
   cloudflared: CloudflaredInstall | { error: string } | null,
 ): void {
-  const file = path.join(cwd, ".vegastack", "project.json");
-  let project: Record<string, unknown> = {};
-  try {
-    project = JSON.parse(fs.readFileSync(file, "utf8")) as Record<string, unknown>;
-  } catch {
-    project = { schema_version: 1, project_root: cwd };
-  }
+  const project = readProjectConfigIfExists(cwd) ?? { schema_version: 1 };
   project.preview = {
     enabled,
     engine: "cloudflared",
@@ -406,9 +460,9 @@ function writePreviewMetadata(
       "Quick Tunnels are intended for temporary testing and development previews, not production hosting.",
     custom_hostname_notice:
       "Custom hostnames require Cloudflare login and a domain/zone you control.",
-    cloudflared,
   };
-  fs.writeFileSync(file, `${JSON.stringify(project, null, 2)}\n`);
+  void cloudflared;
+  writeProjectConfig(cwd, project);
 }
 
 function escapeRegExp(value: string): string {

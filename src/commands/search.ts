@@ -3,15 +3,15 @@
 import {
   allInstalledRegistryEntryNames,
   ensureProjectInitialized,
-  readProjectRegistryEntryNames,
 } from "../lib/registry.js";
 import { VegaStackError } from "../lib/errors.js";
 import { log, printError } from "../lib/log.js";
 import { searchRegistry } from "../lib/registry-search.js";
+import { resolveProjectEntriesWithDetection } from "../lib/auto-detect-entries.js";
 
 export interface SearchCommandOptions {
   all: boolean;
-  entries?: string;
+  entries?: string | string[];
   max?: number;
   regex: boolean;
   ignoreCase: boolean;
@@ -45,11 +45,7 @@ export async function runSearch(query: string, opts: SearchCommandOptions): Prom
 
 function resolveSearchEntries(opts: SearchCommandOptions): string[] {
   if (opts.entries) {
-    return opts.entries
-      .split(",")
-      .map((p) => p.trim())
-      .filter(Boolean)
-      .sort();
+    return normalizeEntryNames(opts.entries);
   }
   if (opts.all) {
     const names = allInstalledRegistryEntryNames().sort();
@@ -57,7 +53,18 @@ function resolveSearchEntries(opts: SearchCommandOptions): string[] {
     return names;
   }
   ensureProjectInitialized(process.cwd());
-  const names = readProjectRegistryEntryNames(process.cwd());
+  const names = resolveProjectEntriesWithDetection(process.cwd());
   log.info(`searching project registry entries: ${names.join(", ") || "(none)"}`);
   return names;
+}
+
+function normalizeEntryNames(value: string | string[]): string[] {
+  return [
+    ...new Set(
+      (Array.isArray(value) ? value : [value])
+        .flatMap((entry) => entry.split(","))
+        .map((p) => p.trim())
+        .filter(Boolean),
+    ),
+  ].sort();
 }

@@ -24,11 +24,13 @@ Concept aliases map natural-language phrases to specific resources or sections. 
 
 `rule_phase` is optional and used only by Cloudflare aliases that target a specific ruleset phase.
 
-## Terraform inventory (28 aliases across 4 providers)
+## Terraform alias examples
 
-The Terraform Registry pack includes these generated aliases. Total: 12 + 8 + 4 + 4 = 28.
+The Terraform Registry pack includes generated aliases in its installed index.
+Use the live pack index as the source of truth; the rows below are examples of
+the alias shape and routing intent.
 
-### `terraform/docs/cloudflare` (12 aliases)
+### `terraform/docs/cloudflare`
 
 | alias | phrase examples | resources |
 |---|---|---|
@@ -45,7 +47,7 @@ The Terraform Registry pack includes these generated aliases. Total: 12 + 8 + 4 
 | `lb` | "cf load balancer", "geo-routing" | `cloudflare_load_balancer`, `cloudflare_load_balancer_pool`, `cloudflare_load_balancer_monitor` |
 | `waf` | "block sql injection", "cf waf rule" | `cloudflare_ruleset` (phase=http_request_firewall_managed), `cloudflare_ruleset` (phase=http_request_firewall_custom) |
 
-### `terraform/docs/aws` (8 aliases)
+### `terraform/docs/aws`
 
 | alias | phrase examples | resources |
 |---|---|---|
@@ -58,7 +60,7 @@ The Terraform Registry pack includes these generated aliases. Total: 12 + 8 + 4 
 | `service_mesh` | "service mesh on ecs" | `aws_appmesh_mesh`, `aws_appmesh_virtual_service`, `aws_appmesh_virtual_router` |
 | `ecr_private` | "private docker registry on aws" | `aws_ecr_repository`, `aws_ecr_repository_policy`, `aws_ecr_lifecycle_policy` |
 
-### `terraform/docs/gcp` (4 aliases)
+### `terraform/docs/gcp`
 
 | alias | phrase examples | resources |
 |---|---|---|
@@ -67,7 +69,7 @@ The Terraform Registry pack includes these generated aliases. Total: 12 + 8 + 4 
 | `gke_private` | "private gke cluster" | `google_container_cluster` (private_cluster_config block), `google_container_node_pool`, `google_compute_network` |
 | `wif` | "workload identity federation" | `google_iam_workload_identity_pool`, `google_iam_workload_identity_pool_provider`, `google_service_account_iam_member` |
 
-### `terraform/docs/azure` (4 aliases)
+### `terraform/docs/azure`
 
 | alias | phrase examples | resources |
 |---|---|---|

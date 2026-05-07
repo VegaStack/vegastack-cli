@@ -9,10 +9,11 @@ import {
   cursorRulePath,
   geminiContextPath,
   geminiExtensionPath,
+  managedToolDir,
+  managedToolMetadataPath,
+  projectConfigPath,
+  projectDetectionCachePath,
   sharedInstructionsDir,
-  projectInstructionsDir,
-  projectLockPath,
-  projectManifestPath,
   projectVegaStackDir,
   registryCacheRoot,
   terraformEntryDocsDir,
@@ -33,8 +34,7 @@ afterEach(() => {
 
 describe("terraformEntryDocsDir", () => {
   it("defaults to Terraform docs inside the registry cache", () => {
-    const dir = terraformEntryDocsDir();
-    expect(dir).toMatch(/[\\/]\.config[\\/]vegastack[\\/]registry[\\/]terraform[\\/]docs$/);
+    expect(terraformEntryDocsDir()).toMatch(/[\\/]\.vegastack[\\/]registry[\\/]terraform[\\/]docs$/);
   });
 
   it("follows VEGASTACK_REGISTRY_DIR", () => {
@@ -50,25 +50,33 @@ describe("Terraform entry paths", () => {
 });
 
 describe("project harness paths", () => {
-  it("registry cache defaults to ~/.config/vegastack/registry", () => {
-    expect(registryCacheRoot()).toMatch(/[\\/]\.config[\\/]vegastack[\\/]registry$/);
+  it("registry cache defaults to ~/.vegastack/registry", () => {
+    expect(registryCacheRoot()).toMatch(/[\\/]\.vegastack[\\/]registry$/);
   });
 
-  it("project state lives under .vegastack", () => {
+  it("project config lives under .vegastack", () => {
     const cwd = "/tmp/proj";
     expect(projectVegaStackDir(cwd)).toBe(path.join(cwd, ".vegastack"));
-    expect(projectManifestPath(cwd)).toBe(path.join(cwd, ".vegastack", "project.json"));
-    expect(projectLockPath(cwd)).toBe(path.join(cwd, ".vegastack", "vegastack-lock.json"));
-    expect(projectInstructionsDir(cwd)).toBe(path.join(cwd, ".vegastack", "instructions"));
-    expect(sharedInstructionsDir()).toMatch(/[\\/]\.config[\\/]vegastack[\\/]instructions$/);
+    expect(projectConfigPath(cwd)).toBe(path.join(cwd, ".vegastack", "vegastack.yml"));
+    expect(projectDetectionCachePath(cwd)).toMatch(/[\\/]\.vegastack[\\/]cache[\\/]projects[\\/][a-f0-9]+\.json$/);
+    expect(sharedInstructionsDir()).toMatch(/[\\/]\.vegastack[\\/]instructions$/);
   });
 
   it("managed cloudflared lives in the shared tools cache", () => {
     expect(cloudflaredToolDir("2026.3.0")).toMatch(
-      /[\\/]\.config[\\/]vegastack[\\/]tools[\\/]cloudflared[\\/]2026\.3\.0$/,
+      /[\\/]\.vegastack[\\/]tools[\\/]cloudflared[\\/]2026\.3\.0$/,
     );
     expect(cloudflaredMetadataPath()).toMatch(
-      /[\\/]\.config[\\/]vegastack[\\/]tools[\\/]cloudflared[\\/]current\.json$/,
+      /[\\/]\.vegastack[\\/]tools[\\/]cloudflared[\\/]current\.json$/,
+    );
+  });
+
+  it("generic managed scan tools live in the shared tools cache", () => {
+    expect(managedToolDir("trivy", "v1.2.3")).toMatch(
+      /[\\/]\.vegastack[\\/]tools[\\/]trivy[\\/]v1\.2\.3$/,
+    );
+    expect(managedToolMetadataPath("trivy")).toMatch(
+      /[\\/]\.vegastack[\\/]tools[\\/]trivy[\\/]current\.json$/,
     );
   });
 });

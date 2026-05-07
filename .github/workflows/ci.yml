@@ -56,7 +56,6 @@ jobs:
       - run: npm ci
         env:
           VEGASTACK_SKIP_POSTINSTALL: "1"
-      - run: npm run build
       - run: npm test
 
   coverage:
@@ -75,8 +74,7 @@ jobs:
       - run: npm ci
         env:
           VEGASTACK_SKIP_POSTINSTALL: "1"
-      - run: npm run build
-      - run: npx vitest run --coverage
+      - run: npm run coverage
       - uses: actions/upload-artifact@v4
         if: always()
         with:

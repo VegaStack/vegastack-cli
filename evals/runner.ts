@@ -3,12 +3,12 @@
 //
 // Usage:
 //   tsx evals/runner.ts --mode both --concurrency 4 --output evals/reports/2026-04-28.json
-//   tsx evals/runner.ts --mode baseline --model claude-opus-4-7 --limit 5
+//   tsx evals/runner.ts --mode baseline --model <model-id> --limit 5
 //   tsx evals/runner.ts --mode with-skill --filter A12  (run all A12 prompts)
 //
 // Flags:
 //   --mode baseline|with-skill|both     (required)
-//   --model <model-id>                  default: claude-opus-4-7
+//   --model <model-id>                  default: DEFAULT_MODEL
 //   --concurrency <n>                   default: 4
 //   --output <path>                     default: evals/reports/<ISO-date>.json
 //   --limit <n>                         only run first N prompts (for smoke)
@@ -19,7 +19,7 @@
 //   --mock                              use mock fixtures instead of calling Anthropic
 //
 // CI surface:
-//   --pr-smoke   convenience: --mode both --filter "" --limit 12 --output /tmp/eval-smoke.json
+//   --pr-smoke   convenience shortcut for the configured PR smoke suite
 //   --nightly    convenience: --mode both --output evals/reports/<date>.json
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -87,10 +87,12 @@ interface CliArgs {
   mockFixtures: string | null;
 }
 
+const DEFAULT_MODEL = "claude-opus-4-7";
+
 function parseArgs(argv: string[]): CliArgs {
   const out: CliArgs = {
     mode: "both",
-    model: "claude-opus-4-7",
+    model: DEFAULT_MODEL,
     concurrency: 4,
     output: defaultReportPath(),
     limit: null,
@@ -136,7 +138,7 @@ function printHelp(): void {
   console.log(
     `evals/runner.ts — vegastack-cli eval runner\n\n` +
       `--mode baseline|with-skill|both   (default: both)\n` +
-      `--model <id>                      (default: claude-opus-4-7)\n` +
+      `--model <id>                      (default: ${DEFAULT_MODEL})\n` +
       `--concurrency <n>                 (default: 4)\n` +
       `--output <path>                   (default: evals/reports/<date>.json)\n` +
       `--limit <n>                       only run first N\n` +
@@ -145,7 +147,7 @@ function printHelp(): void {
       `--skill <path>                    (default: skills/vegastack/SKILL.md)\n` +
       `--vegastack <path>                     path to vegastack bin for with-skill mode\n` +
       `--mock                            use deterministic mock instead of Anthropic API\n` +
-      `--pr-smoke                        12-prompt smoke for PR CI\n` +
+      `--pr-smoke                        smoke suite for PR CI\n` +
       `--nightly                         convenience for nightly cron\n`
   );
 }

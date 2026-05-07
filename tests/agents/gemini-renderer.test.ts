@@ -46,7 +46,8 @@ describe("gemini renderer", () => {
 
     const tomlText = fs.readFileSync(path.join(root, "commands", "vegastack.toml"), "utf8");
     expect(tomlText).toContain("description");
-    expect(tomlText).toContain("vegastack ask");
+    expect(tomlText).toContain("VegaStack ops router");
+    expect(tomlText).toContain("init, ask, scan");
 
     const extText = fs.readFileSync(path.join(root, "gemini-extension.json"), "utf8");
     expect(extText).toContain("vegastack");

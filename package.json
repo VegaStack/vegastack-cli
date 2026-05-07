@@ -57,8 +57,8 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
   },
   "scripts": {
     "prebuild": "npm run clean",
@@ -69,11 +69,13 @@
     "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts' 'npm/*.js'",
     "format:check": "prettier --check 'src/**/*.ts' 'tests/**/*.ts' 'npm/*.js'",
     "typecheck": "tsc --noEmit",
+    "pretest": "npm run build",
     "test": "vitest run",
+    "coverage": "npm run build && vitest run --coverage",
     "test:watch": "vitest",
     "version-sync": "changeset version",
     "prerouter": "npm run build",
-    "postinstall": "node npm/install.js || true",
+    "postinstall": "node npm/install.js",
     "generate-skills": "tsx scripts/generate-skills.ts",
     "generate-skills:check": "npm run generate-skills && git diff --quiet -- skills/recipes skills/personas recipes/INDEX.json personas/INDEX.json",
     "generate-skill": "tsx scripts/generate-skill-from-registry.ts",

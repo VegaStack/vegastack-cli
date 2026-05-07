@@ -9,20 +9,16 @@ The schema is identified by `manifest_schema_version: 1` on every per-provider m
 ```json
 {
   "format_version": 1,
-  "registry_version": "2026.04.28",
-  "generated_at": "2026-04-28T17:50:07Z",
-  "providers": [
-    "1password", "ansible", "auth0", "aws", "azure", "clickhouse",
-    "cloudflare", "crowdstrike", "datadog", "digitalocean", "external",
-    "gcp", "github", "gitlab", "grafana", "helm", "kubernetes", "local",
-    "mongodb-atlas", "netlify", "okta", "pagerduty", "pinecone", "random",
-    "redis-cloud", "snowflake", "splunk", "time", "tls", "vault", "vercel"
-  ],
-  "counts": { "resources": 12450, "data_sources": 1820, "guides": 412 }
+  "registry_version": "<calver>",
+  "generated_at": "<iso8601>",
+  "providers": ["aws", "cloudflare"],
+  "counts": { "resources": 0, "data_sources": 0, "guides": 0 }
 }
 ```
 
-Use this to enumerate providers, confirm a provider exists, and pull `registry_version` for `required_providers` pinning logic.
+Use the installed manifest to enumerate providers, confirm a provider exists,
+read generated counts, and pull `registry_version` for `required_providers`
+pinning logic. Do not copy provider lists or counts into docs.
 
 ## Per-provider manifest (`cli/packs/terraform/docs/<provider>/MANIFEST.json`)
 
@@ -133,35 +129,35 @@ Each resource carries `"schema_origin": "sdkv2" | "plugin_framework" | "mixed"`.
 
 ```bash
 # All required args of a resource (top level only — sub-block args are under .blocks.*)
-jq '.resources.aws_db_instance.required_args[].name' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
+jq '.resources.aws_db_instance.required_args[].name' "~/.vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # All sub-block names for a resource
-jq '.resources.aws_db_instance.blocks | keys' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
+jq '.resources.aws_db_instance.blocks | keys' "~/.vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # Required args inside a specific sub-block
-jq '.resources.aws_db_instance.blocks.s3_import.required_args[].name' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
+jq '.resources.aws_db_instance.blocks.s3_import.required_args[].name' "~/.vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # Is this resource deprecated?
-jq '.resources.aws_s3_bucket | {dep: .deprecated, alt: .suggested_alternative}' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
+jq '.resources.aws_s3_bucket | {dep: .deprecated, alt: .suggested_alternative}' "~/.vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # Files where a particular argument appears
-jq '.argument_index.health_check' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
+jq '.argument_index.health_check' "~/.vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # Companion resources
-jq '.recommended_companions.aws_instance' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
+jq '.recommended_companions.aws_instance' "~/.vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # What does this resource refer to in upstream HCL examples?
-jq '.hcl_references.aws_lb' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
+jq '.hcl_references.aws_lb' "~/.vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # All resources in a subcategory
-jq '.subcategories["RDS (Relational Database)"]' "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
+jq '.subcategories["RDS (Relational Database)"]' "~/.vegastack/registry/terraform/docs/aws/MANIFEST.json"
 
 # All synthetic subcategories (filename prefixes — Cloudflare in particular)
-jq '.synthetic_subcategories | keys' "~/.config/vegastack/registry/terraform/docs/cloudflare/MANIFEST.json"
+jq '.synthetic_subcategories | keys' "~/.vegastack/registry/terraform/docs/cloudflare/MANIFEST.json"
 
 # Guide files with the "migrate" intent
 jq '.guides | to_entries | map(select(.value.intent_tags | contains(["migrate"])))' \
-   "~/.config/vegastack/registry/terraform/docs/aws/MANIFEST.json"
+   "~/.vegastack/registry/terraform/docs/aws/MANIFEST.json"
 ```
 
 ## Validation

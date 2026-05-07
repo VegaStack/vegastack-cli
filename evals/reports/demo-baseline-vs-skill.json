@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-04-27T21:15:03.704Z",
-  "model": "claude-opus-4-7",
+  "model": "runner-default-model",
   "mode": "both",
   "eval_count": 5,
   "summary": {

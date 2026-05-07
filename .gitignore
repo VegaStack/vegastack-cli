@@ -29,6 +29,7 @@ npm/.version
 tests/.workspace/
 tests/.cache/
 exports/
+coverage/
 
 # Changeset draft state
 .changeset/_*.md

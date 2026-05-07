@@ -1,13 +1,13 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import {
-  projectInstructionsDir,
   registryCacheRoot,
   registryEntryDir,
-  projectLockPath,
-  projectManifestPath,
+  projectConfigPath,
   projectVegaStackDir,
+  sharedInstructionsDir,
 } from "./paths.js";
+import { writeProjectConfig, type VegaStackProjectConfig } from "./project-config.js";
 
 export type PackStatus = "available" | "planned";
 
@@ -44,10 +44,7 @@ export interface InitPlan {
   scan: ProjectScan;
   selected: DetectedPack[];
   files: {
-    projectJson: string;
-    lockJson: string;
-    gitignore: string;
-    instructions: string[];
+    projectConfig: string;
   };
   registryCacheRoot: string;
 }
@@ -126,7 +123,79 @@ export const PACKS: readonly PackDefinition[] = Object.freeze([
     detects: ["Jenkinsfile", "**/Jenkinsfile"],
     source: "https://github.com/jenkins-infra/jenkins.io",
   },
+  {
+    name: "cloudflare",
+    title: "Cloudflare",
+    shape: "edge-platform+cli-reference",
+    status: "available",
+    description: "Cloudflare developer docs for Workers, Wrangler, Pages, R2, D1, KV, Durable Objects, and platform operations.",
+    detects: ["wrangler.toml", "wrangler.json", "wrangler.jsonc", ".dev.vars"],
+    source: "https://developers.cloudflare.com/",
+  },
+  {
+    name: "vercel",
+    title: "Vercel",
+    shape: "deploy-platform+cli-reference",
+    status: "available",
+    description: "Vercel docs for projects, deployments, builds, CLI, environment variables, and framework integrations.",
+    detects: ["vercel.json", ".vercel/project.json"],
+    source: "https://vercel.com/docs",
+  },
+  plannedPack("gitlab-ci", "GitLab CI", "ci-yaml", [".gitlab-ci.yml"]),
+  plannedPack("circleci", "CircleCI", "ci-yaml", [".circleci/config.yml"]),
+  plannedPack("buildkite", "Buildkite", "ci-yaml", [".buildkite/pipeline.yml"]),
+  plannedPack("azure-pipelines", "Azure Pipelines", "ci-yaml", ["azure-pipelines.yml"]),
+  plannedPack("bitbucket-pipelines", "Bitbucket Pipelines", "ci-yaml", ["bitbucket-pipelines.yml"]),
+  plannedPack("travis-ci", "Travis CI", "ci-yaml", [".travis.yml"]),
+  plannedPack("drone-ci", "Drone CI", "ci-yaml", [".drone.yml"]),
+  plannedPack("google-cloud-build", "Google Cloud Build", "ci-yaml", ["cloudbuild.yaml"]),
+  plannedPack("ansible", "Ansible", "configuration-management", [
+    "ansible.cfg",
+    "playbook.yaml",
+    "roles/",
+  ]),
+  plannedPack("pulumi", "Pulumi", "iac-sdk", ["Pulumi.yaml"]),
+  plannedPack("cloudformation", "AWS CloudFormation", "iac-template", [
+    "AWSTemplateFormatVersion",
+    "Resources",
+  ]),
+  plannedPack("serverless-framework", "Serverless Framework", "serverless-yaml", [
+    "serverless.yml",
+  ]),
+  plannedPack("aws-sam", "AWS SAM", "serverless-template", ["template.yaml", "samconfig.toml"]),
+  plannedPack("aws-cdk", "AWS CDK", "iac-sdk", ["cdk.json"]),
+  plannedPack("opentofu", "OpenTofu", "iac-hcl", ["*.tofu", "*.tofu.json"]),
+  plannedPack("terragrunt", "Terragrunt", "iac-hcl", ["terragrunt.hcl"]),
+  plannedPack("packer", "Packer", "image-build-hcl", ["*.pkr.hcl"]),
+  plannedPack("nomad", "Nomad", "scheduler-hcl", ["*.nomad", "*.nomad.hcl"]),
+  plannedPack("kustomize", "Kustomize", "kubernetes-overlay", ["kustomization.yaml"]),
+  plannedPack("argo-cd", "Argo CD", "gitops-yaml", ["kind: Application"]),
+  plannedPack("flux", "Flux", "gitops-yaml", ["toolkit.fluxcd.io"]),
+  plannedPack("skaffold", "Skaffold", "kubernetes-dev-yaml", ["skaffold.yaml"]),
+  plannedPack("tilt", "Tilt", "kubernetes-dev", ["Tiltfile"]),
+  plannedPack("devcontainer", "Dev Containers", "container-dev-env", [
+    ".devcontainer/devcontainer.json",
+  ]),
+  plannedPack("nix", "Nix", "reproducible-builds", ["flake.nix", "default.nix"]),
+  plannedPack("bazel", "Bazel", "build-system", ["MODULE.bazel", "WORKSPACE"]),
 ]);
+
+function plannedPack(
+  name: string,
+  title: string,
+  shape: string,
+  detects: readonly string[],
+): PackDefinition {
+  return {
+    name,
+    title,
+    shape,
+    status: "planned",
+    description: `${title} repository signals detected. VegaStack Registry coverage is planned.`,
+    detects,
+    source: "planned VegaStack Registry pack",
+  };
+}
 
 const IGNORE_DIRS = new Set([
   ".git",
@@ -136,6 +205,7 @@ const IGNORE_DIRS = new Set([
   "coverage",
   ".next",
   ".turbo",
+  "exports",
   "vendor",
 ]);
 
@@ -223,14 +293,7 @@ export function buildInitPlan(
     scan,
     selected,
     files: {
-      projectJson: projectManifestPath(cwd),
-      lockJson: projectLockPath(cwd),
-      gitignore: path.join(projectVegaStackDir(cwd), ".gitignore"),
-      instructions: [
-        path.join(projectInstructionsDir(cwd), "AGENTS.md"),
-        path.join(projectInstructionsDir(cwd), "CLAUDE.md"),
-        path.join(projectInstructionsDir(cwd), "README.md"),
-      ],
+      projectConfig: projectConfigPath(cwd),
     },
     registryCacheRoot: registryCacheRoot(),
   };
@@ -238,78 +301,35 @@ export function buildInitPlan(
 
 export function writeInitFiles(plan: InitPlan): void {
   const root = plan.scan.root;
-  fs.mkdirSync(projectInstructionsDir(root), { recursive: true });
   fs.mkdirSync(registryCacheRoot(), { recursive: true });
-  writeLocalGitignore(root);
+  cleanupOldProjectFiles(root);
 
-  const now = new Date().toISOString();
   const registryEntries = Object.fromEntries(
-    plan.selected.map((p) => [
-      p.name,
-      {
-        status: "installed",
-        cache_path: registryEntryCachePath(p.name),
-        source: p.source,
-      },
-    ]),
-  );
-  const detected = Object.fromEntries(
-    plan.scan.detected.map((p) => [
-      p.name,
-      {
-        title: p.title,
-        status: p.status,
-        selected: plan.selected.some((s) => s.name === p.name),
-        reasons: p.reasons,
-      },
-    ]),
-  );
-
-  const projectJson = {
-    schema_version: 1,
-    generated_at: now,
-    project_root: root,
-    git: plan.scan.git,
-    detected,
-    registry_entries: registryEntries,
-    instructions: {
-      directory: projectInstructionsDir(root),
-      agent_entrypoints: [
-        path.join(projectInstructionsDir(root), "AGENTS.md"),
-        path.join(projectInstructionsDir(root), "CLAUDE.md"),
-      ],
-    },
-  };
-  writeJson(projectManifestPath(root), projectJson);
-
-  const lockJson = {
-    schema_version: 1,
-    generated_at: now,
-    registry_entries: Object.fromEntries(
-      plan.selected.map((p) => [
+    plan.selected.map((p) => {
+      const version = readRegistryEntryManifestVersion(p.name) ?? p.version;
+      return [
         p.name,
         {
-          version: readRegistryEntryManifestVersion(p.name) ?? p.version ?? "unknown",
+          ...(version ? { version } : {}),
           cache_path: registryEntryCachePath(p.name),
           source: p.source,
         },
-      ]),
-    ),
+      ];
+    }),
+  );
+  const projectConfig: VegaStackProjectConfig = {
+    schema_version: 1,
+    registry: {
+      entries: registryEntries,
+      recommended_entries: plan.selected.map((entry) => entry.name).sort(),
+    },
+    agents: {
+      shared_instructions: "~/.vegastack/instructions",
+    },
   };
-  writeJson(projectLockPath(root), lockJson);
+  writeProjectConfig(root, projectConfig);
 
-  fs.writeFileSync(
-    path.join(projectInstructionsDir(root), "AGENTS.md"),
-    renderAgentInstructions(plan, "AGENTS.md"),
-  );
-  fs.writeFileSync(
-    path.join(projectInstructionsDir(root), "CLAUDE.md"),
-    renderAgentInstructions(plan, "CLAUDE.md"),
-  );
-  fs.writeFileSync(
-    path.join(projectInstructionsDir(root), "README.md"),
-    renderInstructionsReadme(plan),
-  );
+  writeSharedInstructionFiles();
   writePackCacheMetadata(plan);
 }
 
@@ -323,6 +343,8 @@ export function packCachePath(packName: string): string {
 
 function detectPack(pack: PackDefinition, files: Set<string>, cwd: string): string[] {
   const reasons: string[] = [];
+  const fileList = [...files];
+  if (pack.name === "docker") reasons.push(...detectDockerSignals(fileList));
   for (const f of files) {
     for (const pattern of pack.detects) {
       if (detectPatternMatches(pattern, f, cwd)) reasons.push(f);
@@ -342,7 +364,9 @@ function detectPack(pack: PackDefinition, files: Set<string>, cwd: string): stri
     }
     if (
       pack.name === "docker" &&
-      /(^|\/)(Dockerfile|compose\.ya?ml|docker-compose\.ya?ml)$/.test(f)
+      /(^|\/)(Dockerfile|Containerfile|Dockerfile\.[^/]+|compose\.[^/]+\.ya?ml|docker-compose\.[^/]+\.ya?ml)$/.test(
+        f,
+      )
     ) {
       reasons.push(f);
     }
@@ -355,23 +379,175 @@ function detectPack(pack: PackDefinition, files: Set<string>, cwd: string): stri
     if (pack.name === "helm" && /(^|\/)Chart\.yaml$/.test(f)) {
       reasons.push(f);
     }
+    if (pack.name === "github-actions" && f === ".github/dependabot.yml") {
+      reasons.push(f);
+    }
     if (pack.name === "kubernetes" && /\.(ya?ml)$/.test(f)) {
       const full = path.join(cwd, f);
       const raw = readTextIfExists(full);
       if (
         raw &&
-        /\bkind:\s*(Deployment|Service|StatefulSet|Ingress|ConfigMap|Secret)\b/.test(raw)
+        /\bkind:\s*(Deployment|Service|StatefulSet|DaemonSet|ReplicaSet|Ingress|ConfigMap|Secret|CronJob|Job|Namespace|PersistentVolume|PersistentVolumeClaim|ServiceAccount|Role|ClusterRole|RoleBinding|ClusterRoleBinding|HorizontalPodAutoscaler)\b/.test(
+          raw,
+        )
       ) {
         reasons.push(f);
       }
+    }
+    for (const detector of PLANNED_DETECTORS) {
+      if (pack.name === detector.name && detector.match(f, cwd)) reasons.push(f);
     }
   }
   return [...new Set(reasons)].slice(0, 8);
 }
 
+interface PlannedDetector {
+  name: string;
+  match: (file: string, cwd: string) => boolean;
+}
+
+const PLANNED_DETECTORS: readonly PlannedDetector[] = [
+  exactDetector("gitlab-ci", [".gitlab-ci.yml", ".gitlab-ci.yaml"]),
+  exactDetector("circleci", [".circleci/config.yml", ".circleci/config.yaml"]),
+  exactDetector("buildkite", [
+    ".buildkite/pipeline.yml",
+    ".buildkite/pipeline.yaml",
+    "buildkite.yml",
+    "buildkite.yaml",
+  ]),
+  exactDetector("azure-pipelines", [
+    "azure-pipelines.yml",
+    "azure-pipelines.yaml",
+    ".azure-pipelines.yml",
+    ".azure-pipelines.yaml",
+  ]),
+  exactDetector("bitbucket-pipelines", ["bitbucket-pipelines.yml", "bitbucket-pipelines.yaml"]),
+  exactDetector("travis-ci", [".travis.yml", ".travis.yaml"]),
+  exactDetector("drone-ci", [".drone.yml", ".drone.yaml"]),
+  exactDetector("google-cloud-build", [
+    "cloudbuild.yaml",
+    "cloudbuild.yml",
+    "cloudbuild.json",
+    "clouddeploy.yaml",
+    "clouddeploy.yml",
+  ]),
+  exactDetector("ansible", [
+    "ansible.cfg",
+    "site.yml",
+    "site.yaml",
+    "playbook.yml",
+    "playbook.yaml",
+  ]),
+  prefixDetector("ansible", [
+    "roles/",
+    "playbooks/",
+    "group_vars/",
+    "host_vars/",
+    "inventory/",
+    "inventories/",
+  ]),
+  suffixDetector("ansible", ["/tasks/main.yml", "/tasks/main.yaml", "/handlers/main.yml"]),
+  exactDetector("pulumi", ["Pulumi.yaml", "Pulumi.yml"]),
+  prefixDetector("pulumi", ["Pulumi."]),
+  contentDetector("cloudformation", /\.(ya?ml|json|template)$/i, [
+    /\bAWSTemplateFormatVersion\b/,
+    /\bResources\s*:\s*\n/,
+    /"Resources"\s*:/,
+    /\bTransform:\s*AWS::Serverless/,
+    /"Transform"\s*:\s*"AWS::Serverless/,
+  ]),
+  exactDetector("serverless-framework", ["serverless.yml", "serverless.yaml"]),
+  exactDetector("aws-sam", ["samconfig.toml"]),
+  contentDetector("aws-sam", /\.(ya?ml|json)$/i, [
+    /\bTransform:\s*AWS::Serverless/,
+    /"Transform"\s*:\s*"AWS::Serverless/,
+    /\bAWS::Serverless::/,
+  ]),
+  exactDetector("aws-cdk", ["cdk.json", "cdk.context.json"]),
+  suffixDetector("aws-cdk", [".cdk.json"]),
+  suffixDetector("opentofu", [".tofu", ".tofu.json"]),
+  exactDetector("terragrunt", ["terragrunt.hcl"]),
+  suffixDetector("terragrunt", ["/terragrunt.hcl"]),
+  suffixDetector("packer", [".pkr.hcl", ".pkr.json", ".pkrvars.hcl"]),
+  suffixDetector("nomad", [".nomad", ".nomad.hcl", ".nomad.json"]),
+  exactDetector("kustomize", ["kustomization.yaml", "kustomization.yml", "Kustomization"]),
+  suffixDetector("kustomize", ["/kustomization.yaml", "/kustomization.yml", "/Kustomization"]),
+  exactDetector("skaffold", ["skaffold.yaml", "skaffold.yml"]),
+  exactDetector("tilt", ["Tiltfile", "tiltfile"]),
+  exactDetector("devcontainer", [
+    ".devcontainer/devcontainer.json",
+    ".devcontainer.json",
+    "devcontainer.json",
+  ]),
+  exactDetector("cloudflare", ["wrangler.toml", "wrangler.json", "wrangler.jsonc"]),
+  exactDetector("nix", ["flake.nix", "default.nix", "shell.nix"]),
+  suffixDetector("nix", [".nix"]),
+  exactDetector("bazel", ["MODULE.bazel", "REPO.bazel", "WORKSPACE", "WORKSPACE.bazel"]),
+  suffixDetector("bazel", ["/BUILD", "/BUILD.bazel", ".bzl"]),
+  contentDetector("argo-cd", /\.(ya?ml)$/i, [
+    /\bapiVersion:\s*argoproj\.io\/v1alpha1\b/,
+    /\bkind:\s*(Application|ApplicationSet|AppProject)\b/,
+  ]),
+  contentDetector("flux", /\.(ya?ml)$/i, [
+    /\bapiVersion:\s*(source|kustomize|helm|notification|image)\.toolkit\.fluxcd\.io\//,
+    /\bkind:\s*(GitRepository|OCIRepository|Bucket|Kustomization|HelmRelease|HelmRepository|ImageRepository|ImagePolicy|ImageUpdateAutomation)\b/,
+  ]),
+];
+
+function detectDockerSignals(files: readonly string[]): string[] {
+  const reasons: string[] = [];
+  const byDir = new Map<string, Set<string>>();
+  for (const file of files) {
+    const base = path.posix.basename(file);
+    if (!/^(compose|docker-compose)(\.[^/]+)?\.ya?ml$/.test(base)) continue;
+    const dir = path.posix.dirname(file) === "." ? "" : path.posix.dirname(file);
+    byDir.set(dir, new Set([...(byDir.get(dir) ?? []), base]));
+  }
+  const precedence = ["compose.yaml", "compose.yml", "docker-compose.yaml", "docker-compose.yml"];
+  for (const [dir, names] of byDir) {
+    const canonical = precedence.find((name) => names.has(name));
+    if (canonical) {
+      const full = dir ? `${dir}/${canonical}` : canonical;
+      if (names.size > 1) reasons.push(`${full} (Docker Compose preferred file)`);
+      else reasons.push(full);
+      continue;
+    }
+    for (const name of [...names].sort()) reasons.push(dir ? `${dir}/${name}` : name);
+  }
+  return reasons;
+}
+
+function exactDetector(name: string, paths: readonly string[]): PlannedDetector {
+  const set = new Set(paths);
+  return { name, match: (file) => set.has(file) };
+}
+
+function prefixDetector(name: string, prefixes: readonly string[]): PlannedDetector {
+  return { name, match: (file) => prefixes.some((prefix) => file.startsWith(prefix)) };
+}
+
+function suffixDetector(name: string, suffixes: readonly string[]): PlannedDetector {
+  return { name, match: (file) => suffixes.some((suffix) => file.endsWith(suffix)) };
+}
+
+function contentDetector(
+  name: string,
+  filePattern: RegExp,
+  patterns: readonly RegExp[],
+): PlannedDetector {
+  return {
+    name,
+    match: (file, cwd) => {
+      if (!filePattern.test(file)) return false;
+      const raw = readTextIfExists(path.join(cwd, file));
+      return Boolean(raw && patterns.some((pattern) => pattern.test(raw)));
+    },
+  };
+}
+
 function detectPatternMatches(pattern: string, file: string, cwd: string): boolean {
   if (pattern.startsWith("content:")) {
-    if (!/\.(ya?ml|json|toml|md|mdx|txt|tf|hcl)$/i.test(file)) return false;
+    if (!/\.(ya?ml)$/i.test(file)) return false;
     const raw = readTextIfExists(path.join(cwd, file));
     if (!raw) return false;
     try {
@@ -400,6 +576,7 @@ function sourceLabel(source: unknown): string | undefined {
     branch?: unknown;
     path?: unknown;
     paths?: unknown;
+    sitemap_url?: unknown;
   };
   if (value.type === "github-archive" && typeof value.repo === "string") {
     const branch = typeof value.branch === "string" ? value.branch : "main";
@@ -410,6 +587,7 @@ function sourceLabel(source: unknown): string | undefined {
     return `https://github.com/${value.repo}/tree/${branch}`;
   }
   if (value.type === "local" && typeof value.path === "string") return value.path;
+  if (value.type === "web-docs" && typeof value.sitemap_url === "string") return value.sitemap_url;
   return undefined;
 }
 
@@ -439,10 +617,26 @@ function listProjectFiles(root: string, maxDepth: number, maxFiles: number): str
   return out.sort();
 }
 
-function writeLocalGitignore(root: string): void {
-  const p = path.join(projectVegaStackDir(root), ".gitignore");
-  fs.mkdirSync(path.dirname(p), { recursive: true });
-  fs.writeFileSync(p, "*\n");
+function cleanupOldProjectFiles(root: string): void {
+  fs.rmSync(path.join(projectVegaStackDir(root), ".gitignore"), {
+    force: true,
+  });
+  fs.rmSync(path.join(projectVegaStackDir(root), "project.json"), {
+    force: true,
+  });
+  fs.rmSync(path.join(projectVegaStackDir(root), "vegastack-lock.json"), {
+    force: true,
+  });
+  fs.rmSync(path.join(projectVegaStackDir(root), "instructions"), {
+    recursive: true,
+    force: true,
+  });
+}
+
+export function writeSharedInstructionFiles(): void {
+  fs.mkdirSync(sharedInstructionsDir(), { recursive: true });
+  fs.writeFileSync(path.join(sharedInstructionsDir(), "AGENTS.md"), renderAgentInstructions());
+  fs.writeFileSync(path.join(sharedInstructionsDir(), "CLAUDE.md"), renderAgentInstructions());
 }
 
 function writePackCacheMetadata(plan: InitPlan): void {
@@ -465,11 +659,11 @@ function writePackCacheMetadata(plan: InitPlan): void {
   }
 }
 
-function renderAgentInstructions(plan: InitPlan, target: string): string {
-  return `# VegaStack Project Instructions for ${target}
+function renderAgentInstructions(): string {
+  return `# VegaStack Shared Agent Instructions
 
-This project-local instruction file is managed by @vegastack/cli.
-For project-specific registry entries, detected stack, and security setup, read the current repository's \`.vegastack/project.json\` and \`.vegastack/vegastack-lock.json\`.
+This shared instruction file is managed by @vegastack/cli.
+For project-specific registry entries, detected stack, and security setup, read the current repository's \`.vegastack/vegastack.yml\`.
 
 ## Rules
 
@@ -479,31 +673,12 @@ For project-specific registry entries, detected stack, and security setup, read 
 - Do not invent resource names, arguments, import IDs, command flags, workflow keys, or provider behaviors.
 - Do not print secrets from .env files, shell history, cloud credentials, CI variables, or local config.
 - If a task may modify infrastructure, show the planned change and ask before destructive actions.
-- Prefer project-local context from \`.vegastack/project.json\` and \`.vegastack/vegastack-lock.json\`.
+- Prefer project-local context from \`.vegastack/vegastack.yml\`.
 
 ## Files
 
-- Project manifest: \`.vegastack/project.json\`
-- Registry lock: \`.vegastack/vegastack-lock.json\`
-- Project instructions directory: \`${projectInstructionsDir(plan.scan.root)}\`
-`;
-}
-
-function renderInstructionsReadme(_plan: InitPlan): string {
-  return `# VegaStack Project Harness
-
-This project-local directory is generated by \`vegastack init\`.
-
-## How Agents Should Use This
-
-Agents should read the instruction file matching their harness from this directory before infra, cloudops, CI/CD, or SRE work, then read the current repository's \`.vegastack/project.json\` and \`.vegastack/vegastack-lock.json\`.
-
-- Codex and other AGENTS.md-compatible agents: \`${path.join(projectInstructionsDir(_plan.scan.root), "AGENTS.md")}\`
-- Claude Code: \`${path.join(projectInstructionsDir(_plan.scan.root), "CLAUDE.md")}\`
-
-Heavy registry content is cached under:
-
-\`${registryCacheRoot()}\`
+- Project config: \`.vegastack/vegastack.yml\`
+- Shared instructions directory: \`${sharedInstructionsDir()}\`
 `;
 }
 

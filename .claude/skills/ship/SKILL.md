@@ -8,12 +8,42 @@ allowed-tools: Bash(git:*), Bash(gh:*), Bash(npm:*), Bash(npx:*), Bash(node:*)
 
 Use only inside this repo.
 
+## Hard Release Gate
+
+Do not push, tag, publish, move npm dist-tags, or dispatch release workflows
+until the maintainer gives explicit release approval in the current
+conversation.
+
+Implementation approval is not release approval. Do not treat "go ahead",
+"proceed", "implement it", "fix it", "looks good", "continue", "ship-ready", or
+similar wording as permission to mutate remote state. Those phrases allow local
+edits and verification only.
+
+Before any remote mutation, show the exact command(s), the version being
+released, the target branch/tag, and the npm dist-tag impact. Then wait for a
+direct approval that names the release action, for example:
+
+- "push this branch"
+- "tag v0.1.13-next.0 and publish to next"
+- "release 0.1.12 to latest"
+- "move npm latest to 0.1.12"
+
+If the request is ambiguous, stop and ask. Never infer publish approval from
+prior discussion or from a successful test run.
+
 ## Preflight
 
 1. Run `git status --short` and inspect the diff.
 2. Run `npm run typecheck`, `npm run build`, and `npm test`.
-3. Confirm public docs mention only the current command surface: `vegastack init`, `vegastack ask`, `vegastack search`, `vegastack registry update`, `vegastack doctor`, `vegastack skills`, `vegastack secrets`, `vegastack preview`, and `vegastack update`.
-4. Confirm no stale Registry/package references:
+3. **Run the contributor audit chain (ephemeral mode — no GitHub issues created):**
+   - Invoke `/vegastack-audit scope=changed mode=ephemeral`. This writes a single audit report under `audits/audit-<epoch>-<iso>-changed.md` covering uncommitted changes + their blast radius.
+   - If the report has any **Critical** or **High** findings, **block release**. Either:
+     - Run `/vegastack-fix all sev=critical,high --auto` to apply TDD-verified fixes (each fix carries red→green commit SHAs, mutation review, and a verification log entry appended to the audit report), then re-run the audit until clean; or
+     - Stop and ask the maintainer how to proceed (e.g. defer the finding, mark wontfix, accept and document the risk).
+   - **Medium** findings do not block but must be acknowledged in the release notes if they affect shipped behavior.
+   - The audit report and any verification-log entries from `/vegastack-fix` are committed alongside the release commit so the audit history travels with the version.
+4. Confirm public docs mention only the current command surface: `vegastack init`, `vegastack ask`, `vegastack search`, `vegastack registry update`, `vegastack doctor`, `vegastack skills`, `vegastack preview`, and `vegastack update`.
+5. Confirm no stale Registry/package references:
    - no removed shortcut commands
    - no top-level install/refresh command docs
    - no old lock path
@@ -42,7 +72,7 @@ Release workflow inputs:
 
 ## Final Check
 
-Before pushing release changes, show:
+Before any remote release mutation, show:
 
 - version
 - changelog entry
@@ -50,4 +80,5 @@ Before pushing release changes, show:
 - test results
 - exact command that will push
 
-Wait for explicit confirmation before pushing tags or release branches.
+Wait for explicit confirmation before pushing branches, pushing tags, moving npm
+dist-tags, dispatching release workflows, or publishing packages.

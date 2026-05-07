@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   buildInitPlan,
   scanProject,
@@ -8,7 +8,15 @@ import {
   writeInitFiles,
   type PackDefinition,
 } from "../../src/lib/project.js";
+import { projectConfigPath, sharedInstructionsDir } from "../../src/lib/paths.js";
+import { readProjectConfig } from "../../src/lib/project-config.js";
 import { withTmpDir } from "../setup.js";
+
+const oldEnv = { ...process.env };
+
+afterEach(() => {
+  process.env = { ...oldEnv };
+});
 
 describe("project harness detection", () => {
   it("detects Terraform, GitHub Actions, Docker, Supabase, Kubernetes, and Helm signals", async () => {
@@ -70,11 +78,97 @@ describe("project harness detection", () => {
       ]);
     });
   });
+
+  it("detects broad ops and CI sources as planned packs without selecting them", async () => {
+    await withTmpDir((dir) => {
+      fs.writeFileSync(path.join(dir, ".gitlab-ci.yml"), "stages: [test]\n");
+      fs.mkdirSync(path.join(dir, ".circleci"), { recursive: true });
+      fs.writeFileSync(path.join(dir, ".circleci", "config.yml"), "version: 2.1\n");
+      fs.writeFileSync(path.join(dir, "terragrunt.hcl"), 'terraform { source = "./module" }\n');
+      fs.writeFileSync(path.join(dir, "Pulumi.yaml"), "name: app\nruntime: nodejs\n");
+      fs.writeFileSync(
+        path.join(dir, "template.yaml"),
+        "AWSTemplateFormatVersion: '2010-09-09'\nResources: {}\n",
+      );
+      fs.writeFileSync(path.join(dir, "serverless.yml"), "service: app\n");
+      fs.writeFileSync(path.join(dir, "cdk.json"), "{}\n");
+      fs.writeFileSync(path.join(dir, "app.pkr.hcl"), "packer {}\n");
+      fs.writeFileSync(path.join(dir, "app.nomad.hcl"), 'job "app" {}\n');
+      fs.writeFileSync(path.join(dir, "kustomization.yaml"), "resources: []\n");
+      fs.writeFileSync(path.join(dir, "skaffold.yaml"), "apiVersion: skaffold/v4beta1\n");
+      fs.writeFileSync(path.join(dir, "Tiltfile"), "# tilt\n");
+      fs.writeFileSync(path.join(dir, "cloudbuild.yaml"), "steps: []\n");
+      fs.mkdirSync(path.join(dir, ".devcontainer"), { recursive: true });
+      fs.writeFileSync(path.join(dir, ".devcontainer", "devcontainer.json"), "{}\n");
+      fs.writeFileSync(path.join(dir, "wrangler.toml"), 'name = "worker"\n');
+      fs.writeFileSync(path.join(dir, "flake.nix"), "{ outputs = { self }: {}; }\n");
+      fs.writeFileSync(path.join(dir, "MODULE.bazel"), 'module(name = "app")\n');
+
+      const scan = scanProject(dir);
+      const detected = new Map(scan.detected.map((p) => [p.name, p]));
+
+      for (const name of [
+        "gitlab-ci",
+        "circleci",
+        "google-cloud-build",
+        "terragrunt",
+        "pulumi",
+        "cloudformation",
+        "serverless-framework",
+        "aws-cdk",
+        "packer",
+        "nomad",
+        "kustomize",
+        "skaffold",
+        "tilt",
+        "devcontainer",
+        "nix",
+        "bazel",
+      ]) {
+        expect(detected.get(name)?.status).toBe("planned");
+        expect(detected.get(name)?.selected).toBe(false);
+      }
+      expect(detected.get("cloudflare")?.status).toBe("available");
+      expect(detected.get("cloudflare")?.selected).toBe(true);
+    });
+  });
+
+  it("uses Docker Compose canonical file precedence in detection reasons", async () => {
+    await withTmpDir((dir) => {
+      fs.writeFileSync(path.join(dir, "compose.yaml"), "services: {}\n");
+      fs.writeFileSync(path.join(dir, "docker-compose.yml"), "services: {}\n");
+
+      const docker = scanProject(dir).detected.find((p) => p.name === "docker");
+
+      expect(docker?.reasons[0]).toBe("compose.yaml (Docker Compose preferred file)");
+      expect(docker?.selected).toBe(true);
+    });
+  });
+
+  it("does not detect Kubernetes from README examples or exported agent sessions", async () => {
+    await withTmpDir((dir) => {
+      fs.mkdirSync(path.join(dir, ".git"));
+      fs.writeFileSync(
+        path.join(dir, "README.md"),
+        'Example only: `vegastack search --entry kubernetes "kind: Deployment"`\n',
+      );
+      fs.mkdirSync(path.join(dir, "exports"), { recursive: true });
+      fs.writeFileSync(
+        path.join(dir, "exports", "codex-session.json"),
+        JSON.stringify({ text: "apiVersion: apps/v1\nkind: Deployment\n" }),
+      );
+
+      const scan = scanProject(dir);
+
+      expect(scan.detected.some((p) => p.name === "kubernetes")).toBe(false);
+    });
+  });
 });
 
 describe("project harness init files", () => {
-  it("writes ignored .vegastack state and project instructions", async () => {
+  it("writes committed vegastack.yml state and shared instructions", async () => {
     await withTmpDir((dir) => {
+      process.env.VEGASTACK_CONFIG_DIR = path.join(dir, "home", ".vegastack");
       fs.mkdirSync(path.join(dir, ".git"));
       fs.writeFileSync(path.join(dir, "main.tf"), "terraform {}\n");
 
@@ -82,25 +176,25 @@ describe("project harness init files", () => {
       writeInitFiles(plan);
 
       expect(fs.existsSync(path.join(dir, ".gitignore"))).toBe(false);
-      expect(fs.readFileSync(path.join(dir, ".vegastack", ".gitignore"), "utf8")).toBe("*\n");
-      const project = JSON.parse(
-        fs.readFileSync(path.join(dir, ".vegastack", "project.json"), "utf8"),
-      ) as {
-        schema_version: number;
-        registry_entries: Record<string, unknown>;
-      };
+      expect(fs.existsSync(path.join(dir, ".vegastack", ".gitignore"))).toBe(false);
+      expect(fs.existsSync(path.join(dir, ".vegastack", "project.json"))).toBe(false);
+      const project = readProjectConfig(dir);
+      const raw = fs.readFileSync(projectConfigPath(dir), "utf8");
+      expect(raw).toContain("registry:");
+      expect(raw).toContain("terraform:");
       expect(project.schema_version).toBe(1);
-      expect(project.registry_entries.terraform).toBeDefined();
-      expect(fs.existsSync(path.join(dir, ".vegastack", "instructions"))).toBe(true);
-      expect(fs.readFileSync(plan.files.instructions[0] ?? "", "utf8")).toContain(
+      expect(project.registry?.entries?.terraform).toBeDefined();
+      expect(fs.existsSync(path.join(dir, ".vegastack", "vegastack-lock.json"))).toBe(false);
+      expect(fs.existsSync(path.join(dir, ".vegastack", "instructions"))).toBe(false);
+      expect(fs.readFileSync(path.join(sharedInstructionsDir(), "AGENTS.md"), "utf8")).toContain(
         'vegastack ask "<user request>"',
       );
-      expect(fs.existsSync(path.join(dir, ".vegastack", "vegastack-lock.json"))).toBe(true);
     });
   });
 
   it("writes dynamic registry pack source and shape into .vegastack state", async () => {
     await withTmpDir((dir) => {
+      process.env.VEGASTACK_CONFIG_DIR = path.join(dir, "home", ".vegastack");
       fs.writeFileSync(path.join(dir, "Jenkinsfile"), "pipeline { agent any }\n");
       const packs: PackDefinition[] = [
         {
@@ -117,20 +211,10 @@ describe("project harness init files", () => {
       const plan = buildInitPlan(dir, undefined, packs);
       writeInitFiles(plan);
 
-      const project = JSON.parse(
-        fs.readFileSync(path.join(dir, ".vegastack", "project.json"), "utf8"),
-      ) as {
-        registry_entries: Record<string, { source?: string }>;
-      };
-      const lock = JSON.parse(
-        fs.readFileSync(path.join(dir, ".vegastack", "vegastack-lock.json"), "utf8"),
-      ) as {
-        registry_entries: Record<string, { source?: string }>;
-      };
-      expect(project.registry_entries.jenkins?.source).toBe(
+      const project = readProjectConfig(dir);
+      expect(project.registry?.entries?.jenkins?.source).toBe(
         "https://cli-registry.vegastack.com/cli",
       );
-      expect(lock.registry_entries.jenkins?.source).toBe("https://cli-registry.vegastack.com/cli");
     });
   });
 });

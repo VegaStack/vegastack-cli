@@ -6,6 +6,12 @@
 
 import { ALL_RENDERER_NAMES, getRenderer } from "../agents/index.js";
 import type { Action, InstallResult, Scope } from "../agents/index.js";
+import {
+  inspectDetectedAgentSkills,
+  printAgentSkillInspection,
+  printAgentSkillReconcile,
+  reconcileDetectedAgentSkills,
+} from "../lib/agent-skill-reconcile.js";
 import { log } from "../lib/log.js";
 
 export interface SkillsOptions {
@@ -77,6 +83,36 @@ export async function runSkills(action: Action, opts: SkillsOptions): Promise<nu
     for (const w of r.result.warnings) process.stderr.write(`    ⚠ ${w}\n`);
   }
   return exitCode;
+}
+
+export interface SkillsReconcileOptions {
+  scope: Scope;
+  force: boolean;
+  dryRun: boolean;
+  json: boolean;
+}
+
+export async function runSkillsReconcile(opts: SkillsReconcileOptions): Promise<number> {
+  const cwd = process.cwd();
+  if (opts.dryRun) {
+    const inspected = await inspectDetectedAgentSkills({ cwd, scope: opts.scope });
+    if (opts.json) log.json({ action: "reconcile", dry_run: true, ...inspected });
+    else printAgentSkillInspection(inspected);
+    return 0;
+  }
+
+  const result = await reconcileDetectedAgentSkills({
+    cwd,
+    scope: opts.scope,
+    force: opts.force,
+    dryRun: false,
+  });
+  if (opts.json) {
+    log.json({ action: "reconcile", dry_run: false, ...result });
+  } else {
+    printAgentSkillReconcile(result);
+  }
+  return result.installed.some((r) => r.warnings.length > 0 && !r.installed) ? 9 : 0;
 }
 
 function resolveAgents(input: string[]): string[] {

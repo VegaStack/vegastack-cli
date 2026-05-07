@@ -1,14 +1,11 @@
 ---
 name: vegastack
 description: |
-  Use when the user asks about infrastructure, cloud operations, deployment,
-  CI/CD, Terraform/HCL, GitHub Actions, Docker, Kubernetes, Helm, Supabase,
-  AWS CLI, or any provider/service in a provision/configure/migrate/debug
-  context. VegaStack is a local-first knowledge harness: it routes the query
-  through project-selected registry entries and returns citations from the
-  local cache. Trigger on "deploy", "provision", "configure", "import",
-  "migrate", "write workflow", "Dockerfile", "kubectl", "helm chart",
-  "supabase", "*.tf", "*.hcl", and cloud/SaaS operational tasks.
+  Agent-native VegaStack command router for infrastructure, cloud operations,
+  deployment, CI/CD, Terraform/HCL, Kubernetes, Docker, preview tunnels, and
+  security scanning. Use when the user invokes /vegastack or asks an ops,
+  cloud, IaC, CI/CD, deployment, or scanner question that should be grounded in
+  local VegaStack Registry evidence.
 
   Do NOT use for: pure application code with no infrastructure or operations
   context; general pricing comparisons; high-level business strategy; CDK /
@@ -16,40 +13,62 @@ description: |
   docs.
 license: MIT
 allowed-tools: Bash(vegastack:*) Bash(jq:*) Read Grep Glob
+user-invocable: true
+argument-hint: "[setup|init|detect|refresh|generate|ask|scan|search|doctor|registry|skills|update|preview|tunnel] [args]"
 metadata:
   homepage: https://github.com/vegastack/vegastack-cli
   schema_version: "2"
   registry_version: "dev"
-  providers_count: "31"
 ---
 
-# Dispatch
+# VegaStack Router
 
-Requires Node >=18 and `@vegastack/cli` on PATH. Run `vegastack init` once per project.
+Requires Node >=18 and `@vegastack/cli` on PATH. VegaStack CLI is the only writer of `.vegastack` project config; do not hand-write `.vegastack/vegastack.yml`, hooks, or generated entrypoint blocks.
 
-If the current repository contains `.vegastack/instructions/`, read the matching project-local instruction file first:
+If the current repository contains a VegaStack block in `AGENTS.md` or `CLAUDE.md`, read the shared instruction file linked there first. Shared instructions normally live under `~/.vegastack/instructions/`.
 
-- Codex / AGENTS.md-compatible agents: `.vegastack/instructions/AGENTS.md`
-- Claude Code: `.vegastack/instructions/CLAUDE.md`
+If `.vegastack/vegastack.yml` exists, treat it as the source of truth for active registry entries and project configuration.
 
-If `.vegastack/project.json` or `.vegastack/vegastack-lock.json` exists, treat those files as the source of truth for active registry entries. If they do not exist and the user is asking an ops/cloud/IaC/CI/CD question, tell them to run `vegastack init` before relying on VegaStack grounding.
+## Command Routing
 
-Default command:
+Read the first word of `$ARGUMENTS` as a subcommand:
 
-```bash
-vegastack ask "<the user's request, in natural language>"
-```
+- `init`: load [references/init.md](references/init.md).
+- `setup`: load [references/setup.md](references/setup.md).
+- `detect`: load [references/detect.md](references/detect.md).
+- `refresh`: load [references/refresh.md](references/refresh.md).
+- `generate`: load [references/generate.md](references/generate.md).
+- `scan`: load [references/scan.md](references/scan.md).
+- `ask`: load [references/ask.md](references/ask.md).
+- `search`: load [references/search.md](references/search.md).
+- `doctor`: load [references/doctor.md](references/doctor.md).
+- `registry`: load [references/registry.md](references/registry.md).
+- `skills`: load [references/skills.md](references/skills.md).
+- `update`: load [references/update.md](references/update.md).
+- `preview`: load [references/preview.md](references/preview.md).
+- `tunnel`: load [references/preview.md](references/preview.md) and run `vegastack preview --tunnel ...`; there is no `vegastack tunnel` command.
+- no subcommand: show current status and the available commands.
+- anything else: treat the full arguments as an ops question and use `ask`; do not invent new VegaStack commands such as `deploy`.
 
-Use `vegastack ask --all "<query>"` only when the user explicitly wants a broad local search outside the project lock.
+Ask before commands that mutate project files, global config, installed tools, Registry cache, agent registrations, Git hooks, tunnels, or running app processes. Non-mutating reads such as `vegastack init --dry-run --json`, `vegastack setup --dry-run --json`, `vegastack detect --json`, `vegastack refresh --dry-run --json`, `vegastack generate <intent> --json`, `vegastack doctor --json`, `vegastack ask`, and `vegastack search` can be run directly when useful.
 
-Use `vegastack search --entry <registry-entry> "<literal text>"` for exact source lookup or debugging weak evidence.
+`vegastack scan` may install missing scanner binaries unless `--no-install-tools` is passed. `vegastack update --yes --json`, `vegastack setup --yes --json`, `vegastack init --yes --json`, `vegastack scan enable`, `vegastack scan hook install`, and `vegastack preview --tunnel` are mutating and require user confirmation unless the user explicitly requested that exact action.
 
-For Terraform/HCL work, use `vegastack ask --entry terraform --tf-provider <provider> "<query>"`.
+Do not invent command output. Run the CLI and base the answer on its stdout/stderr.
 
-# Query Shaping
+## Default Status
 
-The agent may use its own language understanding to make the CLI query more
-precise, but the answer must still be grounded only in VegaStack results.
+When invoked as `/vegastack` with no arguments:
+
+1. Run `vegastack doctor --json`.
+2. Treat a non-zero doctor exit as status, not a fatal skill failure; parse stdout when it is valid JSON.
+3. If the project is not initialized, say `/vegastack init` will bootstrap `.vegastack/vegastack.yml`.
+4. Show common commands: `init`, `ask`, `scan`, `search`, `doctor`, `update`, `preview`, `tunnel`.
+5. Mention additional commands when relevant: `setup`, `detect`, `refresh`, `generate`, `registry`, `skills`.
+
+## Query Shaping
+
+The agent may use its own language understanding to make the CLI query more precise, but the answer must still be grounded only in VegaStack results.
 
 Before calling VegaStack, classify the user's intent:
 
@@ -65,6 +84,7 @@ broad call. Examples:
 
 ```bash
 vegastack ask --entry github-actions "oidc aws permissions id-token trust policy"
+vegastack ask --entry cloudflare --entry github-actions "deploy Worker from CI"
 vegastack search --entry github-actions "id-token: write"
 vegastack search --entry jenkins "withCredentials"
 ```

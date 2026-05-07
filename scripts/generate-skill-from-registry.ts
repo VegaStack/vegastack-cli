@@ -4,8 +4,8 @@
 // emits a final, token-substituted SKILL.md to `skills/vegastack/SKILL.md`.
 //
 // The generator is intentionally tiny: no mustache, no handlebars, no
-// dependencies. We only need ${TOKEN} replacement and a stable provider list,
-// and pulling in a templating engine for that adds dep + supply-chain risk.
+// dependencies. We only need ${TOKEN} replacement, and pulling in a templating
+// engine for that adds dep + supply-chain risk.
 //
 // CI invocation:
 //
@@ -22,8 +22,7 @@
 //
 // Tokens substituted (see template):
 //   ${REGISTRY_VERSION}  - from registry/MANIFEST.json pack_version/registry_version, fallback "dev"
-//   ${PROVIDERS_COUNT}   - len(registry/MANIFEST.json providers), fallback 31
-//   ${PROVIDER_LIST}     - comma-joined "AWS, Azure, ..." rendered from providers
+//   ${PROVIDER_LIST}     - optional comma-joined provider list rendered from the manifest
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -37,41 +36,7 @@ const TEMPLATE_PATH = path.join(REPO_ROOT, "registry", "skill-source", "SKILL.md
 const DEFAULT_OUT = path.join(REPO_ROOT, "skills", "vegastack", "SKILL.md");
 const REGISTRY_MANIFEST = path.join(REPO_ROOT, "registry", "MANIFEST.json");
 
-// Fallback list — used when registry/MANIFEST.json isn't on disk yet (CI build,
-// fresh clone). Mirrors the v0.1-overrides.md provider list of 2026-04-28.
-const FALLBACK_PROVIDERS = [
-  "1password",
-  "ansible",
-  "auth0",
-  "aws",
-  "azure",
-  "clickhouse",
-  "cloudflare",
-  "crowdstrike",
-  "datadog",
-  "digitalocean",
-  "external",
-  "gcp",
-  "github",
-  "gitlab",
-  "grafana",
-  "helm",
-  "kubernetes",
-  "local",
-  "mongodb-atlas",
-  "netlify",
-  "okta",
-  "pagerduty",
-  "pinecone",
-  "random",
-  "redis-cloud",
-  "snowflake",
-  "splunk",
-  "time",
-  "tls",
-  "vault",
-  "vercel",
-];
+const FALLBACK_PROVIDERS: string[] = [];
 
 // ── Provider name pretty-print ───────────────────────────────────────
 
@@ -154,7 +119,6 @@ export function renderSkill(template: string, summary: RegistrySummary): string 
   const providerList = summary.providers.map(pretty).join(", ");
   return template
     .replaceAll("${REGISTRY_VERSION}", summary.registryVersion)
-    .replaceAll("${PROVIDERS_COUNT}", String(summary.providers.length))
     .replaceAll("${PROVIDER_LIST}", providerList);
 }
 

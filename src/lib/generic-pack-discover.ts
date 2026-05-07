@@ -58,6 +58,19 @@ const GENERIC_PATH_TOKENS = new Set([
   "list",
   "docs",
 ]);
+const SHORT_DOMAIN_TOKENS = new Set([
+  "ai",
+  "d1",
+  "ec2",
+  "ecr",
+  "eks",
+  "gke",
+  "iam",
+  "kv",
+  "r2",
+  "s3",
+]);
+const DISTINCTIVE_SHORT_TOKENS = new Set(["d1", "ec2", "ecr", "eks", "gke", "kv", "r2", "s3"]);
 
 export interface GenericPackResult {
   status: "ok" | "error";
@@ -124,6 +137,7 @@ export async function discoverGenericPacks(
   opts: { installTools?: boolean } = {},
 ): Promise<GenericPackResult> {
   const baseTokens = tokenize(query).filter((t) => t.length > 1 && !QUERY_STOPWORDS.has(t));
+  const querySurfaceTokens = surfaceTokens(query);
   const queryPhrases = meaningfulQueryPhrases(query);
   const results: GenericPackResult["results"] = [];
   const knowledge: GenericPackResult["knowledge"] = [];
@@ -203,7 +217,7 @@ export async function discoverGenericPacks(
     for (const section of candidates) {
       const manifestScore = fileTokenScores.get(section.path) ?? 0;
       const score =
-        scoreSection(section, tokens, queryPhrases) +
+        scoreSection(section, tokens, queryPhrases, pack, querySurfaceTokens) +
         (section.route_score ?? 0) +
         manifestScore * 10 +
         packAliasBoost;
@@ -211,6 +225,12 @@ export async function discoverGenericPacks(
         exactByEntryPath.get(`${pack}:${section.path}`) ?? [],
         section,
       );
+      if (
+        hasWeakConceptCoverage(section, querySurfaceTokens, pack) &&
+        !exactMatchesCoverConcepts(exactMatches, querySurfaceTokens, pack)
+      ) {
+        continue;
+      }
       if (score <= 0 && exactMatches.length === 0) continue;
       const result: GenericPackResult["results"][number] = {
         registry_entry: pack,
@@ -246,9 +266,11 @@ export async function discoverGenericPacks(
   }
 
   results.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path));
-  const trimmed = pruneOverlappingResults(results).slice(0, max);
+  const trimmed = diversifyByRegistryEntry(pruneOverlappingResults(results), packs, max);
   const trimmedKnowledge = knowledge
-    .filter((k) => scoreKnowledgeForFinal(k, baseTokens) >= 3)
+    .filter(
+      (k) => scoreKnowledgeForFinal(k, baseTokens) >= 3 && knowledgeMatchesDistinctive(k, baseTokens),
+    )
     .sort(
       (a, b) =>
         scoreKnowledgeForFinal(b, baseTokens) - scoreKnowledgeForFinal(a, baseTokens) ||
@@ -354,9 +376,9 @@ function candidateSections(
   const routeScores = new Map(rankCandidates.map((candidate) => [candidate.section_id, candidate]));
   const indexedIds = [
     ...new Set([
+      ...targetIds,
       ...rankCandidates.map((candidate) => candidate.section_id),
       ...readTokenIndex(root, tokens),
-      ...targetIds,
     ]),
   ].slice(0, 800);
   if (indexedIds.length > 0) {
@@ -781,7 +803,13 @@ function listTextFiles(root: string, maxFiles: number): string[] {
   return out;
 }
 
-function scoreSection(section: SearchRecord, tokens: string[], phrases: string[]): number {
+function scoreSection(
+  section: SearchRecord,
+  tokens: string[],
+  phrases: string[],
+  pack: string,
+  originalTokens = tokens,
+): number {
   const text =
     `${section.path} ${section.heading ?? ""} ${section.excerpt} ${(section.tokens ?? []).join(" ")}`.toLowerCase();
   const fileText = section.path.toLowerCase();
@@ -805,12 +833,73 @@ function scoreSection(section: SearchRecord, tokens: string[], phrases: string[]
     const matches = text.match(new RegExp(escapeRegExp(token), "g"));
     if (matches) score += Math.min(matches.length, 20);
   }
+  for (const token of new Set(tokens.filter((t) => DISTINCTIVE_SHORT_TOKENS.has(t)))) {
+    if (pathHasSegment(fileText, token) || tokenAppearsAsWord(text, token)) score += 260;
+    else score -= 120;
+  }
+  score += conceptCoverageScore(text, originalTokens, pack);
   return score;
 }
 
+function conceptCoverageScore(text: string, tokens: string[], pack: string): number {
+  const important = importantConceptTokens(tokens, pack);
+  if (important.length < 4) return 0;
+  let present = 0;
+  let missing = 0;
+  for (const token of important) {
+    if (tokenConceptAppears(text, token)) present += 1;
+    else missing += 1;
+  }
+  const raw = present * 36 - missing * 110;
+  return present >= Math.ceil(important.length / 2) ? Math.max(0, raw) : raw * 10;
+}
+
+function hasWeakConceptCoverage(section: SearchRecord, tokens: string[], pack: string): boolean {
+  const important = importantConceptTokens(tokens, pack);
+  if (important.length < 4) return false;
+  const text =
+    `${section.path} ${section.heading ?? ""} ${section.excerpt} ${(section.tokens ?? []).join(" ")}`.toLowerCase();
+  const present = important.filter((token) => tokenConceptAppears(text, token)).length;
+  return present < Math.ceil(important.length / 2);
+}
+
+function exactMatchesCoverConcepts(
+  matches: WeightedRegistrySearchMatch[],
+  tokens: string[],
+  pack: string,
+): boolean {
+  const important = importantConceptTokens(tokens, pack);
+  if (important.length < 4 || matches.length === 0) return matches.length > 0;
+  const matchedTerms = matches.map((match) => match.query_term.toLowerCase()).join(" ");
+  const covered = important.filter((token) => tokenConceptAppears(matchedTerms, token)).length;
+  return covered >= Math.ceil(important.length / 2);
+}
+
+function importantConceptTokens(tokens: string[], pack: string): string[] {
+  const packTokens = new Set(tokenize(pack));
+  return [...new Set(tokens)].filter(
+    (token) =>
+      !packTokens.has(token) &&
+      !QUERY_STOPWORDS.has(token) &&
+      (token.length > 2 || DISTINCTIVE_SHORT_TOKENS.has(token)),
+  );
+}
+
 function pathHasSegment(fileText: string, token: string): boolean {
-  if (token.length < 3 || GENERIC_PATH_TOKENS.has(token)) return false;
+  if ((token.length < 3 && !DISTINCTIVE_SHORT_TOKENS.has(token)) || GENERIC_PATH_TOKENS.has(token)) {
+    return false;
+  }
   return new RegExp(`(^|[/.@_-])${escapeRegExp(token)}($|[/.@_-])`).test(fileText);
+}
+
+function tokenAppearsAsWord(text: string, token: string): boolean {
+  return new RegExp(`(^|[^a-z0-9])${escapeRegExp(token)}($|[^a-z0-9])`, "i").test(text);
+}
+
+function tokenConceptAppears(text: string, token: string): boolean {
+  if (tokenAppearsAsWord(text, token)) return true;
+  if (token.endsWith("s") && tokenAppearsAsWord(text, token.slice(0, -1))) return true;
+  return tokenAppearsAsWord(text, `${token}s`);
 }
 
 function scoreKnowledge(card: GenericPackResult["knowledge"][number], tokens: string[]): number {
@@ -833,6 +922,17 @@ function scoreKnowledgeForFinal(
     card,
     tokens.filter((token) => !packTokens.has(token)),
   );
+}
+
+function knowledgeMatchesDistinctive(
+  card: GenericPackResult["knowledge"][number],
+  tokens: string[],
+): boolean {
+  const distinctive = tokens.filter((token) => DISTINCTIVE_SHORT_TOKENS.has(token));
+  if (distinctive.length === 0) return true;
+  const text =
+    `${card.id} ${card.title} ${card.path} ${card.triggers.join(" ")} ${card.excerpt}`.toLowerCase();
+  return distinctive.some((token) => tokenAppearsAsWord(text, token));
 }
 
 function knowledgeHasUsefulTrigger(card: GenericPackResult["knowledge"][number]): boolean {
@@ -911,13 +1011,23 @@ function phraseBoundaryRegex(tokens: string[]): RegExp {
 
 function meaningfulQueryPhrases(query: string): string[] {
   const tokens = (query.toLowerCase().match(/[a-z0-9]+(?:[_-][a-z0-9]+)*/g) ?? []).filter(
-    (t) => t.length > 2 && !QUERY_STOPWORDS.has(t),
+    (t) => !QUERY_STOPWORDS.has(t) && (t.length > 2 || SHORT_DOMAIN_TOKENS.has(t)),
   );
   const out = new Set<string>();
   for (let size = Math.min(4, tokens.length); size >= 2; size--) {
     for (let i = 0; i + size <= tokens.length; i++) out.add(tokens.slice(i, i + size).join(" "));
   }
   return [...out].slice(0, 20);
+}
+
+function surfaceTokens(query: string): string[] {
+  return [
+    ...new Set(
+      (query.toLowerCase().match(/[a-z0-9]+(?:[_-][a-z0-9]+)*/g) ?? []).filter(
+        (token) => token.length > 1 && !QUERY_STOPWORDS.has(token),
+      ),
+    ),
+  ];
 }
 
 function tokensForMetadata(tokens: string[], pack: string): string[] {
@@ -935,7 +1045,7 @@ function exactMatchesForSection(
 
 function exactMatchScore(matches: WeightedRegistrySearchMatch[]): number {
   const terms = new Set(matches.map((match) => match.query_term));
-  let score = matches.length * 20;
+  let score = Math.min(matches.length, 3) * 20;
   for (const term of terms) {
     const words = tokenize(term);
     const structuredLiteral = /[-_:.]/.test(term);
@@ -972,10 +1082,49 @@ function pruneOverlappingResults(
   results: GenericPackResult["results"],
 ): GenericPackResult["results"] {
   const kept: GenericPackResult["results"] = [];
+  const perPath = new Map<string, number>();
   for (const result of results) {
-    if (!kept.some((existing) => sectionsOverlap(existing, result))) kept.push(result);
+    const pathKey = `${result.registry_entry}:${result.path}`;
+    if ((perPath.get(pathKey) ?? 0) >= 3) continue;
+    if (kept.some((existing) => sectionsOverlap(existing, result))) continue;
+    kept.push(result);
+    perPath.set(pathKey, (perPath.get(pathKey) ?? 0) + 1);
   }
   return kept;
+}
+
+function diversifyByRegistryEntry(
+  results: GenericPackResult["results"],
+  packs: readonly string[],
+  max: number,
+): GenericPackResult["results"] {
+  if (packs.length <= 1 || results.length <= max) return results.slice(0, max);
+  const selected: GenericPackResult["results"] = [];
+  const selectedKeys = new Set<string>();
+  const minPerPack = Math.max(1, Math.min(2, Math.floor(max / packs.length)));
+  for (const pack of packs) {
+    for (const result of results.filter((candidate) => candidate.registry_entry === pack)) {
+      if (selected.filter((candidate) => candidate.registry_entry === pack).length >= minPerPack) {
+        break;
+      }
+      const key = resultKey(result);
+      if (selectedKeys.has(key)) continue;
+      selected.push(result);
+      selectedKeys.add(key);
+    }
+  }
+  for (const result of results) {
+    if (selected.length >= max) break;
+    const key = resultKey(result);
+    if (selectedKeys.has(key)) continue;
+    selected.push(result);
+    selectedKeys.add(key);
+  }
+  return selected.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path)).slice(0, max);
+}
+
+function resultKey(result: GenericPackResult["results"][number]): string {
+  return `${result.registry_entry}:${result.section_id ?? result.path}:${result.start_line ?? ""}`;
 }
 
 function sectionsOverlap(

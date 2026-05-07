@@ -112,7 +112,7 @@ function hintFor(kind: VegaStackErrorKind, ctx: Readonly<Record<string, unknown>
     case "NetworkError":
       return "Check your network connection and confirm the VegaStack Registry is reachable.";
     case "ChecksumMismatch":
-      return "The downloaded registry artifact did not match its expected SHA256. This means a corrupt download or a tampered artifact. Retry with `vegastack registry update --force`; if it persists, report team@vegastack.com.";
+      return "The downloaded registry artifact did not match its expected SHA256. This means a corrupt download or a tampered artifact. Retry with `vegastack registry update --force`; if it persists, open an issue at https://github.com/vegastack/vegastack-cli/issues with `vegastack doctor --json`.";
     case "AgentInstallError":
       return "The destination already exists or is not writable. Re-run with --force to overwrite, or pick a different --scope.";
     case "ValidationError":

@@ -47,7 +47,7 @@ export interface DiscoverAmbiguous {
   tokens: string[];
   candidate_providers: { provider: string; score: number }[];
   recipes: RecipeMatch[]; // recipes that span the candidate set still surface here
-  hint: string; // e.g. "Use --provider <name> to disambiguate."
+  hint: string; // e.g. "Use --tf-provider <name> with `vegastack ask --entry terraform`."
 }
 
 export interface DiscoverError {

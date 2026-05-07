@@ -19,10 +19,9 @@ afterEach(() => {
 });
 
 describe("generate-skill-from-registry", () => {
-  it("substitutes REGISTRY_VERSION + PROVIDERS_COUNT + PROVIDER_LIST", () => {
+  it("substitutes REGISTRY_VERSION and optional PROVIDER_LIST", () => {
     const tpl = [
       "Registry: ${REGISTRY_VERSION}",
-      "Count: ${PROVIDERS_COUNT}",
       "Providers: ${PROVIDER_LIST}",
       "",
     ].join("\n");
@@ -33,16 +32,13 @@ describe("generate-skill-from-registry", () => {
     });
 
     expect(out).toContain("Registry: 2026.04.28");
-    expect(out).toContain("Count: 2");
     expect(out).toContain("Providers: AWS, Cloudflare");
   });
 
   it("falls back to dev defaults when MANIFEST.json is absent", () => {
     const summary = resolveRegistrySummary(path.join(workdir, "no-such-manifest.json"));
     expect(summary.registryVersion).toBe("dev");
-    expect(summary.providers.length).toBeGreaterThanOrEqual(31);
-    expect(summary.providers).toContain("aws");
-    expect(summary.providers).toContain("cloudflare");
+    expect(summary.providers).toEqual([]);
   });
 
   it("reads registry_version + providers from a real MANIFEST.json", () => {

@@ -16,9 +16,8 @@
 
 name = "vegastack-mcp"
 main = "src/index.ts"
-# wrangler@4.85.0 (latest stable on 2026-04-28) clamps compatibility_date to
-# the Workers runtime's published ceiling — bump to today only after upgrading
-# wrangler to a build that ships the matching runtime metadata.
+# Wrangler clamps compatibility_date to the Workers runtime metadata it ships.
+# Bump this only after upgrading Wrangler to a build with matching metadata.
 compatibility_date = "2026-04-15"
 compatibility_flags = ["nodejs_compat"]
 

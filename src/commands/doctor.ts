@@ -173,14 +173,16 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
   );
 
   if (opts.json) {
+    const ok = exitCode(checks) === 0;
     log.json({
+      ok,
       cli_version: currentCli,
       checks: checks.map((c) => ({ name: c.name, ok: c.ok, detail: c.detail })),
       registry_entries: installedEntries,
       verify: verifyResults,
       agents: agentResults,
     });
-    return exitCode(checks);
+    return ok ? 0 : 1;
   }
 
   for (const c of checks) {

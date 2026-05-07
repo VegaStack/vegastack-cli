@@ -1,19 +1,17 @@
 # Security policy
 
-## Supported versions
+## Supported Versions
 
-| Version | Supported |
-| ------- | --------- |
-| `0.1.x` | ✅        |
-| `< 0.1` | ❌        |
-
-We support the latest published `0.x` minor on npm. Patch releases land on the most recent minor only. Once `1.0.0` ships, this table will list the LTS line.
+Supported release lines are published through npm dist-tags. Use
+`npm view @vegastack/cli dist-tags versions` as the source of truth for the
+currently supported CLI line. Patch releases land on the most recent supported
+minor only.
 
 ## Threat model
 
 `@vegastack/cli` is a local-only CLI. It does **not**:
 
-- Send telemetry. The CLI never makes outbound network calls at query time.
+- Send telemetry.
 - Take credentials. The Registry is static documentation and indexes; there is no auth flow.
 - Execute remote code. Registry installs download text artifacts and JSON indexes only.
 
@@ -23,7 +21,8 @@ What the CLI **does** that has a security surface:
 2. **Filesystem writes** to the local Registry cache under the user's home directory.
 3. **Filesystem writes** by `vegastack skills install` — scoped to known agent directories (`~/.claude/plugins/`, `~/.agents/skills/`, `<cwd>/.cursor/rules/`, `<cwd>/gemini-extension.json`, `<cwd>/CONTEXT.md`).
 4. **Symlink creation** (Claude Code installer) — falls back to a recursive copy on Windows non-admin.
-5. **Subprocess invocation** of managed search/scanning tools such as ripgrep and Gitleaks.
+5. **Subprocess invocation** of managed search/scanning tools such as ripgrep, Gitleaks, Trivy, OSV-Scanner, actionlint, and zizmor.
+6. **Optional network access** for explicit update/install/scan flows, including Registry downloads, managed tool updates, npm version checks, and vulnerability database lookups.
 
 ## Hardening summary (v0.1.0+)
 
@@ -48,23 +47,23 @@ The implementation goes beyond a typical npm postinstall script. Every item belo
 
 ### Subprocess invocation
 
-- **No implicit Registry install in npm postinstall.** `npm/install.js` only prints guidance; Registry data is installed explicitly through `vegastack init` and refreshed with `vegastack registry update`.
-- **Managed tool verification.** Managed binaries are downloaded from their official release channel, verified by SHA256 where the upstream publishes checksums, and stored under `~/.config/vegastack/tools/`.
+- **No implicit Registry or managed-tool install in npm postinstall.** `npm/install.js` only performs best-effort global skill registration for detected agent hosts; Registry data is installed explicitly through `vegastack init` and refreshed with `vegastack registry update`.
+- **Managed tool verification.** Managed binaries are downloaded from their official release channel, verified by SHA256 where the upstream publishes checksums, and stored under `~/.vegastack/tools/`. Extracted binaries are fingerprinted after install and rechecked before reuse.
 - **Argument arrays, not shell strings.** Search and scanner subprocesses are invoked without shell interpolation.
 - **Signal handlers.** Long-running install/update flows clean up tmp dirs before exiting.
 
 ### Error handling
 
 - **Discriminated `VegaStackError` type** with stable exit codes (1–12). Each variant has a `hint()` so users see _problem → cause → fix_.
-- **No silent catch-alls.** Every `try/catch` either rethrows or wraps into a typed error.
-- **Postinstall is no-op.** Registry installation happens explicitly through `vegastack init`.
+- **Typed user-facing errors.** Core command failures use `VegaStackError` variants with stable exit codes and hints; best-effort background refresh and postinstall paths are allowed to fail soft so they do not block the requested command.
+- **Postinstall does not download Registry data or managed tools.** Registry installation happens explicitly through `vegastack init`; full machine setup happens through `vegastack setup`.
 
 ### Supply chain
 
 - **Production deps are intentionally small and pure JavaScript.** Runtime dependencies are reviewed before release; avoid adding new runtime dependencies without a security and maintenance reason.
 - **`npm audit --audit-level=moderate --omit=dev`** runs in CI on every push, every PR, and weekly via cron.
 - **OSV-Scanner** runs in CI against `package-lock.json`.
-- **CodeQL** static analysis runs on every PR.
+- **CodeQL** static analysis is configured but currently disabled while the repo is private without GitHub code scanning entitlement; re-enable it before or when the repo becomes public.
 - **Third-party GitHub Actions are pinned to commit SHAs** (with `# vX.Y.Z` comments so Dependabot can update them). First-party `actions/*` use `@v4` per GitHub's policy.
 - **npm trusted publishing** is configured for GitHub Actions. Public releases publish with OIDC provenance and no long-lived npm token.
 - **Dependabot** watches both npm and GitHub Actions, with grouped updates to keep PR noise low.

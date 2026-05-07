@@ -1,14 +1,14 @@
 # vegastack-cli eval suite
 
-50 prompts across 12 archetypes. Drives a baseline-vs-skill comparison whose
-single headline number is `lift_pct` — the fraction of remaining error closed
-by the skill.
+The eval suite in `evals/evals.json` drives a baseline-vs-skill comparison
+whose single headline number is `lift_pct` — the fraction of remaining error
+closed by the skill.
 
 ## Files
 
 ```
 evals/
-├── evals.json                # the 50 prompts (this file is the source of truth)
+├── evals.json                # prompt suite; source of truth for counts/taxonomy
 ├── runner.ts                 # CLI: baseline-vs-skill executor
 ├── lib/
 │   ├── score.ts              # per-expectation scoring (resource_present, no_resource, ...)
@@ -74,7 +74,7 @@ tsx evals/runner.ts --mode both --concurrency 4 --output evals/reports/local.jso
 # Single-archetype focus:
 tsx evals/runner.ts --mode both --filter A12 --concurrency 2
 
-# PR smoke (12 prompts, one per archetype, both modes):
+# PR smoke, both modes:
 tsx evals/runner.ts --pr-smoke
 ```
 
@@ -83,9 +83,9 @@ The runner writes a JSON report shaped like:
 ```json
 {
   "generated_at": "2026-04-28T07:00:12Z",
-  "model": "claude-opus-4-7",
+  "model": "<runner model id>",
   "mode": "both",
-  "eval_count": 50,
+  "eval_count": 1,
   "summary": {
     "baseline_pct": 0.42,
     "with_skill_pct": 0.81,
@@ -111,12 +111,12 @@ formula sane when `baseline_pct → 1.0`.
 See `.github/workflows/evals.yml`:
 
 - **nightly** cron `0 7 * * *` (07:00 UTC, after the Registry publish window) —
-  full 50-prompt run, both modes, uploads `evals/reports/<date>.json` as a
-  workflow artifact and pushes a copy to the `eval-history` branch.
+  full suite run, both modes, uploads `evals/reports/<date>.json` as a workflow
+  artifact and pushes a copy to the `eval-history` branch.
 - **pr-smoke** triggers on PRs touching `src/lib/discover/**`,
   Registry metadata, knowledge-card, recipe, or alias inputs — runs
-  the 12-prompt smoke (one per archetype), comments lift on the PR, blocks
-  merge if lift drops more than 5pp vs main.
+  the smoke suite, comments lift on the PR, and blocks merge if lift drops more
+  than the configured threshold vs main.
 
 ## Judge noise mitigation
 

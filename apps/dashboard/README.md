@@ -3,17 +3,16 @@
 Public eval dashboard for [vegastack-cli](https://github.com/vegastack/vegastack-cli).
 Live at **https://cli-evals.vegastack.com**.
 
-Built with **Astro 6** + **Tailwind CSS v4** and deployed to **Cloudflare
-Workers** using the [static-assets binding](https://developers.cloudflare.com/workers/static-assets/binding/)
-(not Pages — Cloudflare deprecated Pages for new projects in 2025).
+Built with Astro, Tailwind CSS, and Cloudflare Workers. Package versions are
+pinned in `package.json`; deployment bindings live in `wrangler.toml`.
 
 ## What it shows
 
 - Headline lift number — how much remaining error vegastack-cli closes vs
-  baseline Claude on a 50-prompt Terraform suite, refreshed nightly.
+  the baseline model on the Terraform eval suite, refreshed nightly.
 - 30-day lift trend.
-- Per-archetype lift across the [12 task shapes](https://github.com/vegastack/vegastack-cli/blob/main/CONTEXT.md#archetypes)
-  derived from real Terraform user prompts.
+- Per-archetype lift across task shapes derived from real Terraform user
+  prompts.
 - Per-knowledge-card and per-recipe hit rates.
 - Three failure exemplars from each run — the dashboard publishes its
   own weak spots so the next content round can fix them.
@@ -98,15 +97,13 @@ We avoid generic AI-dashboard patterns (purple gradients on white,
 Roboto, busy micro-interactions). Anything new should justify its
 contrast against this baseline.
 
-## Stack rationale (April 2026)
+## Stack rationale
 
-- **Astro 6.1.x** — latest stable; first-class Cloudflare Workers
-  support; zero client JS by default (we use server-rendered SVG charts,
-  no React/Vue runtime).
-- **`@astrojs/cloudflare` v13** — Workers static-assets binding; the
-  Pages adapter path is deprecated.
-- **Tailwind v4 via `@tailwindcss/vite`** — the `@astrojs/tailwind`
-  integration is deprecated for v4.
-- **Wrangler 4** — modern static-assets binding syntax (`[assets]`).
+- **Astro** — Cloudflare Workers support; zero client JS by default (we use
+  server-rendered SVG charts, no React/Vue runtime).
+- **`@astrojs/cloudflare`** — Workers static-assets binding.
+- **Tailwind via Vite** — design tokens live in CSS through the current
+  Tailwind integration.
+- **Wrangler** — Cloudflare deployment and local preview.
 - **No charting library** — every chart is a `.astro` component that
   emits SVG at build time. Saves ~120 KB of JS and looks better.

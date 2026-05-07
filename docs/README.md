@@ -4,7 +4,8 @@ Current architecture:
 
 - CLI package: `@vegastack/cli`.
 - Knowledge source: VegaStack Registry at `https://cli-registry.vegastack.com/cli`.
-- Project state: `.vegastack/project.json` and `.vegastack/vegastack-lock.json`.
+- Project config: committed `.vegastack/vegastack.yml`.
+- Global cache: `~/.vegastack/registry/`, `~/.vegastack/tools/`, and `~/.vegastack/instructions/`.
 - Main evidence command: `vegastack ask`.
 - Exact lookup command: `vegastack search`.
 - Registry refresh command: `vegastack registry update`.

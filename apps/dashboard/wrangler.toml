@@ -1,8 +1,7 @@
 # Cloudflare Workers deployment for the vegastack-cli eval dashboard.
 #
-# Astro 6 + @astrojs/cloudflare v13 use a unified entrypoint and
-# auto-generate the [assets] binding from the build output. We only
-# declare what the adapter cannot infer: the worker name, custom
+# The Cloudflare adapter auto-generates the [assets] binding from the build
+# output. We only declare what the adapter cannot infer: the worker name, custom
 # bindings (R2, KV), env vars, and routing.
 #
 # See https://developers.cloudflare.com/workers/static-assets/binding/

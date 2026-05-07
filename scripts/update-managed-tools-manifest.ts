@@ -11,7 +11,7 @@ interface TargetSpec {
 }
 
 interface ToolSpec {
-  name: "cloudflared" | "gitleaks" | "ripgrep";
+  name: "actionlint" | "cloudflared" | "gitleaks" | "osv-scanner" | "ripgrep" | "trivy" | "zizmor";
   repo: string;
   targets: TargetSpec[];
   checksumFile?: (version: string) => string;
@@ -34,6 +34,23 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = path.join(ROOT, "src", "lib", "managed-tools-manifest.ts");
 
 const SPECS: ToolSpec[] = [
+  {
+    name: "actionlint",
+    repo: "rhysd/actionlint",
+    versionForAsset: (tag) => tag.replace(/^v/, ""),
+    checksumFile: (version) => `actionlint_${version}_checksums.txt`,
+    targets: [
+      target("darwin", "arm64", "actionlint_{version}_darwin_arm64.tar.gz", "tar.gz", "actionlint"),
+      target("darwin", "x64", "actionlint_{version}_darwin_amd64.tar.gz", "tar.gz", "actionlint"),
+      target("linux", "arm64", "actionlint_{version}_linux_arm64.tar.gz", "tar.gz", "actionlint"),
+      target("linux", "x64", "actionlint_{version}_linux_amd64.tar.gz", "tar.gz", "actionlint"),
+      target("linux", "ia32", "actionlint_{version}_linux_386.tar.gz", "tar.gz", "actionlint"),
+      target("linux", "arm", "actionlint_{version}_linux_armv6.tar.gz", "tar.gz", "actionlint"),
+      target("win32", "arm64", "actionlint_{version}_windows_arm64.zip", "zip", "actionlint.exe"),
+      target("win32", "x64", "actionlint_{version}_windows_amd64.zip", "zip", "actionlint.exe"),
+      target("win32", "ia32", "actionlint_{version}_windows_386.zip", "zip", "actionlint.exe"),
+    ],
+  },
   {
     name: "cloudflared",
     repo: "cloudflare/cloudflared",
@@ -92,6 +109,45 @@ const SPECS: ToolSpec[] = [
       target("win32", "arm64", "ripgrep-{version}-aarch64-pc-windows-msvc.zip", "zip", "rg.exe"),
       target("win32", "x64", "ripgrep-{version}-x86_64-pc-windows-msvc.zip", "zip", "rg.exe"),
       target("win32", "ia32", "ripgrep-{version}-i686-pc-windows-msvc.zip", "zip", "rg.exe"),
+    ],
+  },
+  {
+    name: "osv-scanner",
+    repo: "google/osv-scanner",
+    targets: [
+      target("darwin", "arm64", "osv-scanner_darwin_arm64", "binary", "osv-scanner"),
+      target("darwin", "x64", "osv-scanner_darwin_amd64", "binary", "osv-scanner"),
+      target("linux", "arm64", "osv-scanner_linux_arm64", "binary", "osv-scanner"),
+      target("linux", "x64", "osv-scanner_linux_amd64", "binary", "osv-scanner"),
+      target("win32", "arm64", "osv-scanner_windows_arm64.exe", "binary", "osv-scanner.exe"),
+      target("win32", "x64", "osv-scanner_windows_amd64.exe", "binary", "osv-scanner.exe"),
+    ],
+  },
+  {
+    name: "trivy",
+    repo: "aquasecurity/trivy",
+    versionForAsset: (tag) => tag.replace(/^v/, ""),
+    checksumFile: (version) => `trivy_${version}_checksums.txt`,
+    targets: [
+      target("darwin", "arm64", "trivy_{version}_macOS-ARM64.tar.gz", "tar.gz", "trivy"),
+      target("darwin", "x64", "trivy_{version}_macOS-64bit.tar.gz", "tar.gz", "trivy"),
+      target("linux", "arm64", "trivy_{version}_Linux-ARM64.tar.gz", "tar.gz", "trivy"),
+      target("linux", "x64", "trivy_{version}_Linux-64bit.tar.gz", "tar.gz", "trivy"),
+      target("linux", "ia32", "trivy_{version}_Linux-32bit.tar.gz", "tar.gz", "trivy"),
+      target("linux", "arm", "trivy_{version}_Linux-ARM.tar.gz", "tar.gz", "trivy"),
+      target("linux", "s390x", "trivy_{version}_Linux-s390x.tar.gz", "tar.gz", "trivy"),
+      target("win32", "x64", "trivy_{version}_windows-64bit.zip", "zip", "trivy.exe"),
+    ],
+  },
+  {
+    name: "zizmor",
+    repo: "zizmorcore/zizmor",
+    targets: [
+      target("darwin", "arm64", "zizmor-aarch64-apple-darwin.tar.gz", "tar.gz", "zizmor"),
+      target("darwin", "x64", "zizmor-x86_64-apple-darwin.tar.gz", "tar.gz", "zizmor"),
+      target("linux", "arm64", "zizmor-aarch64-unknown-linux-gnu.tar.gz", "tar.gz", "zizmor"),
+      target("linux", "x64", "zizmor-x86_64-unknown-linux-gnu.tar.gz", "tar.gz", "zizmor"),
+      target("win32", "x64", "zizmor-x86_64-pc-windows-msvc.zip", "zip", "zizmor.exe"),
     ],
   },
 ];
@@ -222,8 +278,8 @@ function render(manifest: unknown): string {
 // Do not edit checksums by hand.
 
 export interface ManagedToolTarget {
-  platform: NodeJS.Platform;
-  arch: NodeJS.Architecture;
+  platform: typeof process.platform;
+  arch: typeof process.arch;
   asset: string;
   archive: "binary" | "tar.gz" | "tgz" | "zip";
   binName: string;
@@ -231,7 +287,7 @@ export interface ManagedToolTarget {
 }
 
 export interface ManagedToolManifestEntry {
-  name: "cloudflared" | "gitleaks" | "ripgrep";
+  name: "actionlint" | "cloudflared" | "gitleaks" | "osv-scanner" | "ripgrep" | "trivy" | "zizmor";
   repo: string;
   version: string;
   source: string;
@@ -243,9 +299,13 @@ export interface ManagedToolsManifest {
   schema_version: 1;
   generated_at: string;
   tools: {
+    actionlint: ManagedToolManifestEntry;
     cloudflared: ManagedToolManifestEntry;
     gitleaks: ManagedToolManifestEntry;
+    "osv-scanner": ManagedToolManifestEntry;
     ripgrep: ManagedToolManifestEntry;
+    trivy: ManagedToolManifestEntry;
+    zizmor: ManagedToolManifestEntry;
   };
 }
 
@@ -253,8 +313,8 @@ export const MANAGED_TOOLS_MANIFEST: ManagedToolsManifest = ${json};
 
 export function managedToolTarget(
   tool: keyof ManagedToolsManifest["tools"],
-  platform: NodeJS.Platform = process.platform,
-  arch: NodeJS.Architecture = process.arch,
+  platform: typeof process.platform = process.platform,
+  arch: typeof process.arch = process.arch,
 ): ManagedToolTarget | null {
   return (
     MANAGED_TOOLS_MANIFEST.tools[tool].targets.find(

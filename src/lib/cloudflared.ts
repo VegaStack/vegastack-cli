@@ -40,20 +40,12 @@ export async function installCloudflared(
     if (
       existing?.version === CLOUDFLARED_VERSION &&
       existing.asset === target.asset &&
-      existing.bin === binPath
+      existing.bin === binPath &&
+      existing.asset_sha256 === target.sha256 &&
+      existing.bin_sha256 === fileSha256(binPath)
     ) {
       return existing;
     }
-    return writeMetadata({
-      version: CLOUDFLARED_VERSION,
-      bin: binPath,
-      asset: target.asset,
-      asset_sha256: target.sha256,
-      bin_sha256: fileSha256(binPath),
-      sha256: target.sha256,
-      installed_at: new Date().toISOString(),
-      source: `${RELEASE_BASE}/${target.asset}`,
-    });
   }
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-cloudflared-"));
@@ -71,26 +63,40 @@ export async function installCloudflared(
       fs.copyFileSync(assetPath, binPath);
     }
     if (process.platform !== "win32") fs.chmodSync(binPath, 0o755);
-    return writeMetadata({
-      version: CLOUDFLARED_VERSION,
-      bin: binPath,
-      asset: target.asset,
-      asset_sha256: target.sha256,
-      bin_sha256: fileSha256(binPath),
-      sha256: target.sha256,
-      installed_at: new Date().toISOString(),
-      source: `${RELEASE_BASE}/${target.asset}`,
-    });
+    return writeMetadata(metadataFor(target, binPath));
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
+}
+
+function metadataFor(target: Target, binPath: string): CloudflaredInstall {
+  return {
+    version: CLOUDFLARED_VERSION,
+    bin: binPath,
+    asset: target.asset,
+    asset_sha256: target.sha256,
+    bin_sha256: fileSha256(binPath),
+    sha256: target.sha256,
+    installed_at: new Date().toISOString(),
+    source: `${RELEASE_BASE}/${target.asset}`,
+  };
 }
 
 export function resolveCloudflaredBin(): string | null {
   const override = process.env.VEGASTACK_CLOUDFLARED_BIN;
   if (override && fs.existsSync(override)) return override;
   const metadata = readCloudflaredMetadata();
-  if (metadata && fs.existsSync(metadata.bin)) return metadata.bin;
+  const target = managedToolTarget("cloudflared");
+  if (
+    metadata &&
+    target &&
+    fs.existsSync(metadata.bin) &&
+    metadata.version === CLOUDFLARED_VERSION &&
+    metadata.asset === target.asset &&
+    metadata.asset_sha256 === target.sha256 &&
+    metadata.bin_sha256 === fileSha256(metadata.bin)
+  )
+    return metadata.bin;
   return findOnPath(process.platform === "win32" ? "cloudflared.exe" : "cloudflared");
 }
 

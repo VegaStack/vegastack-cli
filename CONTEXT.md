@@ -1,6 +1,7 @@
 # vegastack-cli — Gemini context
 
-Use the `vegastack` CLI for infrastructure, cloud operations, CI/CD, Terraform/HCL, GitHub Actions, Docker, Kubernetes, Helm, Supabase, AWS CLI, Jenkins, and other project-selected Registry entries.
+Use the `vegastack` CLI for infrastructure, cloud operations, CI/CD,
+Terraform/HCL, and other project-selected Registry entries.
 
 ## How to query
 
@@ -31,7 +32,7 @@ Output is a JSON envelope with grounded evidence:
 
 ## Registry location
 
-Registry entries are selected by `vegastack init`, installed into `~/.config/vegastack/registry/`, and locked per project in `.vegastack/vegastack-lock.json`. To refresh selected entries, run `vegastack registry update`.
+Registry entries are selected by `vegastack init`, recorded in the committed `.vegastack/vegastack.yml`, and installed into `~/.vegastack/registry/`. Shared agent instructions live under `~/.vegastack/instructions/`. To refresh selected entries, run `vegastack registry update`; to refresh detected project metadata in `vegastack.yml`, run `vegastack refresh`.
 
 ## Full skill reference
 

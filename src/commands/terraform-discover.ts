@@ -1,7 +1,8 @@
-// Internal Terraform Registry pack discovery command. Returns the v0.1 JSON envelope.
+// Internal Terraform Registry pack discovery used by `vegastack ask --entry terraform`.
+// This is not a public `vegastack terraform` command.
 //
 // Flags:
-//   --provider <p>     force a provider (validated against the Terraform entry provider list)
+//   --provider <p>     internal force-provider option used by public --tf-provider
 //   --max <N>          cap the files[] length (default 20)
 //   --raw              skip enrichment (smaller envelope)
 //   --brief            strip manifest_entry + example_usage; add name field; ~80% smaller
@@ -10,17 +11,14 @@
 //   --debug            include per-stage timings
 //   --json-schema      print the JSON Schema for the envelope and exit
 //
-// Token-efficiency flags (E1–E2):
+// Token-efficiency flags:
 //   --brief         Strips manifest_entry and example_usage from each files[] entry,
 //                   adds a `name` field (resource name, e.g. "aws_s3_bucket"), and
 //                   sets mode: "brief" in the envelope. Use for survey / multi-call
 //                   dispatch where you only need to know which resources exist.
 //                   Envelope is typically ~80% smaller than the default.
 //   --full-examples Restores the full ## Example Usage section (pre-E2 behavior).
-//                   Default (no flag) truncates to the first HCL fenced block plus a
-//                   "... (truncated; pass --full-examples for the rest)" marker.
-//                   NOTE: the new default (E2) is a soft-breaking change for callers
-//                   that relied on the full example body without --full-examples.
+//                   Default (no flag) truncates to the first HCL fenced block.
 //
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -36,15 +34,13 @@ export interface TerraformDiscoverOptions {
   /** Skip enrichment (manifest_entry + example_usage). Smaller envelope. */
   raw: boolean;
   /**
-   * E1: Brief mode — strips manifest_entry and example_usage, adds name field.
+   * Brief mode strips manifest_entry and example_usage, then adds name.
    * Produces ~80% smaller envelopes. Sets mode: "brief" in the envelope.
    * Use for survey / multi-call dispatch. Default false.
    */
   brief: boolean;
   /**
-   * E2: Restore full example_usage content (pre-truncation behavior).
-   * Default (no flag): truncates to first HCL fenced block + marker.
-   * NOTE: the default truncation (E2) is a soft-breaking change.
+   * Restore full example_usage content. Default truncates to first HCL block.
    */
   fullExamples: boolean;
   /** Pretty-print JSON. Default true if stdout is a TTY. */
@@ -95,7 +91,7 @@ export async function runTerraformDiscover(
     process.stdout.write(json + "\n");
     if (result.status === "error") return 2;
     if (result.status === "ambiguous") {
-      log.warn("query is ambiguous; consider --provider to disambiguate");
+      log.warn("query is ambiguous; consider --tf-provider to disambiguate");
       return 3;
     }
     return 0;
@@ -106,7 +102,7 @@ export async function runTerraformDiscover(
 
 function printSchema(): number {
   // The schema is shipped beside the manifest schema in the Terraform entry, but
-  // for v0.1 we ship a derived envelope schema next to the CLI source so
+  // we ship a derived envelope schema next to the CLI source so
   // Terraform Registry discovery can print a schema even before the entry is installed.
   // TypeScript includes it as package data at build time.
   const schema = envelopeSchema();
@@ -127,8 +123,7 @@ function envelopeSchema(): unknown {
       /* try next */
     }
   }
-  // Last resort: emit a minimal inline placeholder so `--json-schema` always
-  // produces something valid. v0.1 ships the real one via E1.
+  // Last resort: emit a minimal inline placeholder so schema output remains valid.
   return {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     $id: "https://vegastack.com/schemas/discover-envelope-v1.json",
@@ -143,8 +138,8 @@ function envelopeSchema(): unknown {
 }
 
 function packageSchemaPath(): string {
-  // dist/commands/terraform.js -> ../../schema/envelope.schema.json
-  // src/commands/terraform.ts  -> ../../schema/envelope.schema.json
+  // dist/commands/terraform-discover.js -> ../../schema/envelope.schema.json
+  // src/commands/terraform-discover.ts  -> ../../schema/envelope.schema.json
   const here = dirname(fileURLToPath(import.meta.url));
   return join(here, "..", "..", "schema", "envelope.schema.json");
 }

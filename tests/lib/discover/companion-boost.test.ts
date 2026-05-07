@@ -1,7 +1,7 @@
 // companion-boost.test.ts
 //
 // Verifies the tier1 stage-1l companion-boost logic introduced to close P5 C5
-// (cloudflare-workers-d1-r2 = 0.333).
+// (cloudflare-d1-r2 = 0.333).
 //
 // Key invariants:
 //   • exact_resource hit → companions boosted by +50  (closes P5 C5)

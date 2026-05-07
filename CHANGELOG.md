@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Replaced project-local JSON state and lock files with committed `.vegastack/vegastack.yml`.
+- Moved shared agent instructions to `~/.vegastack/instructions/` and kept project agent files to small managed pointers.
+
 ## [0.1.13-next.0] - 2026-05-05
 
 Opens the next develop prerelease channel after stable `0.1.12`.
@@ -56,7 +63,7 @@ Prerelease of the Registry-backed VegaStack CLI for `develop`.
 
 ### Changed
 
-- Moved project state to `.vegastack/project.json` and `.vegastack/vegastack-lock.json`.
+- Moved project state into project-local VegaStack metadata files; this was later superseded by committed `.vegastack/vegastack.yml`.
 - Replaced archive-era bundle language with VegaStack Registry terminology.
 - Kept Terraform provider discovery behind `vegastack ask --entry terraform --tf-provider <provider>`.
 - Updated public README install guidance so stable installs use `npm i -g @vegastack/cli` and prereleases use `@next`.

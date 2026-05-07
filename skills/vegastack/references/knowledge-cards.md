@@ -28,9 +28,11 @@ Body markdown — multi-paragraph allowed. Cite sources inline.
 
 `overrides_training: true` is the signal to the agent: this is a post-training-cutoff fact the maintainer explicitly verified. Trust the card and cite its `authoritative_source` in your reply.
 
-## Terraform card inventory (16 cards in v0.1)
+## Terraform card examples
 
-The Terraform Registry pack includes these cards. The IDs are stable; eval prompts (`evals/evals.json`) reference them by ID.
+The Terraform Registry pack includes generated cards in its installed
+`index/knowledge.json`. Use that file as the source of truth; the IDs below are
+examples that eval prompts may reference.
 
 | id | one-line summary |
 |---|---|
