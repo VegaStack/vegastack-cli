@@ -28,4 +28,9 @@ describe("preview --command tokenizer (no shell)", () => {
     expect(() => parseCommandArgv("")).toThrow();
     expect(() => parseCommandArgv("   ")).toThrow();
   });
+
+  it("rejects unterminated quoted strings", () => {
+    expect(() => parseCommandArgv('node -e "unterminated')).toThrow(/unterminated/i);
+    expect(() => parseCommandArgv("node -e 'still open")).toThrow(/unterminated/i);
+  });
 });
