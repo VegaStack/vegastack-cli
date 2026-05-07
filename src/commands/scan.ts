@@ -3,6 +3,8 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { log, printError } from "../lib/log.js";
+import { VegaStackError } from "../lib/errors.js";
+import { validateSafeOutputDir } from "../lib/validate.js";
 import { osvCacheDir, scanCacheRoot, trivyCacheDir } from "../lib/paths.js";
 import {
   defaultScanConfig,
@@ -104,7 +106,13 @@ export async function runScan(opts: ScanOptions): Promise<number> {
     const payload = buildScanReportPayload(results, config, effectiveOpts.offline, selected);
 
     const outputPayload = opts.format === "sarif" ? toSarif(payload.findings) : payload;
-    if (opts.output) fs.writeFileSync(opts.output, `${JSON.stringify(outputPayload, null, 2)}\n`);
+    if (opts.output) {
+      const safeOutput = validateScanOutputPath(opts.output, process.cwd());
+      // Atomic write: temp + rename so a crashed scan never leaves a partial file.
+      const tmp = `${safeOutput}.tmp.${process.pid}`;
+      fs.writeFileSync(tmp, `${JSON.stringify(outputPayload, null, 2)}\n`, { mode: 0o644 });
+      fs.renameSync(tmp, safeOutput);
+    }
     if (opts.format === "json" || opts.format === "sarif") log.json(outputPayload);
     else printTextReport(payload);
     return payload.ok ? 0 : 1;
@@ -112,6 +120,31 @@ export async function runScan(opts: ScanOptions): Promise<number> {
     return printError(e);
   }
 }
+
+/**
+ * Validate that `--output <path>` cannot escape the user's allowed roots
+ * (cwd, $HOME, os.tmpdir()). Closes an arbitrary-file-overwrite vector where
+ * a CI caller forwarded the flag with a path like `/etc/passwd` or `../foo`.
+ *
+ * Returns the canonical absolute path so the caller writes to a known
+ * location.
+ */
+function validateScanOutputPath(input: string, cwd: string): string {
+  if (!input || typeof input !== "string") {
+    throw new VegaStackError("ValidationError", "scan --output must be a non-empty string");
+  }
+  // Resolve dirname against cwd, then validate that dir against allowed roots.
+  // We split file vs dir because validateSafeOutputDir creates the dir on demand
+  // and we want the file basename preserved.
+  const absolute = path.isAbsolute(input) ? input : path.resolve(cwd, input);
+  const dir = path.dirname(absolute);
+  const base = path.basename(absolute);
+  const safeDir = validateSafeOutputDir(dir, { cwd });
+  return path.join(safeDir, base);
+}
+
+/** @internal exported for tests only — do not use outside this package. */
+export const validateScanOutputPathForTesting = validateScanOutputPath;
 
 export async function runScanEnable(opts: ScanEnableOptions): Promise<number> {
   try {
