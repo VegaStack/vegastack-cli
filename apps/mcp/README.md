@@ -3,7 +3,8 @@
 Cloudflare Workers Remote MCP server that exposes VegaStack Registry evidence to MCP-aware coding agents (Claude Code, Codex, Cursor, Continue, Aider, Cline, ...). The current worker surface is Terraform-focused while the CLI remains the broad local harness.
 
 - **Transport:** StreamableHTTP at `/mcp` (modern clients) and SSE at `/sse` (legacy clients).
-- **Auth:** none — v0.1 ships anonymous public read. The Registry pack is open data.
+- **Auth:** anonymous public read by default, with bearer-token auth available as an opt-in (see [Auth & rate-limit](#auth--rate-limit)). The Registry pack is open data.
+- **Rate limit:** 60 requests / minute / IP by default (token bucket, in-memory, per-isolate). Configurable via `RATE_LIMIT_PER_MIN`.
 - **Backed by:** Cloudflare R2 bucket `vegastack-cli-registry`.
 - **Production URL:** `https://cli-mcp.vegastack.com/mcp` (StreamableHTTP) and `https://cli-mcp.vegastack.com/sse` (SSE) — DNS+route provisioned post-deploy.
 
@@ -168,9 +169,41 @@ Lookup falls through:
 3. R2 binding (zero-egress)
 4. Public CDN fallback (`REGISTRY_PUBLIC_BASE_URL`) — useful for `wrangler dev` runs without R2 provisioned
 
+## Auth & rate-limit
+
+The worker enforces two abuse controls (issue [#77](https://github.com/vegastack/vegastack-cli/issues/77)):
+
+### Per-IP rate limit (always on)
+
+A token-bucket limiter, keyed on `cf-connecting-ip + colo`, fires before tool dispatch:
+
+- **Default:** 60 requests / minute / IP. Override with `RATE_LIMIT_PER_MIN=<int>`.
+- **Response on overage:** HTTP 429 with `Retry-After` header and a JSON body `{"error":"rate_limited", ...}`.
+- **State:** in-memory, per Worker isolate. Best-effort — a determined attacker who lands across many isolates can exceed the per-IP cap, but a misbehaving single client is contained.
+- **Scope:** every non-`OPTIONS` request, including `/health` and `/version`. The CORS preflight is exempt.
+
+### Bearer-token auth (opt-in)
+
+Set both env vars to require an `Authorization: Bearer <token>` header on every request:
+
+```toml
+# wrangler.toml [vars] — or `wrangler secret put MCP_AUTH_TOKEN` for the secret
+REQUIRE_AUTH = "true"
+```
+
+```bash
+wrangler secret put MCP_AUTH_TOKEN          # paste a 32-byte hex secret
+```
+
+- **Comparison:** constant-time over UTF-8 bytes; both length and content mismatches return identical 401 responses.
+- **Misconfig:** if `REQUIRE_AUTH=true` and `MCP_AUTH_TOKEN` is empty, the server fails closed with HTTP 500 — there is no silent-allow path.
+- **No-op default:** when `REQUIRE_AUTH` is unset (or anything other than the literal string `true`), the middleware is bypassed.
+
+Generate a token: `openssl rand -hex 32`.
+
 ## Current limitations
 
 - The worker currently exposes Terraform discovery and selected Registry lookup tools. The local CLI remains the primary interface for broad pack search.
 - Workers cannot shell out to ripgrep, so remote search must use Registry indexes or R2/KV-backed lookup paths.
-- v0.1 has no auth or per-user quota controls. Put it behind Cloudflare access/rate limits before using it for private deployments.
+- v0.1 has rate-limiting and opt-in bearer auth (see above). Per-tenant quotas and OAuth land in v0.2. For shared private deployments, layer Cloudflare Access in front of the worker.
 - Keep response shapes aligned with `docs/contracts/discover-types.ts` before changing tool output.

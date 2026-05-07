@@ -20,6 +20,12 @@ declare global {
     CACHE_TTL_SECONDS: string;
     /** Log level: "debug" | "info" | "warn" | "error". */
     LOG_LEVEL: string;
+    /** Per-IP rate limit, requests per minute. Default 60. */
+    RATE_LIMIT_PER_MIN?: string;
+    /** "true" to require Authorization: Bearer <token> on every request. */
+    REQUIRE_AUTH?: string;
+    /** Expected bearer token (secret). Required when REQUIRE_AUTH=true. */
+    MCP_AUTH_TOKEN?: string;
   }
 }
 

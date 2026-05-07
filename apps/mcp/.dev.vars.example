@@ -1,8 +1,9 @@
 # vegastack-mcp local dev secrets.
 #
-# v0.1 ships an anonymous public read MCP server — there are no required
-# secrets. This file exists so contributors know where to put things if/when
-# v0.2 adds auth.
+# v0.1 ships an anonymous public read MCP server with a per-IP rate limit
+# (token-bucket, in-memory, per-isolate). v0.2 will move to per-tenant auth.
+# Bearer-token auth is available now as an opt-in (REQUIRE_AUTH=true) for
+# operators who want to gate their deployment.
 #
 # Copy to `.dev.vars` (NOT checked in) before `wrangler dev` if you need to
 # override anything.
@@ -14,3 +15,19 @@
 # CACHE_TTL_SECONDS=60
 
 # LOG_LEVEL=debug
+
+# ── Rate limit (audit #77) ───────────────────────────────────────────────
+# Per-IP requests-per-minute. Default 60. Buckets are keyed on
+# cf-connecting-ip + colo and live in-memory in each Worker isolate.
+# RATE_LIMIT_PER_MIN=60
+
+# ── Bearer-token auth (opt-in, audit #77) ────────────────────────────────
+# Set REQUIRE_AUTH=true and provide MCP_AUTH_TOKEN to require every request
+# to carry `Authorization: Bearer <MCP_AUTH_TOKEN>`. Comparison is
+# constant-time. If REQUIRE_AUTH=true but MCP_AUTH_TOKEN is empty the
+# server fails closed (500) — there is no silent-allow path.
+#
+# Generate a token with: `openssl rand -hex 32`
+# Set in production via: `wrangler secret put MCP_AUTH_TOKEN`
+# REQUIRE_AUTH=true
+# MCP_AUTH_TOKEN=replace-me-with-a-32-byte-hex-secret

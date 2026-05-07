@@ -22,6 +22,7 @@
 import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { listProviders, readRootManifest } from "./lib/r2-registry.js";
+import { createBearerAuth, createRateLimiter, readMiddlewareConfig } from "./middleware.js";
 
 import {
   handleTerraformDiscover,
@@ -71,8 +72,7 @@ export class VegaStackMcp extends McpAgent<Env> {
           query: args.query,
           provider: args.provider ?? null,
           latency_ms: Date.now() - t0,
-          result_count:
-            (result.structuredContent as { count?: number } | undefined)?.count ?? 0,
+          result_count: (result.structuredContent as { count?: number } | undefined)?.count ?? 0,
         });
         return result;
       },
@@ -146,6 +146,34 @@ const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Max-Age": "86400",
 };
 
+// Module-scope middleware instances so token-bucket state persists across
+// requests in the same Worker isolate. Initialised lazily on the first
+// request because the Env (and therefore RATE_LIMIT_PER_MIN /
+// MCP_AUTH_TOKEN) isn't available at module load.
+let rateLimiter: ((req: Request) => Promise<Response | null>) | null = null;
+let bearerAuth: ((req: Request) => Promise<Response | null>) | null = null;
+
+function ensureMiddleware(env: Env): {
+  rl: (req: Request) => Promise<Response | null>;
+  auth: (req: Request) => Promise<Response | null>;
+} {
+  if (rateLimiter === null || bearerAuth === null) {
+    const cfg = readMiddlewareConfig(
+      env as unknown as {
+        RATE_LIMIT_PER_MIN?: string;
+        REQUIRE_AUTH?: string;
+        MCP_AUTH_TOKEN?: string;
+      },
+    );
+    rateLimiter = createRateLimiter({ limitPerMin: cfg.limitPerMin });
+    bearerAuth = createBearerAuth({
+      requireAuth: cfg.requireAuth,
+      expectedToken: cfg.expectedToken,
+    });
+  }
+  return { rl: rateLimiter, auth: bearerAuth };
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
@@ -153,6 +181,15 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
+
+    // ── auth + rate-limit (issue #77) ────────────────────────────────────
+    // Apply to every non-OPTIONS request, including /health and /version,
+    // so a hostile caller can't bypass the limiter by hitting cheap routes.
+    const { rl, auth } = ensureMiddleware(env);
+    const authResp = await auth(request);
+    if (authResp) return withCors(authResp);
+    const rlResp = await rl(request);
+    if (rlResp) return withCors(rlResp);
 
     // ── Health / version / tools listing ────────────────────────────────
     if (url.pathname === "/" || url.pathname === "") {
@@ -213,7 +250,12 @@ const TOOL_NAMES = [
   "registry_get_recipe",
 ];
 
-async function healthBody(env: Env): Promise<{ ok: boolean; registry_reachable: boolean; provider_count: number; registry_version: string }> {
+async function healthBody(env: Env): Promise<{
+  ok: boolean;
+  registry_reachable: boolean;
+  provider_count: number;
+  registry_version: string;
+}> {
   try {
     const root = await readRootManifest(env);
     const providers = await listProviders(env);
