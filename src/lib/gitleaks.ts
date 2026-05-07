@@ -83,8 +83,6 @@ function metadataFor(target: Target, binPath: string): GitleaksInstall {
   };
 }
 
-export const installLatestGitleaks = installGitleaks;
-
 export function resolveGitleaksBin(): string | null {
   const override = process.env.VEGASTACK_GITLEAKS_BIN;
   if (override && fs.existsSync(override)) return override;
