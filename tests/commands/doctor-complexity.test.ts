@@ -15,12 +15,7 @@ describe("doctor.ts cyclomatic complexity is bounded (rollup #82)", () => {
   it("runDoctor and helpers all stay at or below complexity 15", () => {
     const r = spawnSync(
       "npx",
-      [
-        "eslint",
-        "--rule",
-        '{"complexity":["error",15]}',
-        "src/commands/doctor.ts",
-      ],
+      ["eslint", "--rule", '{"complexity":["error",15]}', "src/commands/doctor.ts"],
       { cwd: REPO, encoding: "utf8" },
     );
     const out = `${r.stdout ?? ""}${r.stderr ?? ""}`;

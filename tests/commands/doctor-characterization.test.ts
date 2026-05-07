@@ -14,8 +14,8 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../src/lib/update-check.js", async (orig) => {
-  const real = (await orig()) as Record<string, unknown>;
-  return { ...real, refreshUpdateCache: () => null };
+  const real = await orig();
+  return { ...(real as object), refreshUpdateCache: () => null };
 });
 
 vi.mock("../../src/lib/host-detect.js", () => ({
@@ -39,21 +39,13 @@ vi.mock("../../src/agents/index.js", () => {
   };
 });
 
-// Force which() to always be deterministic — pretend jq is missing.
-vi.mock("node:child_process", async (orig) => {
-  const real = (await orig()) as Record<string, unknown>;
-  return {
-    ...real,
-    spawnSync: () => ({ status: 1, error: new Error("stub"), stdout: "", stderr: "" }),
-  };
-});
-
 let tmpHome: string;
 let prevConfig: string | undefined;
 let prevRegistry: string | undefined;
 let prevTools: string | undefined;
 let prevPkgRoot: string | undefined;
-let stdoutSpy: ReturnType<typeof vi.spyOn>;
+let prevPath: string | undefined;
+let stdoutSpy: { mockRestore: () => void };
 let captured: string[];
 
 beforeEach(() => {
@@ -62,6 +54,9 @@ beforeEach(() => {
   prevRegistry = process.env.VEGASTACK_REGISTRY_DIR;
   prevTools = process.env.VEGASTACK_TOOLS_DIR;
   prevPkgRoot = process.env.VEGASTACK_PKG_ROOT;
+  prevPath = process.env.PATH;
+  // Empty PATH -> jq lookup deterministically fails -> "jq (optional)" not-ok.
+  process.env.PATH = path.join(tmpHome, "empty-path");
   process.env.VEGASTACK_CONFIG_DIR = path.join(tmpHome, "cfg");
   process.env.VEGASTACK_REGISTRY_DIR = path.join(tmpHome, "reg");
   process.env.VEGASTACK_TOOLS_DIR = path.join(tmpHome, "tools");
@@ -70,10 +65,19 @@ beforeEach(() => {
   fs.mkdirSync(process.env.VEGASTACK_TOOLS_DIR, { recursive: true });
 
   captured = [];
-  stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation((chunk: unknown) => {
-    captured.push(typeof chunk === "string" ? chunk : Buffer.from(chunk as Uint8Array).toString());
-    return true;
-  });
+  const origWrite = process.stdout.write.bind(process.stdout);
+  process.stdout.write = ((chunk: unknown, ...rest: unknown[]) => {
+    if (typeof chunk === "string" || chunk instanceof Uint8Array) {
+      captured.push(typeof chunk === "string" ? chunk : Buffer.from(chunk).toString());
+      return true;
+    }
+    return (origWrite as (...a: unknown[]) => boolean)(chunk, ...rest);
+  }) as typeof process.stdout.write;
+  stdoutSpy = {
+    mockRestore: () => {
+      process.stdout.write = origWrite;
+    },
+  };
 });
 
 afterEach(() => {
@@ -86,6 +90,8 @@ afterEach(() => {
   else process.env.VEGASTACK_TOOLS_DIR = prevTools;
   if (prevPkgRoot === undefined) delete process.env.VEGASTACK_PKG_ROOT;
   else process.env.VEGASTACK_PKG_ROOT = prevPkgRoot;
+  if (prevPath === undefined) delete process.env.PATH;
+  else process.env.PATH = prevPath;
   fs.rmSync(tmpHome, { recursive: true, force: true });
   vi.resetModules();
 });
@@ -118,7 +124,7 @@ describe("runDoctor characterization (JSON output contract)", () => {
 
   it("emits the documented check set with stable shape (name/ok/detail)", async () => {
     const out = await runOnce();
-    const checks = out.checks as Array<{ name: string; ok: boolean; detail: string }>;
+    const checks = out.checks as { name: string; ok: boolean; detail: string }[];
     for (const c of checks) {
       expect(typeof c.name).toBe("string");
       expect(typeof c.ok).toBe("boolean");
