@@ -1,0 +1,1210 @@
+{
+  "single-provider-explicit": {
+    "input": {
+      "query": "s3 bucket",
+      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini",
+      "provider": "aws"
+    },
+    "output": {
+      "status": "ok",
+      "query": "s3 bucket",
+      "provider": "aws",
+      "provider_confidence": 1,
+      "tokens": [
+        "s3",
+        "bucket"
+      ],
+      "tiers_used": [
+        "manifest"
+      ],
+      "schema_version": 1,
+      "registry_version": "2026.04.28",
+      "files": [
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+          "score": 480,
+          "score_norm": 100,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "primary_resource:aws_s3_bucket",
+            "primary_resource:aws_s3_bucket",
+            "name_partial:aws_s3_bucket",
+            "description:bucket"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket.html.markdown",
+            "description": "Provides an S3 bucket resource.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [
+              {
+                "name": "force_destroy"
+              },
+              {
+                "name": "tags"
+              }
+            ],
+            "computed_attrs": [
+              {
+                "name": "arn"
+              },
+              {
+                "name": "id"
+              }
+            ],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": {
+              "command": "terraform import aws_s3_bucket.example bucket-name",
+              "id_format": "<bucket_name>"
+            },
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [
+              "aws_s3_bucket_versioning",
+              "aws_s3_bucket_server_side_encryption_configuration",
+              "aws_s3_bucket_public_access_block"
+            ],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000001"
+          },
+          "example_usage": "## Example Usage\n\n```terraform\nresource \"aws_s3_bucket\" \"example\" {\n  bucket = \"my-tf-test-bucket\"\n}\n```\n\n... (truncated; pass --full-examples for the rest)"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+          "score": 175,
+          "score_norm": 43.8,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_public_access_block",
+            "description:bucket",
+            "recommended_companion:aws_s3_bucket→aws_s3_bucket_public_access_block"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_public_access_block.html.markdown",
+            "description": "Manages S3 bucket public-access block.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000007"
+          },
+          "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+          "score": 175,
+          "score_norm": 43.8,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_server_side_encryption_configuration",
+            "description:bucket",
+            "recommended_companion:aws_s3_bucket→aws_s3_bucket_server_side_encryption_configuration"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_server_side_encryption_configuration.html.markdown",
+            "description": "Manages S3 bucket SSE configuration.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000006"
+          },
+          "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+          "score": 175,
+          "score_norm": 43.8,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_versioning",
+            "description:bucket",
+            "recommended_companion:aws_s3_bucket→aws_s3_bucket_versioning"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_versioning.html.markdown",
+            "description": "Manages S3 bucket versioning configuration.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              },
+              {
+                "name": "versioning_configuration"
+              }
+            ],
+            "optional_args": [],
+            "computed_attrs": [
+              {
+                "name": "id"
+              }
+            ],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000002"
+          },
+          "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown",
+          "score": 130,
+          "score_norm": 32.5,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_website_configuration"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_website_configuration.html.markdown",
+            "description": "Manages S3 static-website hosting.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000008"
+          },
+          "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
+        }
+      ],
+      "knowledge": [],
+      "recipes": [],
+      "concept_aliases_used": [],
+      "citations": [
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown"
+      ],
+      "count": 5,
+      "mode": "full"
+    }
+  },
+  "single-provider-detected-aws": {
+    "input": {
+      "query": "create an aws s3 bucket",
+      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini"
+    },
+    "output": {
+      "status": "ok",
+      "query": "create an aws s3 bucket",
+      "provider": "aws",
+      "provider_confidence": 1,
+      "tokens": [
+        "s3",
+        "bucket"
+      ],
+      "tiers_used": [
+        "manifest"
+      ],
+      "schema_version": 1,
+      "registry_version": "2026.04.28",
+      "files": [
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+          "score": 480,
+          "score_norm": 100,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "primary_resource:aws_s3_bucket",
+            "primary_resource:aws_s3_bucket",
+            "name_partial:aws_s3_bucket",
+            "description:bucket"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket.html.markdown",
+            "description": "Provides an S3 bucket resource.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [
+              {
+                "name": "force_destroy"
+              },
+              {
+                "name": "tags"
+              }
+            ],
+            "computed_attrs": [
+              {
+                "name": "arn"
+              },
+              {
+                "name": "id"
+              }
+            ],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": {
+              "command": "terraform import aws_s3_bucket.example bucket-name",
+              "id_format": "<bucket_name>"
+            },
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [
+              "aws_s3_bucket_versioning",
+              "aws_s3_bucket_server_side_encryption_configuration",
+              "aws_s3_bucket_public_access_block"
+            ],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000001"
+          },
+          "example_usage": "## Example Usage\n\n```terraform\nresource \"aws_s3_bucket\" \"example\" {\n  bucket = \"my-tf-test-bucket\"\n}\n```\n\n... (truncated; pass --full-examples for the rest)"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+          "score": 175,
+          "score_norm": 43.8,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_public_access_block",
+            "description:bucket",
+            "recommended_companion:aws_s3_bucket→aws_s3_bucket_public_access_block"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_public_access_block.html.markdown",
+            "description": "Manages S3 bucket public-access block.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000007"
+          },
+          "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+          "score": 175,
+          "score_norm": 43.8,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_server_side_encryption_configuration",
+            "description:bucket",
+            "recommended_companion:aws_s3_bucket→aws_s3_bucket_server_side_encryption_configuration"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_server_side_encryption_configuration.html.markdown",
+            "description": "Manages S3 bucket SSE configuration.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000006"
+          },
+          "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+          "score": 175,
+          "score_norm": 43.8,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_versioning",
+            "description:bucket",
+            "recommended_companion:aws_s3_bucket→aws_s3_bucket_versioning"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_versioning.html.markdown",
+            "description": "Manages S3 bucket versioning configuration.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              },
+              {
+                "name": "versioning_configuration"
+              }
+            ],
+            "optional_args": [],
+            "computed_attrs": [
+              {
+                "name": "id"
+              }
+            ],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000002"
+          },
+          "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown",
+          "score": 130,
+          "score_norm": 32.5,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_website_configuration"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_website_configuration.html.markdown",
+            "description": "Manages S3 static-website hosting.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000008"
+          },
+          "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
+        }
+      ],
+      "knowledge": [],
+      "recipes": [],
+      "concept_aliases_used": [],
+      "citations": [
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown"
+      ],
+      "count": 5,
+      "mode": "full"
+    }
+  },
+  "single-provider-detected-cf": {
+    "input": {
+      "query": "cloudflare dns record",
+      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini"
+    },
+    "output": {
+      "status": "ok",
+      "query": "cloudflare dns record",
+      "provider": "cloudflare",
+      "provider_confidence": 1,
+      "tokens": [
+        "dns",
+        "record"
+      ],
+      "tiers_used": [
+        "manifest",
+        "grep"
+      ],
+      "schema_version": 1,
+      "registry_version": "2026.04.28",
+      "files": [
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/cloudflare/r/dns_record.html.markdown",
+          "score": 442.5,
+          "score_norm": 100,
+          "tier": "manifest+grep",
+          "reasons": [
+            "primary_resource:cloudflare_dns_record",
+            "name_partial:cloudflare_dns_record",
+            "name_partial:cloudflare_dns_record",
+            "description:record",
+            "grep_confirmed:grep_resource:cloudflare_record",
+            "grep_confirmed:filename_glob:"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/dns_record.html.markdown",
+            "description": "Provides a Cloudflare DNS record.",
+            "subcategory": "",
+            "required_args": [
+              {
+                "name": "zone_id"
+              },
+              {
+                "name": "name"
+              },
+              {
+                "name": "type"
+              },
+              {
+                "name": "content"
+              }
+            ],
+            "optional_args": [
+              {
+                "name": "ttl"
+              },
+              {
+                "name": "proxied"
+              }
+            ],
+            "computed_attrs": [
+              {
+                "name": "id"
+              }
+            ],
+            "blocks": {},
+            "enum_values": {
+              "type": [
+                "A",
+                "AAAA",
+                "CNAME",
+                "MX",
+                "TXT",
+                "NS",
+                "SRV"
+              ]
+            },
+            "import_syntax": {
+              "command": "terraform import cloudflare_dns_record.example zone_id/record_id",
+              "id_format": "<zone_id>/<record_id>"
+            },
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "plugin_framework",
+            "sections": {},
+            "sha1_prefix": "10000001"
+          },
+          "example_usage": "## Example Usage\n\n```terraform\nresource \"cloudflare_dns_record\" \"example\" {\n  zone_id = \"023e105f4ecef8ad9ca31a8372d0c353\"\n  name    = \"api\"\n  type    = \"A\"\n  content = \"203.0.113.42\"\n  ttl     = 1\n  proxied = true\n}\n```\n\n... (truncated; pass --full-examples for the rest)"
+        }
+      ],
+      "knowledge": [],
+      "recipes": [],
+      "concept_aliases_used": [],
+      "citations": [
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/cloudflare/r/dns_record.html.markdown"
+      ],
+      "count": 1,
+      "mode": "full"
+    }
+  },
+  "ambiguous-merge-aws-cf": {
+    "input": {
+      "query": "s3 bucket on cloudflare",
+      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini"
+    },
+    "output": {
+      "status": "ok",
+      "query": "s3 bucket on cloudflare",
+      "provider": "aws,cloudflare",
+      "provider_confidence": 0.9,
+      "tokens": [
+        "s3",
+        "bucket",
+        "cloudflare"
+      ],
+      "tiers_used": [
+        "manifest"
+      ],
+      "schema_version": 1,
+      "registry_version": "2026.04.28",
+      "files": [
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+          "score": 480,
+          "score_norm": 100,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "primary_resource:aws_s3_bucket",
+            "primary_resource:aws_s3_bucket",
+            "name_partial:aws_s3_bucket",
+            "description:bucket"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket.html.markdown",
+            "description": "Provides an S3 bucket resource.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [
+              {
+                "name": "force_destroy"
+              },
+              {
+                "name": "tags"
+              }
+            ],
+            "computed_attrs": [
+              {
+                "name": "arn"
+              },
+              {
+                "name": "id"
+              }
+            ],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": {
+              "command": "terraform import aws_s3_bucket.example bucket-name",
+              "id_format": "<bucket_name>"
+            },
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [
+              "aws_s3_bucket_versioning",
+              "aws_s3_bucket_server_side_encryption_configuration",
+              "aws_s3_bucket_public_access_block"
+            ],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000001"
+          },
+          "example_usage": "## Example Usage\n\n```terraform\nresource \"aws_s3_bucket\" \"example\" {\n  bucket = \"my-tf-test-bucket\"\n}\n```\n\n... (truncated; pass --full-examples for the rest)"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+          "score": 175,
+          "score_norm": 43.8,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_public_access_block",
+            "description:bucket",
+            "recommended_companion:aws_s3_bucket→aws_s3_bucket_public_access_block"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_public_access_block.html.markdown",
+            "description": "Manages S3 bucket public-access block.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000007"
+          },
+          "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+          "score": 175,
+          "score_norm": 43.8,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_server_side_encryption_configuration",
+            "description:bucket",
+            "recommended_companion:aws_s3_bucket→aws_s3_bucket_server_side_encryption_configuration"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_server_side_encryption_configuration.html.markdown",
+            "description": "Manages S3 bucket SSE configuration.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000006"
+          },
+          "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+          "score": 175,
+          "score_norm": 43.8,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_versioning",
+            "description:bucket",
+            "recommended_companion:aws_s3_bucket→aws_s3_bucket_versioning"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_versioning.html.markdown",
+            "description": "Manages S3 bucket versioning configuration.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              },
+              {
+                "name": "versioning_configuration"
+              }
+            ],
+            "optional_args": [],
+            "computed_attrs": [
+              {
+                "name": "id"
+              }
+            ],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000002"
+          },
+          "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown",
+          "score": 130,
+          "score_norm": 32.5,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_website_configuration"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_website_configuration.html.markdown",
+            "description": "Manages S3 static-website hosting.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000008"
+          },
+          "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
+        }
+      ],
+      "knowledge": [],
+      "recipes": [],
+      "concept_aliases_used": [],
+      "citations": [
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown"
+      ],
+      "count": 5,
+      "merged_from_providers": [
+        "aws",
+        "cloudflare"
+      ]
+    }
+  },
+  "provider-undetected": {
+    "input": {
+      "query": "totally unrelated query",
+      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini"
+    },
+    "output": {
+      "status": "error",
+      "query": "totally unrelated query",
+      "error": "Could not detect provider from query. Pass --tf-provider with `vegastack ask --entry terraform`.",
+      "code": "ProviderUndetected"
+    }
+  },
+  "unknown-explicit-provider": {
+    "input": {
+      "query": "s3 bucket",
+      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini",
+      "provider": "nope"
+    },
+    "output": {
+      "status": "error",
+      "query": "s3 bucket",
+      "error": "unknown provider 'nope'. Known providers: aws, cloudflare",
+      "code": "ProviderUnknown"
+    }
+  },
+  "max-cap": {
+    "input": {
+      "query": "s3",
+      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini",
+      "provider": "aws",
+      "max": 3
+    },
+    "output": {
+      "status": "ok",
+      "query": "s3",
+      "provider": "aws",
+      "provider_confidence": 1,
+      "tokens": [
+        "s3"
+      ],
+      "tiers_used": [
+        "manifest",
+        "grep"
+      ],
+      "schema_version": 1,
+      "registry_version": "2026.04.28",
+      "files": [
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+          "score": 285,
+          "score_norm": 71.3,
+          "tier": "manifest+grep",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "primary_resource:aws_s3_bucket",
+            "grep_confirmed:content_grep:s3"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket.html.markdown",
+            "description": "Provides an S3 bucket resource.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [
+              {
+                "name": "force_destroy"
+              },
+              {
+                "name": "tags"
+              }
+            ],
+            "computed_attrs": [
+              {
+                "name": "arn"
+              },
+              {
+                "name": "id"
+              }
+            ],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": {
+              "command": "terraform import aws_s3_bucket.example bucket-name",
+              "id_format": "<bucket_name>"
+            },
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [
+              "aws_s3_bucket_versioning",
+              "aws_s3_bucket_server_side_encryption_configuration",
+              "aws_s3_bucket_public_access_block"
+            ],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000001"
+          },
+          "example_usage": "## Example Usage\n\n```terraform\nresource \"aws_s3_bucket\" \"example\" {\n  bucket = \"my-tf-test-bucket\"\n}\n```\n\n... (truncated; pass --full-examples for the rest)"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+          "score": 125,
+          "score_norm": 31.3,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "recommended_companion:aws_s3_bucket→aws_s3_bucket_public_access_block"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_public_access_block.html.markdown",
+            "description": "Manages S3 bucket public-access block.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000007"
+          },
+          "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+          "score": 125,
+          "score_norm": 31.3,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "recommended_companion:aws_s3_bucket→aws_s3_bucket_server_side_encryption_configuration"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_server_side_encryption_configuration.html.markdown",
+            "description": "Manages S3 bucket SSE configuration.",
+            "subcategory": "S3",
+            "required_args": [
+              {
+                "name": "bucket"
+              }
+            ],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000006"
+          },
+          "example_usage": "## Example Usage\n\n```hcl\n# stub\n```\n\n... (truncated; pass --full-examples for the rest)"
+        }
+      ],
+      "knowledge": [],
+      "recipes": [],
+      "concept_aliases_used": [],
+      "citations": [
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown"
+      ],
+      "count": 3,
+      "mode": "full"
+    }
+  },
+  "brief-mode": {
+    "input": {
+      "query": "s3 bucket",
+      "root": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini",
+      "provider": "aws",
+      "brief": true
+    },
+    "output": {
+      "status": "ok",
+      "query": "s3 bucket",
+      "provider": "aws",
+      "provider_confidence": 1,
+      "tokens": [
+        "s3",
+        "bucket"
+      ],
+      "tiers_used": [
+        "manifest"
+      ],
+      "schema_version": 1,
+      "registry_version": "2026.04.28",
+      "files": [
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+          "score": 480,
+          "score_norm": 100,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "primary_resource:aws_s3_bucket",
+            "primary_resource:aws_s3_bucket",
+            "name_partial:aws_s3_bucket",
+            "description:bucket"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket.html.markdown",
+            "description": "",
+            "required_args": [],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000001"
+          },
+          "example_usage": "",
+          "name": "aws_s3_bucket"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+          "score": 175,
+          "score_norm": 43.8,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_public_access_block",
+            "description:bucket",
+            "recommended_companion:aws_s3_bucket→aws_s3_bucket_public_access_block"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_public_access_block.html.markdown",
+            "description": "",
+            "required_args": [],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000007"
+          },
+          "example_usage": "",
+          "name": "aws_s3_bucket_public_access_block"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+          "score": 175,
+          "score_norm": 43.8,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_server_side_encryption_configuration",
+            "description:bucket",
+            "recommended_companion:aws_s3_bucket→aws_s3_bucket_server_side_encryption_configuration"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_server_side_encryption_configuration.html.markdown",
+            "description": "",
+            "required_args": [],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000006"
+          },
+          "example_usage": "",
+          "name": "aws_s3_bucket_server_side_encryption_configuration"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+          "score": 175,
+          "score_norm": 43.8,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_versioning",
+            "description:bucket",
+            "recommended_companion:aws_s3_bucket→aws_s3_bucket_versioning"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_versioning.html.markdown",
+            "description": "",
+            "required_args": [],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000002"
+          },
+          "example_usage": "",
+          "name": "aws_s3_bucket_versioning"
+        },
+        {
+          "path": "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown",
+          "score": 130,
+          "score_norm": 32.5,
+          "tier": "manifest",
+          "reasons": [
+            "subcat_keyword:s3→S3",
+            "subcategory_peer:S3",
+            "name_partial:aws_s3_bucket_website_configuration"
+          ],
+          "manifest_entry": {
+            "type": "resource",
+            "file": "r/s3_bucket_website_configuration.html.markdown",
+            "description": "",
+            "required_args": [],
+            "optional_args": [],
+            "computed_attrs": [],
+            "blocks": {},
+            "enum_values": {},
+            "import_syntax": null,
+            "deprecated": false,
+            "suggested_alternative": null,
+            "recommended_companions": [],
+            "schema_origin": "sdkv2",
+            "sections": {},
+            "sha1_prefix": "00000008"
+          },
+          "example_usage": "",
+          "name": "aws_s3_bucket_website_configuration"
+        }
+      ],
+      "knowledge": [],
+      "recipes": [],
+      "concept_aliases_used": [],
+      "citations": [
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_public_access_block.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_server_side_encryption_configuration.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_versioning.html.markdown",
+        "/private/tmp/wt-round4-S/tests/fixtures/registry-mini/aws/r/s3_bucket_website_configuration.html.markdown"
+      ],
+      "count": 5,
+      "mode": "brief"
+    }
+  }
+}
