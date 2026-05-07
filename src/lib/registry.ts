@@ -384,8 +384,55 @@ function urlFor(relativePath: string): string {
   return `${registryBaseUrl()}/${cleaned.split("/").map(encodeURIComponent).join("/")}`;
 }
 
+// Hosts permitted for catalog fetches. The allowlist exists so a hostile
+// VEGASTACK_REGISTRY_URL (leaked CI secret, malicious devcontainer, attacker
+// rc-file write) cannot redirect catalog traffic before sigstore verification
+// runs on the response — see #72.
+const REGISTRY_HOST_ALLOWLIST: ReadonlySet<string> = new Set(["cli-registry.vegastack.com"]);
+
+export function resolveRegistryBaseUrl(): string {
+  const raw = process.env.VEGASTACK_REGISTRY_URL;
+  if (raw === undefined || raw === "") return DEFAULT_REGISTRY_BASE_URL;
+  const devTrust = process.env.VEGASTACK_REGISTRY_DEV_TRUST === "1";
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch (e) {
+    if (devTrust) {
+      log.warn(`VEGASTACK_REGISTRY_DEV_TRUST=1: trusting unparseable URL ${raw}`);
+      return raw.replace(/\/+$/, "");
+    }
+    throw new VegaStackError(
+      "ValidationError",
+      `VEGASTACK_REGISTRY_URL is not a valid URL: ${raw}`,
+      { cause: e, context: { value: raw } },
+    );
+  }
+  if (devTrust) {
+    log.warn(
+      `VEGASTACK_REGISTRY_DEV_TRUST=1: bypassing scheme/host allowlist for ${parsed.toString()}`,
+    );
+    return raw.replace(/\/+$/, "");
+  }
+  if (parsed.protocol !== "https:") {
+    throw new VegaStackError(
+      "ValidationError",
+      `VEGASTACK_REGISTRY_URL must use https:// (got ${parsed.protocol}). Set VEGASTACK_REGISTRY_DEV_TRUST=1 for local development.`,
+      { context: { value: raw } },
+    );
+  }
+  if (!REGISTRY_HOST_ALLOWLIST.has(parsed.hostname)) {
+    throw new VegaStackError(
+      "ValidationError",
+      `VEGASTACK_REGISTRY_URL host ${parsed.hostname} is not in the allowlist. Set VEGASTACK_REGISTRY_DEV_TRUST=1 to override.`,
+      { context: { value: raw, host: parsed.hostname } },
+    );
+  }
+  return raw.replace(/\/+$/, "");
+}
+
 function registryBaseUrl(): string {
-  return (process.env.VEGASTACK_REGISTRY_URL ?? DEFAULT_REGISTRY_BASE_URL).replace(/\/+$/, "");
+  return resolveRegistryBaseUrl();
 }
 
 async function fetchRegistryCatalog(): Promise<RegistryCatalog> {
