@@ -54,15 +54,26 @@ describe("safeExtractZip — issue #76 (zip-slip defense)", () => {
     }
   });
 
-  it("rejects zip archives containing path-traversal entries", () => {
+  it("rejects zip archives containing path-traversal entries", async () => {
     const dest = makeTmp("vs-zip-extract-");
     const parent = path.dirname(dest);
     const witness = path.join(parent, "escape.txt");
     try {
       // Pre-condition: witness file does not exist.
       expect(fs.existsSync(witness)).toBe(false);
-      expect(() => safeExtractZip(evilZip, dest)).toThrow(VegaStackError);
-      expect(() => safeExtractZip(evilZip, dest)).toThrow(/unsafe|traversal|path/i);
+      let caught: unknown;
+      try {
+        await safeExtractZip(evilZip, dest);
+      } catch (e) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(VegaStackError);
+      // Either our explicit guard fires, or yauzl rejects the bogus entry
+      // first via its own central-directory validator. In both cases the
+      // error chain mentions the offending path or rejects extraction.
+      const top = (caught as Error).message;
+      const cause = ((caught as { cause?: Error }).cause)?.message ?? "";
+      expect(`${top} :: ${cause}`).toMatch(/unsafe|escape|traversal|path|zip archive/i);
       // Post-condition: nothing escaped.
       expect(fs.existsSync(witness)).toBe(false);
     } finally {
@@ -75,10 +86,10 @@ describe("safeExtractZip — issue #76 (zip-slip defense)", () => {
     }
   });
 
-  it("extracts benign zip archives", () => {
+  it("extracts benign zip archives", async () => {
     const dest = makeTmp("vs-zip-extract-");
     try {
-      safeExtractZip(benignZip, dest);
+      await safeExtractZip(benignZip, dest);
       expect(fs.readFileSync(path.join(dest, "sub", "ok.txt"), "utf8")).toBe("ok");
     } finally {
       fs.rmSync(dest, { recursive: true, force: true });
