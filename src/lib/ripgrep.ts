@@ -1,4 +1,5 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
+import { safeExtractTar, safeExtractZip } from "./safe-extract.js";
 import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -57,7 +58,7 @@ export async function installRipgrep(opts: { force?: boolean } = {}): Promise<Ri
     if (target.archive !== "tar.gz" && target.archive !== "zip") {
       throw new VegaStackError("ArtifactCorrupt", `unsupported ripgrep archive ${target.archive}`);
     }
-    extractArchive(archivePath, extractDir, target.archive);
+    await extractArchive(archivePath, extractDir, target.archive);
     const extracted = findExtractedBinary(extractDir, target.binName);
     fs.rmSync(destDir, { recursive: true, force: true });
     fs.mkdirSync(destDir, { recursive: true });
@@ -144,28 +145,16 @@ async function downloadVerified(url: string, target: string, expectedSha: string
   });
 }
 
-function extractArchive(archivePath: string, targetDir: string, kind: "tar.gz" | "zip"): void {
-  try {
-    if (kind === "tar.gz") {
-      execFileSync("tar", ["-xzf", archivePath, "-C", targetDir], { stdio: "pipe" });
-      return;
-    }
-    if (process.platform === "win32") {
-      execFileSync(
-        "powershell.exe",
-        [
-          "-NoProfile",
-          "-Command",
-          `Expand-Archive -LiteralPath ${JSON.stringify(archivePath)} -DestinationPath ${JSON.stringify(targetDir)} -Force`,
-        ],
-        { stdio: "pipe" },
-      );
-      return;
-    }
-    execFileSync("unzip", ["-q", archivePath, "-d", targetDir], { stdio: "pipe" });
-  } catch (e) {
-    throw new VegaStackError("ArtifactCorrupt", "failed to extract ripgrep archive", { cause: e });
+async function extractArchive(
+  archivePath: string,
+  targetDir: string,
+  kind: "tar.gz" | "zip",
+): Promise<void> {
+  if (kind === "tar.gz") {
+    safeExtractTar(archivePath, targetDir);
+    return;
   }
+  await safeExtractZip(archivePath, targetDir);
 }
 
 function findExtractedBinary(root: string, binName: string): string {

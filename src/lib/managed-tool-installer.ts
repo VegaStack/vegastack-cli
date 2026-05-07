@@ -1,4 +1,5 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
+import { safeExtractTar, safeExtractZip } from "./safe-extract.js";
 import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -64,7 +65,7 @@ export async function installManagedTool(
     if (target.archive === "binary") {
       fs.copyFileSync(assetPath, binPath);
     } else {
-      extractArchive(assetPath, extractDir, target.archive);
+      await extractArchive(assetPath, extractDir, target.archive);
       fs.copyFileSync(findExtractedBinary(extractDir, target.binName), binPath);
     }
     if (process.platform !== "win32") fs.chmodSync(binPath, 0o755);
@@ -162,32 +163,16 @@ async function downloadVerified(url: string, target: string, expectedSha: string
   });
 }
 
-function extractArchive(
+async function extractArchive(
   archivePath: string,
   targetDir: string,
   kind: "tar.gz" | "tgz" | "zip",
-): void {
-  try {
-    if (kind === "tar.gz" || kind === "tgz") {
-      execFileSync("tar", ["-xzf", archivePath, "-C", targetDir], { stdio: "pipe" });
-      return;
-    }
-    if (process.platform === "win32") {
-      execFileSync(
-        "powershell.exe",
-        [
-          "-NoProfile",
-          "-Command",
-          `Expand-Archive -LiteralPath ${JSON.stringify(archivePath)} -DestinationPath ${JSON.stringify(targetDir)} -Force`,
-        ],
-        { stdio: "pipe" },
-      );
-      return;
-    }
-    execFileSync("unzip", ["-q", archivePath, "-d", targetDir], { stdio: "pipe" });
-  } catch (e) {
-    throw new VegaStackError("ArtifactCorrupt", `failed to extract ${kind} archive`, { cause: e });
+): Promise<void> {
+  if (kind === "tar.gz" || kind === "tgz") {
+    safeExtractTar(archivePath, targetDir);
+    return;
   }
+  await safeExtractZip(archivePath, targetDir);
 }
 
 function findExtractedBinary(root: string, binName: string): string {

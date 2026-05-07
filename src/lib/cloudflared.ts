@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { VegaStackError } from "./errors.js";
+import { safeExtractTar } from "./safe-extract.js";
 import { streamDownloadVerified } from "./fetch-with-timeout.js";
 import {
   MANAGED_TOOLS_MANIFEST,
@@ -146,19 +147,7 @@ async function downloadVerified(url: string, target: string, expectedSha: string
 }
 
 function extractTar(archivePath: string, targetDir: string): void {
-  const result = spawnSync("tar", ["-xzf", archivePath, "-C", targetDir], {
-    encoding: "utf8",
-    stdio: "pipe",
-  });
-  if (result.error ?? (result.status ?? 0) !== 0) {
-    throw new VegaStackError("ArtifactCorrupt", "failed to extract cloudflared archive", {
-      cause: result.error,
-      context: {
-        stderr: result.stderr,
-        stdout: result.stdout,
-      },
-    });
-  }
+  safeExtractTar(archivePath, targetDir);
 }
 
 function findExtractedBinary(root: string, binName: string): string {
