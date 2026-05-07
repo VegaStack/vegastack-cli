@@ -30,6 +30,54 @@ export interface LoadRecipesArgs {
   provider?: string;
 }
 
+/** Hard cap on a single recipe's on-disk size (1 MiB). */
+export const MAX_RECIPE_BYTES = 1024 * 1024;
+
+interface ParsedRecipeEntry {
+  mtimeMs: number;
+  parsed: RawRecipe | null;
+}
+
+const PARSE_CACHE = new Map<string, ParsedRecipeEntry>();
+
+/** Reset the module-level parsed-recipe cache. Test-only. */
+export function clearRecipesCache(): void {
+  PARSE_CACHE.clear();
+}
+
+function getParsedRecipe(file: string): ParsedRecipeEntry | null {
+  let stat: fs.Stats;
+  try {
+    stat = fs.statSync(file);
+  } catch {
+    return null;
+  }
+  const cached = PARSE_CACHE.get(file);
+  if (cached && cached.mtimeMs === stat.mtimeMs) return cached;
+  if (stat.size > MAX_RECIPE_BYTES) {
+    const skipped: ParsedRecipeEntry = { mtimeMs: stat.mtimeMs, parsed: null };
+    PARSE_CACHE.set(file, skipped);
+    return skipped;
+  }
+  let raw: string;
+  try {
+    raw = fs.readFileSync(file, "utf8");
+  } catch {
+    return null;
+  }
+  let parsed: RawRecipe;
+  try {
+    parsed = TOML.parse(raw) as RawRecipe;
+  } catch {
+    const bad: ParsedRecipeEntry = { mtimeMs: stat.mtimeMs, parsed: null };
+    PARSE_CACHE.set(file, bad);
+    return bad;
+  }
+  const entry: ParsedRecipeEntry = { mtimeMs: stat.mtimeMs, parsed };
+  PARSE_CACHE.set(file, entry);
+  return entry;
+}
+
 export function loadRecipes(args: LoadRecipesArgs): RecipeMatch[] {
   const dir = path.join(args.terraformRoot, "recipes");
   const files = listTomlFiles(dir);
@@ -40,18 +88,9 @@ export function loadRecipes(args: LoadRecipesArgs): RecipeMatch[] {
 
   const out: RecipeMatch[] = [];
   for (const file of files) {
-    let raw: string;
-    try {
-      raw = fs.readFileSync(file, "utf8");
-    } catch {
-      continue;
-    }
-    let parsed: RawRecipe;
-    try {
-      parsed = TOML.parse(raw) as RawRecipe;
-    } catch {
-      continue;
-    }
+    const entry = getParsedRecipe(file);
+    if (!entry?.parsed) continue;
+    const parsed = entry.parsed;
     if (!parsed.id) continue;
 
     const providers = Array.isArray(parsed.providers)

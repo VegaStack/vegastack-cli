@@ -17,10 +17,7 @@ describe("loadKnowledge — mtime cache + size guard", () => {
     dir = path.join(tmp, "knowledge");
     fs.mkdirSync(dir);
     card = path.join(dir, "a.md");
-    fs.writeFileSync(
-      card,
-      "---\nid: a\ntitle: A\ntriggers:\n  - phrase: hello\n---\nbody\n",
-    );
+    fs.writeFileSync(card, "---\nid: a\ntitle: A\ntriggers:\n  - phrase: hello\n---\nbody\n");
     clearKnowledgeCache();
   });
   afterEach(() => {
@@ -28,34 +25,23 @@ describe("loadKnowledge — mtime cache + size guard", () => {
     clearKnowledgeCache();
   });
 
-  it("does not re-read the file across calls when mtime is unchanged", () => {
+  it("returns cached parse when file content changes but mtime is preserved", () => {
+    const fixed = Math.floor(Date.now() / 1000);
+    fs.utimesSync(card, fixed, fixed);
     const args = { terraformRoot: tmp, tokens: ["hello"], query: "hello" };
-    loadKnowledge(args);
-    let reads = 0;
-    const origRead = fs.readFileSync;
-    (fs as unknown as { readFileSync: typeof origRead }).readFileSync = ((
-      ...a: Parameters<typeof origRead>
-    ) => {
-      if (typeof a[0] === "string" && a[0] === card) reads++;
-      return origRead(...a);
-    }) as typeof origRead;
-    try {
-      loadKnowledge(args);
-      loadKnowledge(args);
-    } finally {
-      (fs as unknown as { readFileSync: typeof origRead }).readFileSync = origRead;
-    }
-    expect(reads).toBe(0);
+    const a = loadKnowledge(args);
+    expect(a[0]!.title).toBe("A");
+    fs.writeFileSync(card, "---\nid: a\ntitle: ROTATED\ntriggers:\n  - phrase: hello\n---\nbody\n");
+    fs.utimesSync(card, fixed, fixed);
+    const b = loadKnowledge(args);
+    expect(b[0]!.title).toBe("A");
   });
 
   it("recomputes when mtime changes", () => {
     const a = loadKnowledge({ terraformRoot: tmp, tokens: ["hello"], query: "hello" });
     expect(a[0]!.title).toBe("A");
     const future = new Date(Date.now() + 5_000);
-    fs.writeFileSync(
-      card,
-      "---\nid: a\ntitle: B\ntriggers:\n  - phrase: hello\n---\nbody\n",
-    );
+    fs.writeFileSync(card, "---\nid: a\ntitle: B\ntriggers:\n  - phrase: hello\n---\nbody\n");
     fs.utimesSync(card, future, future);
     const b = loadKnowledge({ terraformRoot: tmp, tokens: ["hello"], query: "hello" });
     expect(b[0]!.title).toBe("B");

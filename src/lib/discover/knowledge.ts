@@ -39,6 +39,60 @@ export interface LoadKnowledgeArgs {
   provider?: string;
 }
 
+/** Hard cap on a single knowledge card's on-disk size (1 MiB). Cards larger
+ *  than this are skipped during load to bound memory. */
+export const MAX_KNOWLEDGE_BYTES = 1024 * 1024;
+
+interface ParsedCardEntry {
+  mtimeMs: number;
+  data: RawCardFrontmatter | null;
+  body: string;
+}
+
+const PARSE_CACHE = new Map<string, ParsedCardEntry>();
+
+/** Reset the module-level parsed-card cache. Test-only. */
+export function clearKnowledgeCache(): void {
+  PARSE_CACHE.clear();
+}
+
+function getParsedCard(file: string): ParsedCardEntry | null {
+  let stat: fs.Stats;
+  try {
+    stat = fs.statSync(file);
+  } catch {
+    return null;
+  }
+  const cached = PARSE_CACHE.get(file);
+  if (cached && cached.mtimeMs === stat.mtimeMs) return cached;
+  if (stat.size > MAX_KNOWLEDGE_BYTES) {
+    const skipped: ParsedCardEntry = { mtimeMs: stat.mtimeMs, data: null, body: "" };
+    PARSE_CACHE.set(file, skipped);
+    return skipped;
+  }
+  let raw: string;
+  try {
+    raw = fs.readFileSync(file, "utf8");
+  } catch {
+    return null;
+  }
+  let parsed: matter.GrayMatterFile<string>;
+  try {
+    parsed = matter(raw);
+  } catch {
+    const bad: ParsedCardEntry = { mtimeMs: stat.mtimeMs, data: null, body: "" };
+    PARSE_CACHE.set(file, bad);
+    return bad;
+  }
+  const entry: ParsedCardEntry = {
+    mtimeMs: stat.mtimeMs,
+    data: parsed.data as RawCardFrontmatter,
+    body: parsed.content.trim(),
+  };
+  PARSE_CACHE.set(file, entry);
+  return entry;
+}
+
 export function loadKnowledge(args: LoadKnowledgeArgs): KnowledgeCard[] {
   const dir = path.join(args.terraformRoot, "knowledge");
   const files = listMarkdownFiles(dir);
@@ -49,19 +103,9 @@ export function loadKnowledge(args: LoadKnowledgeArgs): KnowledgeCard[] {
 
   const out: KnowledgeCard[] = [];
   for (const file of files) {
-    let raw: string;
-    try {
-      raw = fs.readFileSync(file, "utf8");
-    } catch {
-      continue;
-    }
-    let parsed: matter.GrayMatterFile<string>;
-    try {
-      parsed = matter(raw);
-    } catch {
-      continue;
-    }
-    const data = parsed.data as RawCardFrontmatter;
+    const entry = getParsedCard(file);
+    if (!entry?.data) continue;
+    const data = entry.data;
     if (!data.id) continue;
 
     // Provider filter.
@@ -86,7 +130,7 @@ export function loadKnowledge(args: LoadKnowledgeArgs): KnowledgeCard[] {
       providers,
       triggers,
       overrides_training: Boolean(data.overrides_training),
-      body: parsed.content.trim(),
+      body: entry.body,
     });
   }
 
