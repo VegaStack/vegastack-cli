@@ -26,7 +26,7 @@ import { fileURLToPath } from "node:url";
 import { discover } from "../lib/discover.js";
 import { terraformEntryDocsDir } from "../lib/paths.js";
 import { log, printError } from "../lib/log.js";
-import { VegaStackError } from "../lib/errors.js";
+import { EXIT_CODES, VegaStackError } from "../lib/errors.js";
 
 export interface TerraformDiscoverOptions {
   provider?: string;
@@ -89,10 +89,10 @@ export async function runTerraformDiscover(
     const result = await discover(args);
     const json = opts.pretty ? JSON.stringify(result, null, 2) : JSON.stringify(result);
     process.stdout.write(json + "\n");
-    if (result.status === "error") return 2;
+    if (result.status === "error") return EXIT_CODES.DiscoverError;
     if (result.status === "ambiguous") {
       log.warn("query is ambiguous; consider --tf-provider to disambiguate");
-      return 3;
+      return EXIT_CODES.Ambiguous;
     }
     return 0;
   } catch (e) {
