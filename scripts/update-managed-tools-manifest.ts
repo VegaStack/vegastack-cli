@@ -242,9 +242,18 @@ async function resolveSha(
   throw new Error(`${spec.repo} ${asset} has no digest/checksum source`);
 }
 
-function parseChecksum(text: string, asset: string): string {
+// Exported for direct unit testing — the substring/exact-match boundary is a
+// supply-chain-relevant invariant. A naive `line.includes(asset)` would let a
+// `*.tar.gz.sig` or `*.tar.gz.minisig` line satisfy the lookup for the bare
+// `*.tar.gz` asset and silently return the wrong digest.
+export function parseChecksum(text: string, asset: string): string {
   for (const line of text.split(/\r?\n/)) {
-    if (!line.includes(asset)) continue;
+    // Treat `<sha>  <filename>` (or `<sha> *<filename>`, BSD/GNU forms) as the
+    // canonical layout and require the whole filename token to equal `asset`.
+    // Accept lines of either order; in either case the asset name must appear
+    // as a complete whitespace-delimited token.
+    const tokens = line.split(/\s+/).filter((t) => t.length > 0);
+    if (!tokens.some((t) => t === asset || t === `*${asset}` || t === `./${asset}`)) continue;
     const match = line.match(/[a-f0-9]{64}/i);
     if (match) return match[0].toLowerCase();
   }

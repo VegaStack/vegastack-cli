@@ -44,4 +44,16 @@ describe("npm/install.js postinstall", () => {
     expect(r.status).toBe(0);
     expect(r.stderr).toContain("skipping agent skill registration");
   });
+
+  // Audit security/F-006: defence-in-depth honour `npm_config_ignore_scripts`
+  // even when invoked directly (npm itself usually short-circuits earlier).
+  it("honors npm_config_ignore_scripts=true", () => {
+    const r = runPostinstall({ npm_config_ignore_scripts: "true" });
+    expect(r.status).toBe(0);
+    expect(r.stderr).toContain("npm_config_ignore_scripts=true");
+    expect(r.stderr).toContain("skipping");
+    // Must NOT print the normal Registry-data guidance line — that means the
+    // shim took the early-return path.
+    expect(r.stderr).not.toContain("does not download Registry data");
+  });
 });

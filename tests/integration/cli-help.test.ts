@@ -77,6 +77,38 @@ describe("vegastack CLI help / version", () => {
     expect(r.stdout).toContain("--hostname");
   });
 
+  // Performance F-002: every `runX` should be loaded lazily so `--help` and
+  // `--version` (and any `<cmd> --help`) don't pay the parse/link cost of
+  // commander/init/scan/preview/update plus their transitive deps.
+  // Static-import-graph check: parse dist/cli.js and assert no top-level
+  // `from "./commands/<name>.js"` import remains for the heavy modules.
+  it("dist/cli.js does not statically import command modules (lazy load)", () => {
+    const built = fs.readFileSync(CLI, "utf8");
+    const lazyOnly = [
+      "init.js",
+      "scan.js",
+      "preview.js",
+      "update.js",
+      "ask.js",
+      "search.js",
+      "skills.js",
+      "setup.js",
+      "registry.js",
+      "doctor.js",
+      "generate.js",
+      "refresh.js",
+      "detect.js",
+    ];
+    for (const cmd of lazyOnly) {
+      const staticPattern = new RegExp(
+        `\\bfrom\\s+["']\\./commands/${cmd.replace(".", "\\.")}["']`,
+      );
+      expect(staticPattern.test(built), `dist/cli.js statically imports commands/${cmd}`).toBe(
+        false,
+      );
+    }
+  });
+
   it("`vegastack registry --help` lists registry actions", () => {
     const r = spawnSync("node", [CLI, "registry", "--help"], { encoding: "utf8" });
     expect(r.stdout).toContain("list");

@@ -86,7 +86,19 @@ export async function runSetup(opts: SetupOptions): Promise<number> {
       managed_tools: plan.recommended_managed_tools,
       detected_tools: plan.detected_tools,
     };
-    fs.writeFileSync(globalConfigPath(), `${JSON.stringify(config, null, 2)}\n`);
+    // Persist with owner-only mode (0600) on POSIX so a multi-user host
+    // doesn't leak the config (which records the absolute config_root and the
+    // active managed-tool set) to other accounts. Windows ignores POSIX bits.
+    fs.writeFileSync(globalConfigPath(), `${JSON.stringify(config, null, 2)}\n`, {
+      mode: 0o600,
+    });
+    if (process.platform !== "win32") {
+      try {
+        fs.chmodSync(globalConfigPath(), 0o600);
+      } catch {
+        /* best-effort tightening on pre-existing files */
+      }
+    }
 
     const result = { ok: true, plan, config, skills, managed_tools: managedTools };
     if (opts.json) log.json(result);

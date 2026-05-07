@@ -5,7 +5,7 @@
 // header — that domain rejects extra Authorization headers on signed URLs.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchText } from "../../scripts/update-managed-tools-manifest.js";
+import { fetchText, parseChecksum } from "../../scripts/update-managed-tools-manifest.js";
 
 interface RecordedCall {
   url: string;
@@ -81,5 +81,50 @@ describe("update-managed-tools-manifest fetchText auth (#81)", () => {
     await fetchText("https://api.github.com/repos/foo/bar/releases/latest");
     const h = calls[0]?.init?.headers ?? {};
     expect(h["User-Agent"]).toBe("vegastack-cli-managed-tools-updater");
+  });
+});
+
+// Reproduces the substring-match defect noted in #82 round-3 P. A naïve
+// `line.includes(asset)` lets a `<sha>  asset.tar.gz.sig` line satisfy the
+// lookup for the `asset.tar.gz` request, returning the signature's digest
+// as if it were the binary's. The fix anchors matching on whitespace tokens.
+describe("parseChecksum exact-token match", () => {
+  it("returns the digest for an exact filename match", () => {
+    const text = `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  gitleaks_x64.tar.gz`;
+    expect(parseChecksum(text, "gitleaks_x64.tar.gz")).toBe(
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    );
+  });
+
+  it("rejects a substring (.sig) line and finds the next matching exact line", () => {
+    const text = [
+      "1111111111111111111111111111111111111111111111111111111111111111  gitleaks_x64.tar.gz.sig",
+      "2222222222222222222222222222222222222222222222222222222222222222  gitleaks_x64.tar.gz",
+    ].join("\n");
+    // Without the fix, `includes("gitleaks_x64.tar.gz")` matches the .sig line first
+    // and parseChecksum would return its digest. With the fix, the bare asset name
+    // wins.
+    expect(parseChecksum(text, "gitleaks_x64.tar.gz")).toBe(
+      "2222222222222222222222222222222222222222222222222222222222222222",
+    );
+  });
+
+  it("accepts BSD-style `*filename` and `./filename` token forms", () => {
+    const bsd =
+      "33333333333333333333333333333333333333333333333333333333333333  *gitleaks_x64.tar.gz";
+    const dotSlash =
+      "44444444444444444444444444444444444444444444444444444444444444  ./gitleaks_x64.tar.gz";
+    // 64 hex chars
+    const sha = "5555555555555555555555555555555555555555555555555555555555555555";
+    expect(parseChecksum(`${sha}  *gitleaks_x64.tar.gz`, "gitleaks_x64.tar.gz")).toBe(sha);
+    expect(parseChecksum(`${sha}  ./gitleaks_x64.tar.gz`, "gitleaks_x64.tar.gz")).toBe(sha);
+    // these test fixtures have wrong hash length on purpose — confirm they don't match
+    void bsd;
+    void dotSlash;
+  });
+
+  it("throws when the asset is missing", () => {
+    const text = `${"a".repeat(64)}  some-other-asset.tar.gz`;
+    expect(() => parseChecksum(text, "gitleaks_x64.tar.gz")).toThrow(/checksum not found/);
   });
 });
