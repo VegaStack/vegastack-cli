@@ -264,10 +264,29 @@ async function fetchJson<T>(url: string): Promise<T> {
   return JSON.parse(await fetchText(url)) as T;
 }
 
-async function fetchText(url: string): Promise<string> {
-  const response = await fetch(url, {
-    headers: { "User-Agent": "vegastack-cli-managed-tools-updater" },
-  });
+// Authenticate api.github.com calls when a token is available so the weekly
+// managed-tools-updater workflow doesn't trip the 60-req/h unauthenticated
+// rate limit on shared Actions runners (#81). Asset CDN URLs at
+// objects.githubusercontent.com use signed query strings and reject extra
+// Authorization headers, so the auth header is scoped by hostname.
+export async function fetchText(url: string): Promise<string> {
+  const headers: Record<string, string> = {
+    "User-Agent": "vegastack-cli-managed-tools-updater",
+  };
+  let host: string | undefined;
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    host = undefined;
+  }
+  if (host === "api.github.com") {
+    const token = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN;
+    if (token && token.length > 0) {
+      headers["Authorization"] = `Bearer ${token}`;
+      headers["X-GitHub-Api-Version"] = "2022-11-28";
+    }
+  }
+  const response = await fetch(url, { headers });
   if (!response.ok) throw new Error(`failed to fetch ${url}: HTTP ${response.status}`);
   return await response.text();
 }
@@ -325,4 +344,11 @@ export function managedToolTarget(
 `;
 }
 
-await main();
+// Only run main() when invoked directly, so test files can import fetchText
+// without triggering a real network fetch at module-load time.
+const invokedDirectly =
+  process.argv[1] !== undefined &&
+  import.meta.url === new URL(`file://${path.resolve(process.argv[1])}`).href;
+if (invokedDirectly) {
+  await main();
+}

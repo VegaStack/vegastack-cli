@@ -9,7 +9,7 @@ import { fetchText } from "../../scripts/update-managed-tools-manifest.js";
 
 interface RecordedCall {
   url: string;
-  init: RequestInit | undefined;
+  init: { headers?: Record<string, string> } | undefined;
 }
 
 const ENV_KEYS = ["GITHUB_TOKEN", "GH_TOKEN"] as const;
@@ -26,9 +26,9 @@ describe("update-managed-tools-manifest fetchText auth (#81)", () => {
     }
     calls = [];
     realFetch = globalThis.fetch;
-    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === "string" ? input : input.toString();
-      calls.push({ url, init });
+    globalThis.fetch = vi.fn(async (input: unknown, init?: unknown) => {
+      const url = typeof input === "string" ? input : String(input);
+      calls.push({ url, init: init as RecordedCall["init"] });
       return new Response("ok", { status: 200 });
     }) as typeof globalThis.fetch;
   });
@@ -40,13 +40,13 @@ describe("update-managed-tools-manifest fetchText auth (#81)", () => {
     }
   });
 
-  function authHeader(init: RequestInit | undefined): string | undefined {
-    const h = init?.headers as Record<string, string> | undefined;
+  function authHeader(init: RecordedCall["init"]): string | undefined {
+    const h = init?.headers;
     if (!h) return undefined;
-    return h["Authorization"] ?? h["authorization"];
+    return h.Authorization ?? h.authorization;
   }
-  function apiVersionHeader(init: RequestInit | undefined): string | undefined {
-    const h = init?.headers as Record<string, string> | undefined;
+  function apiVersionHeader(init: RecordedCall["init"]): string | undefined {
+    const h = init?.headers;
     if (!h) return undefined;
     return h["X-GitHub-Api-Version"] ?? h["x-github-api-version"];
   }
@@ -79,7 +79,7 @@ describe("update-managed-tools-manifest fetchText auth (#81)", () => {
   it("preserves the User-Agent header on every call", async () => {
     process.env.GITHUB_TOKEN = "xyz";
     await fetchText("https://api.github.com/repos/foo/bar/releases/latest");
-    const h = calls[0]?.init?.headers as Record<string, string>;
+    const h = calls[0]?.init?.headers ?? {};
     expect(h["User-Agent"]).toBe("vegastack-cli-managed-tools-updater");
   });
 });
