@@ -242,13 +242,43 @@ function stage1gExampleTokens(ctx: Ctx, exampleTokens: Record<string, string[]>)
 }
 
 // ── 1h. description substring match ─────────────────────────────────────
-function stage1hDescription(ctx: Ctx): void {
-  for (const [, entry] of [...Object.entries(ctx.resources), ...Object.entries(ctx.dataSources)]) {
-    const desc = (entry.description ?? "").toLowerCase();
-    if (!desc || desc === "|-") continue;
+//
+// Perf note (audit code-review/discover F-003): for an AWS-shaped manifest
+// (~1300 resources + ~400 data-sources) the original implementation
+// allocated a fresh ~1.7k-entry array via spread+Object.entries on every
+// query AND lower-cased every description string per query. The lower-cased
+// view is a pure function of the manifest, so we memoise it on a WeakMap
+// keyed by the manifest object. First call per manifest pays the
+// allocation; every subsequent query iterates the cached flat array.
+interface DescEntry {
+  file: string;
+  desc: string; // lowercased, "" if absent / placeholder
+}
+const DESC_CACHE = new WeakMap<ProviderManifest, DescEntry[]>();
+function getDescIndex(manifest: ProviderManifest): DescEntry[] {
+  const cached = DESC_CACHE.get(manifest);
+  if (cached) return cached;
+  const out: DescEntry[] = [];
+  const push = (entries: Record<string, ResourceEntry> | undefined): void => {
+    if (!entries) return;
+    for (const e of Object.values(entries)) {
+      const d = (e.description ?? "").toLowerCase();
+      if (!d || d === "|-") continue;
+      out.push({ file: e.file, desc: d });
+    }
+  };
+  push(manifest.resources ?? {});
+  push(manifest.data_sources ?? {});
+  DESC_CACHE.set(manifest, out);
+  return out;
+}
+
+function stage1hDescription(ctx: Ctx, manifest: ProviderManifest): void {
+  const index = getDescIndex(manifest);
+  for (const { file, desc } of index) {
     for (const token of ctx.tokens) {
       if (token.length >= 4 && desc.includes(token)) {
-        ctx.scorer.add(ctx.fullPath(entry.file), 15, "description", token);
+        ctx.scorer.add(ctx.fullPath(file), 15, "description", token);
       }
     }
   }
@@ -435,7 +465,7 @@ export function tier1(args: Tier1Args): ReadonlyMap<string, ScoredFile> {
   stage1ePartialName(ctx);
   stage1fArgAttr(ctx, argIndex, attrIndex);
   stage1gExampleTokens(ctx, exampleTokens);
-  stage1hDescription(ctx);
+  stage1hDescription(ctx, m);
   stage1iGuides(ctx, guides);
   stage1jBigramTypo(ctx, resourceBigrams);
   stage1kProviderIndex(ctx);

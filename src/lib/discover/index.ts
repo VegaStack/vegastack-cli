@@ -432,22 +432,23 @@ async function runProviderPipeline(args: ProviderPipelineArgs): Promise<Provider
     throw e;
   }
 
-  // ── Tier 1 + Tier 2 in parallel ──
+  // ── Tier 1 then Tier 2 (both are synchronous CPU/spawnSync work). The
+  // earlier `Promise.all([Promise.resolve(tier1(...)), Promise.resolve(tier2(...))])`
+  // was fake parallelism: Promise.resolve takes its argument by value, so
+  // tier1() ran to completion BEFORE tier2() was even invoked, and the
+  // tT1_0/tT2_0 markers (taken back-to-back) reported tier2's elapsed as the
+  // sum of both stages. Run them sequentially so timings are truthful.
   const tT1_0 = nowMs();
-  const tT2_0 = nowMs();
-  const [t1, t2Result] = await Promise.all([
-    Promise.resolve(
-      tier1({
-        manifest,
-        tokens,
-        provider,
-        providerDir: dir,
-        aliasMatches,
-      }),
-    ),
-    Promise.resolve(tier2({ tokens, provider, providerDir: dir })),
-  ]);
+  const t1 = tier1({
+    manifest,
+    tokens,
+    provider,
+    providerDir: dir,
+    aliasMatches,
+  });
   const tier1Ms = nowMs() - tT1_0;
+  const tT2_0 = nowMs();
+  const t2Result = tier2({ tokens, provider, providerDir: dir });
   const tier2Ms = nowMs() - tT2_0;
 
   // Quality gate.
@@ -814,6 +815,46 @@ const MULTI_PROVIDER_CONNECTORS: readonly RegExp[] = [
   /,/, // comma as Oxford-list connector
 ];
 
+interface AliasFilePhrase {
+  phrase: string;
+  provider: string;
+}
+
+const ALIAS_FILE_PHRASES_CACHE = new Map<string, AliasFilePhrase[]>();
+
+/** @internal Test-only — clears the alias-file phrase cache. */
+export function _clearAliasFilePhrasesCacheForTests(): void {
+  ALIAS_FILE_PHRASES_CACHE.clear();
+}
+
+function getAliasFilePhrases(
+  terraformRoot: string,
+  knownProviders: readonly string[],
+): AliasFilePhrase[] {
+  // Cache key: root + sorted provider list. The underlying loadAliases is
+  // already mtime-keyed, so a stale cache hit here is bounded to "we don't
+  // pick up newly-added aliases.yaml files mid-process" — a CLI-process
+  // lifetime concern, not correctness.
+  const key = `${terraformRoot}\0${[...knownProviders].sort().join(",")}`;
+  const cached = ALIAS_FILE_PHRASES_CACHE.get(key);
+  if (cached !== undefined) return cached;
+  const out: AliasFilePhrase[] = [];
+  for (const p of knownProviders) {
+    try {
+      for (const a of loadAliases({ terraformRoot, provider: p })) {
+        out.push({ phrase: a.phrase.toLowerCase(), provider: p });
+      }
+    } catch {
+      /* skip malformed alias file */
+    }
+  }
+  // Sort alias phrases by length desc so longer phrases match first
+  // (prefer "cloudflare dns" over "dns" alone).
+  out.sort((a, b) => b.phrase.length - a.phrase.length);
+  ALIAS_FILE_PHRASES_CACHE.set(key, out);
+  return out;
+}
+
 export function detectMultiProviderPhrasing(
   query: string,
   knownProviders: readonly string[],
@@ -830,22 +871,15 @@ export function detectMultiProviderPhrasing(
     ["digital ocean", "digitalocean"],
   ] as const;
 
-  // Per-Registry pack alias files (e.g. "falcon" → crowdstrike). Loaded once.
-  const aliasFilePhrases: { phrase: string; provider: string }[] = [];
-  if (terraformRoot !== undefined) {
-    for (const p of knownProviders) {
-      try {
-        for (const a of loadAliases({ terraformRoot, provider: p })) {
-          aliasFilePhrases.push({ phrase: a.phrase.toLowerCase(), provider: p });
-        }
-      } catch {
-        /* skip malformed alias file */
-      }
-    }
-    // Sort alias phrases by length desc so longer phrases match first
-    // (prefer "cloudflare dns" over "dns" alone).
-    aliasFilePhrases.sort((a, b) => b.phrase.length - a.phrase.length);
-  }
+  // Per-Registry pack alias files (e.g. "falcon" → crowdstrike). The
+  // assembled+sorted phrase list is invariant for a given (terraformRoot,
+  // knownProviders set), so cache it per-process. `loadAliases` itself is
+  // mtime-keyed (aliases.ts CACHE), but assembling a lowercased copy and
+  // sorting by length on every query is wasted work — this can fire
+  // multiple times per query through detectMultiProviderPhrasing and the
+  // detectProviderFromAliasFiles paths (audit code-review/discover F-006).
+  const aliasFilePhrases =
+    terraformRoot !== undefined ? getAliasFilePhrases(terraformRoot, knownProviders) : [];
 
   // ── Step 1: Find every provider mention in the query along with its
   // [start, end) position. Mentions overlap by intent — a longer mention

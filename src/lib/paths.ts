@@ -5,12 +5,51 @@ import * as os from "node:os";
 import * as path from "node:path";
 import * as fs from "node:fs";
 import { createHash } from "node:crypto";
+import { rejectDangerousChars } from "./validate.js";
+import { VegaStackError } from "./errors.js";
 
 export const HOME = os.homedir();
 
+/**
+ * Resolve a trusted-root override from an env-var. The env-var is validated
+ * for control / bidi-override characters, must be an absolute path (relative
+ * paths are rejected — silently resolving them against `cwd` would move the
+ * cache root with the user's shell), and is normalized.
+ *
+ * Cached per process so we pay the validation+stat once. Throws
+ * `VegaStackError(ValidationError)` on bad input — every cache, log, and
+ * tool path flows off these roots, so a tampered value (shell-rc poisoning,
+ * `.envrc`, agent-set env) must surface loudly rather than propagate to
+ * `fs.writeFileSync` paths downstream.
+ */
+const TRUSTED_ROOT_CACHE = new Map<string, string>();
+function resolveTrustedRoot(envName: string): string | undefined {
+  const raw = process.env[envName];
+  if (!raw) return undefined;
+  const cached = TRUSTED_ROOT_CACHE.get(`${envName}=${raw}`);
+  if (cached !== undefined) return cached;
+  rejectDangerousChars(raw, envName);
+  if (!path.isAbsolute(raw)) {
+    throw new VegaStackError(
+      "ValidationError",
+      `${envName} must be an absolute path; got: ${raw}`,
+      { context: { envName, value: raw } },
+    );
+  }
+  const resolved = path.normalize(raw);
+  TRUSTED_ROOT_CACHE.set(`${envName}=${raw}`, resolved);
+  return resolved;
+}
+
+/** @internal Test-only — clears the env-var resolution cache. */
+export function _clearTrustedRootCacheForTests(): void {
+  TRUSTED_ROOT_CACHE.clear();
+}
+
 /** Global VegaStack config root. */
 export function vegastackConfigRoot(): string {
-  if (process.env.VEGASTACK_CONFIG_DIR) return process.env.VEGASTACK_CONFIG_DIR;
+  const env = resolveTrustedRoot("VEGASTACK_CONFIG_DIR");
+  if (env !== undefined) return env;
   return path.join(HOME, ".vegastack");
 }
 
@@ -31,13 +70,15 @@ export function globalLogsRoot(): string {
 
 /** Global cache root for reusable VegaStack Registry entries. */
 export function registryCacheRoot(): string {
-  if (process.env.VEGASTACK_REGISTRY_DIR) return process.env.VEGASTACK_REGISTRY_DIR;
+  const env = resolveTrustedRoot("VEGASTACK_REGISTRY_DIR");
+  if (env !== undefined) return env;
   return path.join(vegastackConfigRoot(), "registry");
 }
 
 /** Global cache root for external tools managed by VegaStack. */
 export function toolsCacheRoot(): string {
-  if (process.env.VEGASTACK_TOOLS_DIR) return process.env.VEGASTACK_TOOLS_DIR;
+  const env = resolveTrustedRoot("VEGASTACK_TOOLS_DIR");
+  if (env !== undefined) return env;
   return path.join(vegastackConfigRoot(), "tools");
 }
 
