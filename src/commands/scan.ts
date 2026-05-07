@@ -25,6 +25,37 @@ import {
   type ScanToolName,
 } from "../lib/scan-tools.js";
 
+// Loose grammar for container image refs as accepted by Docker / OCI:
+//   [host[:port]/]repo(/repo)*[:tag][@digest]
+// We deliberately reject leading `-` so a value like `--config=/etc/passwd`
+// cannot be treated as a flag by trivy when forwarded as bare argv. Also
+// rejects whitespace and shell metacharacters as defence-in-depth even though
+// argv is passed without a shell.
+const IMAGE_REF_RE = /^[A-Za-z0-9][A-Za-z0-9._/:@+-]*$/;
+
+/**
+ * Build argv for actionlint/zizmor with a `--` argument terminator separating
+ * tool flags from user-controlled workflow file paths. This prevents a staged
+ * filename like `.github/workflows/-config=evil.yml` from being interpreted
+ * as a flag by the underlying tool. Exported for unit testing.
+ */
+export function buildWorkflowToolArgv(
+  toolFlags: readonly string[],
+  files: readonly string[],
+): string[] {
+  const safe = files.filter((f) => !f.startsWith("-"));
+  return [...toolFlags, "--", ...safe];
+}
+
+export function validateImageRef(image: string): void {
+  if (!image || image.startsWith("-") || !IMAGE_REF_RE.test(image)) {
+    throw new VegaStackError(
+      "ValidationError",
+      `--image '${image}' is not a valid container image ref (expected registry/repo[:tag][@sha256:…])`,
+    );
+  }
+}
+
 export interface ScanOptions {
   categories: string[];
   staged: boolean;
@@ -476,9 +507,9 @@ async function scanActions(
   config: VegaStackScanConfig,
   opts: ScanOptions,
 ): Promise<ToolResult[]> {
-  const workflowFiles = opts.staged
-    ? stagedFiles(cwd).filter(isWorkflowFile)
-    : existingWorkflowInputs(cwd);
+  const workflowFiles = (
+    opts.staged ? stagedFiles(cwd).filter(isWorkflowFile) : existingWorkflowInputs(cwd)
+  ).filter((f) => !f.startsWith("-"));
   if (workflowFiles.length === 0) return [];
   const out: ToolResult[] = [];
   if (config.checks.actions.engines.includes("actionlint")) {
@@ -488,6 +519,7 @@ async function scanActions(
       "-format",
       "{{range $err := .}}{{json $err}}{{end}}",
       ...toolExtraArgs(config, "actionlint"),
+      "--",
       ...workflowFiles,
     ];
     const a = runTool(actionlint, aArgs, { cwd });
@@ -503,6 +535,7 @@ async function scanActions(
         ? ["--persona", config.checks.actions.zizmor_persona]
         : []),
       ...toolExtraArgs(config, "zizmor"),
+      "--",
       ...workflowFiles,
     ];
     const z = runTool(zizmor, zArgs, {
@@ -574,6 +607,7 @@ async function scanContainers(
   const trivy = await ensureScanTool("trivy", opts);
   fs.mkdirSync(trivyCacheDir(), { recursive: true });
   const images = [...config.checks.containers.images, ...opts.image];
+  for (const image of images) validateImageRef(image);
   const out: ToolResult[] = [];
   for (const image of images) {
     const r = runTool(
@@ -584,6 +618,7 @@ async function scanContainers(
         "--format",
         "json",
         ...toolExtraArgs(config, "trivy"),
+        "--",
         image,
       ],
       { cwd },

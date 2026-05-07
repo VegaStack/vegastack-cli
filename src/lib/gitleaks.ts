@@ -198,7 +198,17 @@ function findOnPath(bin: string): string | null {
   const parts = (process.env.PATH ?? "").split(path.delimiter).filter(Boolean);
   for (const part of parts) {
     const candidate = path.join(part, bin);
-    if (fs.existsSync(candidate)) return candidate;
+    try {
+      // Match ripgrep.ts: only return entries that are actually executable.
+      // existsSync alone returns directories, non-exec regular files, and
+      // dangling symlinks, leading to opaque spawn ENOEXEC failures.
+      fs.accessSync(candidate, fs.constants.X_OK);
+      const st = fs.statSync(candidate);
+      if (!st.isFile() && !st.isSymbolicLink()) continue;
+      return candidate;
+    } catch {
+      // not accessible / not executable
+    }
   }
   return null;
 }

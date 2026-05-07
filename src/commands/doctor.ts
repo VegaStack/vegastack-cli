@@ -374,13 +374,19 @@ function exitCode(checks: Check[]): number {
   return required.every((c) => c.ok) ? 0 : 1;
 }
 
-interface WhichResult {
+export interface WhichResult {
   found: boolean;
   version: string;
 }
 
-function which(cmd: string): WhichResult {
-  const result = spawnSync(cmd, ["--version"], { encoding: "utf8" });
+export function which(cmd: string): WhichResult {
+  // On Windows, executables are named foo.exe / foo.cmd / foo.bat. Calling
+  // spawnSync("jq", …) without shell:true returns ENOENT because Node does
+  // not honour PATHEXT itself. Use shell:true on Windows so the system
+  // resolver finds the right extension; this is safe because `cmd` is a
+  // hard-coded internal value (no user input reaches this function).
+  const useShell = process.platform === "win32";
+  const result = spawnSync(cmd, ["--version"], { encoding: "utf8", shell: useShell });
   if (result.error !== undefined || result.status !== 0) return { found: false, version: "" };
   const combined = `${result.stdout ?? ""}${result.stderr ?? ""}`;
   const firstLine = combined.split("\n")[0] ?? "";

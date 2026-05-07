@@ -8,6 +8,22 @@ import {
   syncRegistryEntry,
 } from "../lib/registry.js";
 import { log, printError } from "../lib/log.js";
+import { VegaStackError } from "../lib/errors.js";
+
+// Pack ids are lowercase, start with a letter, and only contain a-z 0-9 and `-`.
+// We validate at the command boundary so that any traversal/SSRF-shaped value
+// (e.g. `../foo`, `http://...`, names containing `/`) is rejected before it
+// can reach `syncRegistryEntry()`.
+const REGISTRY_ENTRY_RE = /^[a-z][a-z0-9-]{0,40}$/;
+
+export function validateRegistryEntryName(name: string): void {
+  if (!REGISTRY_ENTRY_RE.test(name)) {
+    throw new VegaStackError(
+      "ValidationError",
+      `'${name}' is not a valid registry entry name (expected ${REGISTRY_ENTRY_RE.source})`,
+    );
+  }
+}
 
 export interface RegistryOptions {
   json?: boolean;
@@ -65,7 +81,10 @@ export async function runRegistryUpdate(opts: RegistryUpdateOptions = {}): Promi
 }
 
 function resolveUpdateEntries(opts: RegistryUpdateOptions): string[] {
-  if (opts.entry) return [opts.entry].sort();
+  if (opts.entry) {
+    validateRegistryEntryName(opts.entry);
+    return [opts.entry].sort();
+  }
   if (opts.all) return allInstalledRegistryEntryNames().sort();
   ensureProjectInitialized(process.cwd());
   return readProjectRegistryEntryNames(process.cwd()).sort();
