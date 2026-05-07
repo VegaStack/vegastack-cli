@@ -18,6 +18,7 @@ function isolatedEnv(): Record<string, string | undefined> {
     ...process.env,
     HOME: fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-home-")),
     VEGASTACK_REGISTRY_URL: "http://127.0.0.1:1",
+    VEGASTACK_REGISTRY_DEV_TRUST: "1",
     NO_COLOR: "1",
   };
 }
