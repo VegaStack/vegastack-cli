@@ -144,7 +144,7 @@ class ClaudeCodeInstaller implements AgentInstaller {
     }
 
     if (ctx.dryRun) {
-      result.notes.push(`would run: claude plugin marketplace add ${src}`);
+      result.notes.push(`would run: claude plugin marketplace add -- ${src}`);
       result.notes.push(`would run: claude plugin install ${PLUGIN_ID}`);
       return result;
     }
@@ -169,7 +169,10 @@ class ClaudeCodeInstaller implements AgentInstaller {
 
     // Add marketplace. Idempotent in spirit — if already added, swallow the
     // error and continue. The output text varies across `claude` versions.
-    const add = runClaude(["plugin", "marketplace", "add", src]);
+    // `--` terminator: pkgRoot() flows from npm install paths; if a future
+    // global install lands under a path beginning with `-`, claude's argv
+    // parser would otherwise treat it as a flag.
+    const add = runClaude(["plugin", "marketplace", "add", "--", src]);
     if (!add.ok && !/already/i.test(add.output)) {
       result.warnings.push(`marketplace add failed: ${add.output.trim()}`);
       return result;
