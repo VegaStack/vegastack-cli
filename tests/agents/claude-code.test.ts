@@ -64,6 +64,10 @@ describe("claude-code installer", () => {
     expect(r.installed).toBe(false);
     expect(r.notes.join("\n")).toMatch(/marketplace add/);
     expect(r.notes.join("\n")).toMatch(/plugin install/);
+    // Regression: marketplace add must use `--` before the user-derived path so
+    // a path beginning with `-` is not parsed as a flag by claude's argv parser.
+    // See https://github.com/vegastack/vegastack-cli/issues/28 (M-014).
+    expect(r.notes.join("\n")).toMatch(/marketplace add\s+--\s+\S/);
 
     fs.rmSync(stubDir, { recursive: true, force: true });
   });
