@@ -432,22 +432,24 @@ async function runProviderPipeline(args: ProviderPipelineArgs): Promise<Provider
     throw e;
   }
 
-  // ── Tier 1 + Tier 2 in parallel ──
+  // ── Tier 1, then Tier 2 ──
+  // tier1 and tier2 are both synchronous (tier2 uses spawnSync for ripgrep),
+  // so wrapping the call sites in Promise.resolve / Promise.all does NOT
+  // execute them concurrently — JavaScript is single-threaded and each
+  // function runs to completion before yielding. We keep them sequential
+  // and honestly time each half. Genuine parallelism would require moving
+  // tier2 to async spawn or a worker thread; tracked separately.
   const tT1_0 = nowMs();
-  const tT2_0 = nowMs();
-  const [t1, t2Result] = await Promise.all([
-    Promise.resolve(
-      tier1({
-        manifest,
-        tokens,
-        provider,
-        providerDir: dir,
-        aliasMatches,
-      }),
-    ),
-    Promise.resolve(tier2({ tokens, provider, providerDir: dir })),
-  ]);
+  const t1 = tier1({
+    manifest,
+    tokens,
+    provider,
+    providerDir: dir,
+    aliasMatches,
+  });
   const tier1Ms = nowMs() - tT1_0;
+  const tT2_0 = nowMs();
+  const t2Result = tier2({ tokens, provider, providerDir: dir });
   const tier2Ms = nowMs() - tT2_0;
 
   // Quality gate.
@@ -631,13 +633,27 @@ export function mergeOkEnvelopes(
   // output, so the envelope size contract is respected.
   const N = envelopes.length;
   const quota = Math.ceil(max / N) + 2;
+  // Walk each provider's ranked list and admit only the top-`quota`
+  // PROVIDER-UNIQUE files (i.e. ones not yet promoted by an earlier
+  // provider's slice). When two providers' ranked lists overlap, the smaller
+  // provider used to lose effective slots because the dedupe step ran AFTER
+  // the slice — overlapping files counted toward its quota even though they
+  // were already in the pool. Walking the full list and stopping at the
+  // first `quota` unique entries restores the per-provider guarantee.
   const filesByPath = new Map<string, DiscoverFile>();
   for (const env of envelopes) {
-    // Take top-`quota` from this provider's already-ranked files[].
-    const providerSlice = env.files.slice(0, quota);
-    for (const f of providerSlice) {
+    let admitted = 0;
+    for (const f of env.files) {
+      if (admitted >= quota) break;
       const cur = filesByPath.get(f.path);
-      if (!cur || f.score > cur.score) filesByPath.set(f.path, f);
+      if (cur === undefined) {
+        filesByPath.set(f.path, f);
+        admitted++;
+      } else if (f.score > cur.score) {
+        // Already in the pool from another provider but this provider scored
+        // it higher — overwrite without consuming a slot.
+        filesByPath.set(f.path, f);
+      }
     }
   }
   const allFiles = Array.from(filesByPath.values()).sort((a, b) => {

@@ -12,6 +12,7 @@ import {
   printAgentSkillReconcile,
   reconcileDetectedAgentSkills,
 } from "../lib/agent-skill-reconcile.js";
+import { VegaStackError } from "../lib/errors.js";
 import { log } from "../lib/log.js";
 
 export interface SkillsOptions {
@@ -28,8 +29,15 @@ export async function runSkills(action: Action, opts: SkillsOptions): Promise<nu
   const cwd = process.cwd();
   const targets = resolveAgents(opts.agents);
   if (targets.length === 0) {
-    log.err(`no agents to ${action}.`);
-    return 1;
+    // resolveAgents only returns [] when input was non-empty AND every entry
+    // was unknown. Surface a single structured ValidationError so the
+    // top-level handler emits the canonical exit code (10) and one tidy
+    // message instead of two (the resolve-time err + a generic "no agents").
+    throw new VegaStackError(
+      "ValidationError",
+      `no valid agents to ${action}. Use --agent <name>, all, or a comma-separated list.`,
+      { context: { agents: opts.agents, valid: ALL_RENDERER_NAMES } },
+    );
   }
 
   const ctx = { scope: opts.scope, cwd, force: opts.force, dryRun: opts.dryRun };
@@ -121,13 +129,16 @@ function resolveAgents(input: string[]): string[] {
     .map((s) => s.trim())
     .filter(Boolean);
   if (flat.length === 0 || flat.includes("all")) return [...ALL_RENDERER_NAMES];
-  // Validate
+  // Validate. Throw a structured error so the caller surfaces a single,
+  // canonical exit code (10) instead of a log + return-empty pattern that
+  // produced two error lines and a generic exit 1.
   const unknown = flat.filter((name) => !ALL_RENDERER_NAMES.includes(name));
   if (unknown.length > 0) {
-    log.err(
+    throw new VegaStackError(
+      "ValidationError",
       `unknown agent(s): ${unknown.join(", ")}. Valid: ${ALL_RENDERER_NAMES.join(", ")}, all`,
+      { context: { unknown, valid: ALL_RENDERER_NAMES } },
     );
-    return [];
   }
   return flat;
 }
