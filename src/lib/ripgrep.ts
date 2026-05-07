@@ -95,7 +95,10 @@ export function resolveRipgrepBin(): string | null {
     metadata.bin_sha256 === fileSha256(metadata.bin)
   )
     return metadata.bin;
-  return findOnPath(process.platform === "win32" ? "rg.exe" : "rg");
+  if (process.env.VEGASTACK_ALLOW_SYSTEM_TOOLS === "1") {
+    return findOnPath(process.platform === "win32" ? "rg.exe" : "rg");
+  }
+  return null;
 }
 
 export function readRipgrepMetadata(): RipgrepInstall | null {

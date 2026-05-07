@@ -99,8 +99,13 @@ export function resolveGitleaksBin(): string | null {
     metadata.bin_sha256 === fileSha256(metadata.bin)
   )
     return metadata.bin;
-  const fromPath = findOnPath(process.platform === "win32" ? "gitleaks.exe" : "gitleaks");
-  return fromPath;
+  // Managed install absent / stale / corrupted. Refuse silent PATH fallback
+  // unless the operator has explicitly opted in — an attacker who can drop
+  // a same-named binary onto PATH would otherwise execute arbitrary code.
+  if (process.env.VEGASTACK_ALLOW_SYSTEM_TOOLS === "1") {
+    return findOnPath(process.platform === "win32" ? "gitleaks.exe" : "gitleaks");
+  }
+  return null;
 }
 
 export function readGitleaksMetadata(): GitleaksInstall | null {

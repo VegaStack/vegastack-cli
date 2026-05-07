@@ -10,11 +10,11 @@ const RG = isWin ? "rg.exe" : "rg";
 const GITLEAKS = isWin ? "gitleaks.exe" : "gitleaks";
 
 interface SnapEnv {
-  PATH?: string;
-  VEGASTACK_GITLEAKS_BIN?: string;
-  VEGASTACK_RIPGREP_BIN?: string;
-  VEGASTACK_TOOLS_DIR?: string;
-  VEGASTACK_ALLOW_SYSTEM_TOOLS?: string;
+  PATH: string | undefined;
+  VEGASTACK_GITLEAKS_BIN: string | undefined;
+  VEGASTACK_RIPGREP_BIN: string | undefined;
+  VEGASTACK_TOOLS_DIR: string | undefined;
+  VEGASTACK_ALLOW_SYSTEM_TOOLS: string | undefined;
 }
 
 function snapshotEnv(): SnapEnv {
@@ -29,8 +29,9 @@ function snapshotEnv(): SnapEnv {
 
 function restoreEnv(snap: SnapEnv): void {
   for (const k of Object.keys(snap) as (keyof SnapEnv)[]) {
-    if (snap[k] === undefined) delete process.env[k];
-    else process.env[k] = snap[k];
+    const v = snap[k];
+    if (v === undefined) delete process.env[k];
+    else process.env[k] = v;
   }
 }
 
