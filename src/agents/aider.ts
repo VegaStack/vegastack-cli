@@ -240,7 +240,15 @@ class AiderRenderer implements AgentRenderer {
       try {
         const parsed = parseConf(fs.readFileSync(conf, "utf8"));
         const before = parsed.read.length;
-        parsed.read = parsed.read.filter((r) => r !== conv && r !== path.basename(conv));
+        // Only remove entries that resolve to the exact `conv` we wrote;
+        // a basename-only match could falsely drop a user-managed sibling
+        // file with the same filename in another directory.
+        const confDir = path.dirname(conf);
+        parsed.read = parsed.read.filter((r) => {
+          if (r === conv) return false;
+          const resolved = path.isAbsolute(r) ? r : path.resolve(confDir, r);
+          return resolved !== conv;
+        });
         if (parsed.read.length !== before) {
           fs.writeFileSync(conf, renderConf(parsed), "utf8");
           result.notes.push(`unpatched ${conf}`);

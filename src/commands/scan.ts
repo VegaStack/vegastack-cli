@@ -292,8 +292,11 @@ ${end}
     raw = "#!/bin/sh\n";
   }
   if (raw.includes(begin)) {
+    // Anchor markers to the start of a line so a quoted occurrence inside
+    // a string literal (e.g. `echo "# vegastack scan:start"`) is left
+    // untouched; only the actual managed block is replaced.
     raw = raw.replace(
-      new RegExp(`${escapeRegExp(begin)}[\\s\\S]*?${escapeRegExp(end)}\\n?`),
+      new RegExp(`^${escapeRegExp(begin)}[\\s\\S]*?^${escapeRegExp(end)}\\n?`, "m"),
       block,
     );
   } else if (raw.trim() !== "#!/bin/sh" && !force) {
@@ -317,7 +320,7 @@ export function removeScanPreCommitHook(cwd: string): boolean {
   const raw = fs.readFileSync(hookPath, "utf8");
   if (!raw.includes(begin)) return false;
   const next = raw.replace(
-    new RegExp(`\\n?${escapeRegExp(begin)}[\\s\\S]*?${escapeRegExp(end)}\\n?`),
+    new RegExp(`\\n?^${escapeRegExp(begin)}[\\s\\S]*?^${escapeRegExp(end)}\\n?`, "m"),
     "\n",
   );
   fs.writeFileSync(hookPath, next.trim() ? `${next.trimEnd()}\n` : "#!/bin/sh\n", { mode: 0o755 });
@@ -811,6 +814,11 @@ function parseGitleaksFindings(r: {
   stdout: string;
   stderr: string;
 }): ScanFinding[] {
+  // Mirror parseActionlintFindings/parseTrivyFindings: a clean exit means
+  // no findings, regardless of whether stdout is empty, "null", or "[]".
+  // Without this, a future gitleaks build that emits a trailing newline on
+  // success would route through the catch branch and surface stderr noise.
+  if (r.status === 0) return [];
   try {
     const parsed = JSON.parse(r.stdout) as unknown[];
     return parsed.map((item) => {

@@ -124,7 +124,7 @@ function hintFor(kind: VegaStackErrorKind, ctx: Readonly<Record<string, unknown>
     case "Ambiguous":
       return "The query matched more than one candidate. Disambiguate with a more specific term, or pass an explicit selector flag (e.g. `--tf-provider <name>` for terraform-discover).";
     case "PythonMissing":
-      return "python3 is not required for the CLI. If you see this, a development-only script is being run in the wrong environment.";
+      return "python3 was required by an internal helper but was not found. The shipped CLI does not require python3 at runtime; if you see this, a development-only script is being invoked in the wrong environment.";
     case "Unsupported":
       return "This environment is not supported. See the README's compatibility matrix.";
     case "Unknown":

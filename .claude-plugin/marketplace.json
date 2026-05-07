@@ -34,8 +34,8 @@
         "knowledge-harness",
         "agent-skills"
       ],
-      "homepage": "https://github.com/VegaStack/vegastack-cli",
-      "repository": "https://github.com/VegaStack/vegastack-cli",
+      "homepage": "https://github.com/vegastack/vegastack-cli",
+      "repository": "https://github.com/vegastack/vegastack-cli",
       "license": "MIT"
     }
   ]

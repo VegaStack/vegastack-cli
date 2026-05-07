@@ -273,7 +273,7 @@ function extractExampleUsage(filepath: string, fullContent = false): string | un
   }
 
   // No HCL fence found — take first DEFAULT_EXAMPLE_MAX_LINES lines.
-  const lines = sectionBody.split("\n");
+  const lines = sectionBody.split(/\r?\n/);
   const truncatedLines = lines.slice(0, DEFAULT_EXAMPLE_MAX_LINES);
   const hasMore = lines.length > DEFAULT_EXAMPLE_MAX_LINES;
   const truncatedBody = truncatedLines.join("\n").trimEnd();
