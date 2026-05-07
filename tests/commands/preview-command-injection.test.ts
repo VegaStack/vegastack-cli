@@ -7,11 +7,7 @@ describe("preview --command tokenizer (no shell)", () => {
   });
 
   it("honours single and double quoted segments", () => {
-    expect(parseCommandArgv('node -e "console.log(1)"')).toEqual([
-      "node",
-      "-e",
-      "console.log(1)",
-    ]);
+    expect(parseCommandArgv('node -e "console.log(1)"')).toEqual(["node", "-e", "console.log(1)"]);
     expect(parseCommandArgv("node -e 'a b c'")).toEqual(["node", "-e", "a b c"]);
   });
 

@@ -372,6 +372,11 @@ program
   .command("preview")
   .description("start a local app preview, optionally through Cloudflare Tunnel")
   .option("--command <cmd>", "command to start the local dev server")
+  .option(
+    "--shell",
+    "evaluate --command via the system shell (DANGEROUS: enables shell metacharacters; only use with trusted input)",
+    false,
+  )
   .option("--url <url>", "existing local URL to preview, e.g. http://localhost:3000")
   .option("--port <n>", "local port to wait for when no URL is provided", parsePositiveInt)
   .option("--tunnel", "create a temporary Cloudflare Quick Tunnel", false)
@@ -402,6 +407,7 @@ Cloudflare notice:
       timeout: number;
       yes: boolean;
       json: boolean;
+      shell: boolean;
     }) => {
       process.exit(
         await runPreview({
@@ -414,6 +420,7 @@ Cloudflare notice:
           timeout: opts.timeout,
           yes: opts.yes,
           json: opts.json,
+          shell: opts.shell,
         }),
       );
     },

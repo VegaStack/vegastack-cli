@@ -20,6 +20,85 @@ export interface PreviewOptions {
   timeout: number;
   json: boolean;
   yes: boolean;
+  shell?: boolean | undefined;
+}
+
+const SHELL_METACHAR_RE = /[;&|`$<>()\n\r]/;
+const DOUBLE_AMP_OR_PIPE_RE = /&&|\|\|/;
+
+/**
+ * Tokenize a `--command` string into an argv array without invoking a shell.
+ * Honours single/double quoted segments. Refuses unquoted shell metacharacters
+ * (`; & | ` $ < > ( )` and newlines) that would enable command injection if the
+ * resulting string were re-evaluated by a shell.
+ *
+ * Exported for unit testing of the security boundary.
+ */
+export function parseCommandArgv(command: string): string[] {
+  const argv: string[] = [];
+  let i = 0;
+  let cur = "";
+  let inSingle = false;
+  let inDouble = false;
+  let escape = false;
+  let curHasContent = false;
+  while (i < command.length) {
+    const ch = command[i]!;
+    if (escape) {
+      cur += ch;
+      curHasContent = true;
+      escape = false;
+      i++;
+      continue;
+    }
+    if (ch === "\\" && !inSingle) {
+      escape = true;
+      i++;
+      continue;
+    }
+    if (ch === "'" && !inDouble) {
+      inSingle = !inSingle;
+      curHasContent = true;
+      i++;
+      continue;
+    }
+    if (ch === '"' && !inSingle) {
+      inDouble = !inDouble;
+      curHasContent = true;
+      i++;
+      continue;
+    }
+    if (!inSingle && !inDouble && /\s/.test(ch)) {
+      if (curHasContent) {
+        argv.push(cur);
+        cur = "";
+        curHasContent = false;
+      }
+      i++;
+      continue;
+    }
+    if (
+      !inSingle &&
+      !inDouble &&
+      (SHELL_METACHAR_RE.test(ch) || command.slice(i, i + 2).match(DOUBLE_AMP_OR_PIPE_RE))
+    ) {
+      throw new VegaStackError(
+        "ValidationError",
+        `--command contains an unquoted shell metacharacter (${JSON.stringify(ch)}); pass --shell to opt-in to shell evaluation if intentional`,
+      );
+    }
+    cur += ch;
+    curHasContent = true;
+    i++;
+  }
+  if (inSingle || inDouble) {
+    throw new VegaStackError("ValidationError", "--command has an unterminated quoted string");
+  }
+  if (curHasContent) argv.push(cur);
+  if (argv.length === 0) {
+    throw new VegaStackError("ValidationError", "--command is empty");
+  }
+  return argv;
 }
 
 interface RunningPreview {
@@ -82,7 +161,7 @@ async function startLocalPreview(
     return { localUrl: url, server: null };
   }
 
-  const server = spawnShell(command);
+  const server = spawnShell(command, opts.shell === true);
   children.push(server);
   pipeChild(server, "preview");
   const url = opts.port
@@ -183,11 +262,23 @@ function detectPackageManager(cwd: string): string {
   return "npm";
 }
 
-function spawnShell(command: string): PreviewChild {
-  return spawn(command, {
-    shell: true,
+function spawnShell(command: string, shell: boolean): PreviewChild {
+  const env = { ...process.env, BROWSER: "none" };
+  if (shell) {
+    log.warn(
+      "preview --shell evaluates --command via the system shell; only use with trusted input",
+    );
+    return spawn(command, {
+      shell: true,
+      stdio: ["ignore", "pipe", "pipe"],
+      env,
+    });
+  }
+  const argv = parseCommandArgv(command);
+  return spawn(argv[0]!, argv.slice(1), {
+    shell: false,
     stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env, BROWSER: "none" },
+    env,
   });
 }
 
