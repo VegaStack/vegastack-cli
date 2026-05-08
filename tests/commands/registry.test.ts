@@ -1,51 +1,94 @@
-// Smoke coverage for `vegastack registry list/status`. Network is allowed
-// to fail silently (the implementation falls back to the static PACKS list).
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { describe, expect, it } from "vitest";
-import { runRegistryList, runRegistryStatus } from "../../src/commands/registry.js";
-import { withTmpDir } from "../setup.js";
+const registryMocks = vi.hoisted(() => ({
+  allInstalledRegistryEntryNames: vi.fn(),
+  ensureProjectInitialized: vi.fn(),
+  listPublishedRegistryEntryStatuses: vi.fn(),
+  readProjectRegistryEntryNames: vi.fn(),
+  syncRegistryEntry: vi.fn(),
+}));
 
-describe("vegastack registry (smoke)", () => {
-  it("runRegistryList --json returns 0", async () => {
-    await withTmpDir(async (dir) => {
-      const prevCwd = process.cwd();
-      const prevReg = process.env.VEGASTACK_REGISTRY_DIR;
-      process.env.VEGASTACK_REGISTRY_DIR = dir;
-      // Force the network probe to a closed port so the catch-fallback fires.
-      const prevUrl = process.env.VEGASTACK_REGISTRY_URL;
-      process.env.VEGASTACK_REGISTRY_URL = "http://127.0.0.1:1";
-      process.chdir(dir);
-      try {
-        const code = await runRegistryList({ json: true });
-        expect(code).toBe(0);
-      } finally {
-        process.chdir(prevCwd);
-        if (prevReg === undefined) delete process.env.VEGASTACK_REGISTRY_DIR;
-        else process.env.VEGASTACK_REGISTRY_DIR = prevReg;
-        if (prevUrl === undefined) delete process.env.VEGASTACK_REGISTRY_URL;
-        else process.env.VEGASTACK_REGISTRY_URL = prevUrl;
-      }
+const logMocks = vi.hoisted(() => ({
+  json: vi.fn(),
+  ok: vi.fn(),
+  printError: vi.fn(() => 1),
+}));
+
+vi.mock("../../src/lib/registry.js", () => registryMocks);
+vi.mock("../../src/lib/log.js", () => ({
+  log: {
+    json: logMocks.json,
+    ok: logMocks.ok,
+  },
+  printError: logMocks.printError,
+}));
+
+describe("registry command", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    registryMocks.syncRegistryEntry.mockResolvedValue(undefined);
+  });
+
+  it("lists published registry entries as JSON", async () => {
+    registryMocks.listPublishedRegistryEntryStatuses.mockResolvedValue([
+      { name: "docker", installed: true, selected: true, title: "Docker", shape: "registry-entry" },
+    ]);
+    const { runRegistryList } = await import("../../src/commands/registry.js");
+
+    await expect(runRegistryList({ json: true })).resolves.toBe(0);
+    expect(logMocks.json).toHaveBeenCalledWith({
+      registry: [
+        {
+          name: "docker",
+          installed: true,
+          selected: true,
+          title: "Docker",
+          shape: "registry-entry",
+        },
+      ],
     });
   });
 
-  it("runRegistryStatus delegates to list and returns 0", async () => {
-    await withTmpDir(async (dir) => {
-      const prevCwd = process.cwd();
-      const prevReg = process.env.VEGASTACK_REGISTRY_DIR;
-      const prevUrl = process.env.VEGASTACK_REGISTRY_URL;
-      process.env.VEGASTACK_REGISTRY_DIR = dir;
-      process.env.VEGASTACK_REGISTRY_URL = "http://127.0.0.1:1";
-      process.chdir(dir);
-      try {
-        const code = await runRegistryStatus({ json: true });
-        expect(code).toBe(0);
-      } finally {
-        process.chdir(prevCwd);
-        if (prevReg === undefined) delete process.env.VEGASTACK_REGISTRY_DIR;
-        else process.env.VEGASTACK_REGISTRY_DIR = prevReg;
-        if (prevUrl === undefined) delete process.env.VEGASTACK_REGISTRY_URL;
-        else process.env.VEGASTACK_REGISTRY_URL = prevUrl;
-      }
-    });
+  it("updates an explicit validated entry", async () => {
+    const { runRegistryUpdate } = await import("../../src/commands/registry.js");
+
+    await expect(runRegistryUpdate({ entry: "github-actions", force: true, json: true })).resolves.toBe(
+      0,
+    );
+    expect(registryMocks.syncRegistryEntry).toHaveBeenCalledWith("github-actions", { force: true });
+    expect(logMocks.json).toHaveBeenCalledWith({ ok: true, updated: ["github-actions"] });
+  });
+
+  it("updates selected project entries in sorted order by default", async () => {
+    registryMocks.readProjectRegistryEntryNames.mockReturnValue(["terraform", "docker"]);
+    const { runRegistryUpdate } = await import("../../src/commands/registry.js");
+
+    await expect(runRegistryUpdate({ json: true })).resolves.toBe(0);
+    expect(registryMocks.ensureProjectInitialized).toHaveBeenCalledWith(process.cwd());
+    expect(syncedEntries()).toEqual(["docker", "terraform"]);
+  });
+
+  it("updates all installed entries without requiring project initialization", async () => {
+    registryMocks.allInstalledRegistryEntryNames.mockReturnValue(["terraform", "aws"]);
+    const { runRegistryUpdate } = await import("../../src/commands/registry.js");
+
+    await expect(runRegistryUpdate({ all: true, json: true })).resolves.toBe(0);
+    expect(registryMocks.ensureProjectInitialized).not.toHaveBeenCalled();
+    expect(syncedEntries()).toEqual(["aws", "terraform"]);
+  });
+
+  it("rejects traversal-shaped registry entry names at the command boundary", async () => {
+    const { validateRegistryEntryName, runRegistryUpdate } = await import(
+      "../../src/commands/registry.js"
+    );
+
+    expect(() => validateRegistryEntryName("../terraform")).toThrow(/valid registry entry name/);
+    await expect(runRegistryUpdate({ entry: "../terraform" })).resolves.toBe(1);
+    expect(registryMocks.syncRegistryEntry).not.toHaveBeenCalled();
+    expect(logMocks.printError).toHaveBeenCalled();
   });
 });
+
+function syncedEntries(): string[] {
+  return registryMocks.syncRegistryEntry.mock.calls.map((call) => String(call[0]));
+}
