@@ -4,5 +4,7 @@
   "initialVersions": {
     "@vegastack/cli": "0.1.13-next.0"
   },
-  "changesets": []
+  "changesets": [
+    "0-1-13-next-3-oss-readiness"
+  ]
 }
