@@ -19,7 +19,7 @@ What the CLI **does** that has a security surface:
 
 1. **Registry artifact download** — fetches `REGISTRY.json`, `ARTIFACTS.json`, and listed text artifacts from `https://cli-registry.vegastack.com/cli`.
 2. **Filesystem writes** to the local Registry cache under the user's home directory.
-3. **Filesystem writes** by `vegastack skills install` — scoped to known agent directories (`~/.claude/plugins/`, `~/.agents/skills/`, `<cwd>/.cursor/rules/`, `<cwd>/gemini-extension.json`, `<cwd>/CONTEXT.md`).
+3. **Filesystem writes** by `vegastack skills install` — scoped to known agent directories (`~/.claude/plugins/`, `~/.agents/skills/`, `<cwd>/.cursor/rules/`, `~/.gemini/extensions/vegastack/`, `~/.continue/mcpServers/`, `~/.aider/`).
 4. **Symlink creation** (Claude Code installer) — falls back to a recursive copy on Windows non-admin.
 5. **Subprocess invocation** of managed search/scanning tools such as ripgrep, Gitleaks, Trivy, OSV-Scanner, actionlint, and zizmor.
 6. **Optional network access** for explicit update/install/scan flows, including Registry downloads, managed tool updates, npm version checks, and vulnerability database lookups.
@@ -38,7 +38,7 @@ The implementation goes beyond a typical npm postinstall script. Every item belo
 
 - **Atomic Registry swap.** Existing cached packs are renamed aside before promotion; the old copy is restored if promotion fails.
 - **Lock ownership tracking.** A process never deletes a lock it didn't create.
-- **Backup on overwrite.** Every `--force` write to a user-edited file (`AGENTS.md`, `CONTEXT.md`, `.cursor/rules/*.mdc`) renames the existing copy to `*.bak-<timestamp>-<random>` first. Random suffix prevents collisions when multiple installers run within the same millisecond.
+- **Backup on overwrite.** Every `--force` write to a user-edited file (`AGENTS.md`, `gemini-extension.json`, `.cursor/rules/*.mdc`, `.aider.conf.yml`) renames the existing copy to `*.bak-<timestamp>-<random>` first. Random suffix prevents collisions when multiple installers run within the same millisecond.
 - **Path validation.** Any path crossing the user→library boundary goes through `validateSafeFilePath` / `validateSafeOutputDir` which:
   - reject control-char and bidi-override codepoints (Trojan Source defense);
   - resolve symlinks (`fs.realpathSync`) before authorization checks;
@@ -54,7 +54,7 @@ The implementation goes beyond a typical npm postinstall script. Every item belo
 
 ### Error handling
 
-- **Discriminated `VegaStackError` type** with stable exit codes (1–12). Each variant has a `hint()` so users see _problem → cause → fix_.
+- **Discriminated `VegaStackError` type** with stable exit codes. The full table (`EXIT_CODES`, codes 0–12) is defined in [`src/cli.ts`](src/cli.ts) and pinned by the contract test in [`tests/lib/exit-codes-contract.test.ts`](tests/lib/exit-codes-contract.test.ts). Each variant has a `hint()` so users see _problem → cause → fix_.
 - **Typed user-facing errors.** Core command failures use `VegaStackError` variants with stable exit codes and hints; best-effort background refresh and postinstall paths are allowed to fail soft so they do not block the requested command.
 - **Postinstall does not download Registry data or managed tools.** Registry installation happens explicitly through `vegastack init` or `vegastack registry install`; first-run machine setup happens through bare `vegastack` or `vegastack setup`.
 

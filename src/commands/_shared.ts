@@ -36,7 +36,7 @@ export function resolveRegistryEntriesFromOptions(
   opts: EntryResolutionOptions,
   logLabel = "searching",
 ): string[] {
-  if (opts.entries) {
+  if (opts.entries && opts.entries.length > 0) {
     return normalizeEntryNames(opts.entries);
   }
   if (opts.all) {

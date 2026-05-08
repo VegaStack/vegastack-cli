@@ -1,27 +1,20 @@
-// Registry of all per-agent installers and renderers. Add new agents here.
+// Registry of per-agent renderers. `ALL_RENDERERS` is the single source of
+// truth for the supported agent host list — `vegastack skills install`,
+// `--host all`, doctor checks, and reconcile flows all read it. Add new
+// agents by exporting a renderer from a sibling file and registering it
+// below.
 //
-// Two surfaces are exported:
-//   - ALL_AGENTS    — legacy synchronous AgentInstaller registry, consumed
-//                     by `vegastack skills install` today.
-//   - ALL_RENDERERS — async AgentRenderer registry, the v0.1 abstraction
-//                     used by tests and forthcoming MCP/installer flows.
+// The per-file legacy `*Installer` classes (claudeCode, codex, cursor,
+// gemini) remain for direct imports inside the agents/ module and a few
+// test files; they are not re-exported as a registry.
 
-import type { AgentInstaller, AgentRenderer } from "./types.js";
+import type { AgentRenderer } from "./types.js";
 import { aiderRenderer } from "./aider.js";
-import { claudeCode, claudeCodeRenderer } from "./claude-code.js";
-import { codex, codexRenderer } from "./codex.js";
+import { claudeCodeRenderer } from "./claude-code.js";
+import { codexRenderer } from "./codex.js";
 import { continueRenderer } from "./continue.js";
-import { cursor, cursorRenderer } from "./cursor.js";
-import { gemini, geminiRenderer } from "./gemini.js";
-
-export const ALL_AGENTS: Readonly<Record<string, AgentInstaller>> = Object.freeze({
-  "claude-code": claudeCode,
-  codex,
-  cursor,
-  gemini,
-});
-
-export const ALL_AGENT_NAMES = Object.keys(ALL_AGENTS) as readonly string[];
+import { cursorRenderer } from "./cursor.js";
+import { geminiRenderer } from "./gemini.js";
 
 export const ALL_RENDERERS: Readonly<Record<string, AgentRenderer>> = Object.freeze({
   "claude-code": claudeCodeRenderer,
@@ -34,16 +27,11 @@ export const ALL_RENDERERS: Readonly<Record<string, AgentRenderer>> = Object.fre
 
 export const ALL_RENDERER_NAMES = Object.keys(ALL_RENDERERS) as readonly string[];
 
-export function getAgent(name: string): AgentInstaller | undefined {
-  return ALL_AGENTS[name];
-}
-
 export function getRenderer(name: string): AgentRenderer | undefined {
   return ALL_RENDERERS[name];
 }
 
 export type {
-  AgentInstaller,
   AgentRenderer,
   CanonicalSkill,
   InstallContext,

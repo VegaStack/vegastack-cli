@@ -1,16 +1,14 @@
-// Shared types for per-agent renderers (the AgentRenderer abstraction).
+// Shared types for per-agent renderers.
 //
-// E5 v0.1: the original v0.1 prototype only had `AgentInstaller`, which
-// hard-coded copy/symlink behavior per agent. The renderer abstraction adds:
+// `AgentRenderer` is the canonical abstraction. Six renderers implement it:
+// claude-code, codex, cursor, gemini, continue, aider. Each consumes one
+// `CanonicalSkill` (loaded from `skills/vegastack/SKILL.md`) and emits the
+// per-host file layout for that agent.
 //
-//   - one canonical skill source (CanonicalSkill, drawn from
-//     `registry/skill-source/` after generate-skill-from-registry.ts has run),
-//   - a uniform install/uninstall/status surface every agent renderer
-//     implements (claude-code, codex, cursor, gemini, continue, aider).
-//
-// The historical `AgentInstaller` interface is retained as an alias so the
-// existing per-agent files compile without churn while we layer the
-// renderer-specific logic on top. New code targets `AgentRenderer`.
+// `AgentInstaller` is a legacy synchronous interface still implemented by
+// some per-agent classes (claude-code, codex, cursor) for direct use inside
+// the agents/ module and a few tests. It is no longer surfaced by the
+// `agents/index.ts` registry; new code should target `AgentRenderer`.
 
 export type Action = "install" | "uninstall" | "status";
 export type Scope = "global" | "project";
@@ -40,7 +38,7 @@ export interface InstallResult {
  *   - Claude Code: SKILL.md + plugin.json + skills dir layout
  *   - Codex CLI: SKILL.md alone (metadata-only scan until matched)
  *   - Cursor: .mdc with description / globs / alwaysApply frontmatter
- *   - Gemini: gemini-extension.json + skills/SKILL.md + commands/vegastack.toml
+ *   - Gemini: ~/.gemini/extensions/vegastack/{gemini-extension.json, skills/vegastack/SKILL.md, commands/vegastack.toml}
  *   - Continue: .continue/config.yaml mcpServers patch
  *   - Aider: .aider.conf.yml read[] + CONVENTIONS.md block
  */

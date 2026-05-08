@@ -6,8 +6,10 @@
 
 - Finalized the public CLI mode terminology: Interactive Mode remains the default, and `--agent` is the structured, non-interactive mode for agents and scripts.
 - Replaced public `--entry` examples and Registry Entry wording with `--pack` and Registry Pack terminology across CLI help, docs, skills, generated instructions, and tests.
-- Added `GET_STARTED.md` as the step-by-step user guide and included it in the npm package files so README links work after install.
+- Added `GETTING_STARTED.md` as the step-by-step user guide and included it in the npm package files so README links work after install.
 - Updated `registry list --agent` to return `registry_packs` and added regression coverage for help text, skills `--host`, setup next steps, Registry pack schema, and generated lookup plans.
+- Replaced project-local JSON state and lock files with committed `.vegastack/vegastack.yml`.
+- Moved shared agent instructions to `~/.vegastack/instructions/` and kept project agent files to small managed pointers.
 
 ## 0.1.13-next.1
 
@@ -41,13 +43,6 @@
   **Audit-skill upgrades:** `/vegastack-audit` and `/vegastack-fix` skills updated with regression-prevention category, mandatory worktrees + repo-relative paths for parallel subagents, already-fixed verification step, post-merge auto-fix step, and cleanup-verification template. Documented in `.claude/skills/vegastack-{audit,fix}/`.
 
   Full report: `audits/audit-1778150875-2026-05-07T10-47-55Z-full.md`.
-
-## Unreleased
-
-### Changed
-
-- Replaced project-local JSON state and lock files with committed `.vegastack/vegastack.yml`.
-- Moved shared agent instructions to `~/.vegastack/instructions/` and kept project agent files to small managed pointers.
 
 ## [0.1.13-next.0] - 2026-05-05
 

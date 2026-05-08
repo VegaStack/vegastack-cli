@@ -12,5 +12,5 @@ Current architecture:
 - All-pack download command: `vegastack registry install --all`.
 - Registry refresh command: `vegastack registry update`.
 
-Start with [../GET_STARTED.md](../GET_STARTED.md). Current contracts
+Start with [../GETTING_STARTED.md](../GETTING_STARTED.md). Current contracts
 live in `docs/contracts/`.

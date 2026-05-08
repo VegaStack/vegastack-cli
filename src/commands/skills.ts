@@ -1,8 +1,4 @@
 // `vegastack skills <install|uninstall|status>` — manage per-agent skill registration.
-// v0.1: switched from legacy ALL_AGENT_NAMES (4 agents) to ALL_RENDERER_NAMES
-// (6 agents: claude-code, codex, cursor, gemini, continue, aider). Without this
-// swap, Continue/Aider/modern Gemini have no install path from the CLI
-// (audit punch-list #3, A3 must-fix).
 
 import { ALL_RENDERER_NAMES, getRenderer } from "../agents/index.js";
 import type { Action, InstallResult, Scope } from "../agents/index.js";

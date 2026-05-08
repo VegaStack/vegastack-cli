@@ -35,8 +35,8 @@ Registry data lives in the user's cache at `~/.vegastack/registry/`.
 | `src/lib/registry.ts`        | Signed Registry catalog fetch, archive download, extraction, artifact verification.   |
 | `src/lib/registry-search.ts` | Deterministic exact source search.                                                    |
 | `src/lib/discover*`          | Terraform Registry pack discovery internals used by `ask --pack terraform`.          |
-| `src/agents/`                | Agent renderers for Claude Code, Codex, Cursor, Gemini, Continue, Aider.              |
-| `skills/vegastack/`          | Shipped skill body and references.                                                    |
+| `src/agents/`                | Agent renderers for Claude Code, Codex, Cursor, Gemini, Continue, Aider. `ALL_RENDERERS` in `src/agents/index.ts` is the single source of truth. |
+| `skills/vegastack/`          | Shipped skill body, references, and per-host templates (`templates/cursor-rule.mdc`, `templates/gemini-extension.json`, `templates/AGENTS.md`). |
 | `registry/skill-source/`     | Canonical skill template.                                                             |
 | `npm/`                       | npm bin and postinstall wrappers.                                                     |
 

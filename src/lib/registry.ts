@@ -52,7 +52,7 @@ export interface RegistryCatalogEntry {
   source?: unknown;
 }
 
-interface ArtifactIndex {
+export interface ArtifactIndex {
   schema_version: number;
   files: { path: string; bytes: number; sha256: string }[];
 }
@@ -552,8 +552,16 @@ function readAndVerifyArtifactIndex(
   return artifacts;
 }
 
-function verifyExtractedArtifacts(root: string, artifacts: ArtifactIndex): void {
-  const expected = new Set<string>();
+// Exported for direct testing. The production install flow calls this after
+// extracting the verified archive and reading + checksum-verifying ARTIFACTS.json.
+export function verifyExtractedArtifacts(root: string, artifacts: ArtifactIndex): void {
+  // The archive ships with `ARTIFACTS.json` at the root — it IS the artifact
+  // index file we just read at `readAndVerifyArtifactIndex`. Its presence is
+  // required, its integrity is already verified against `entry.artifacts_sha256`
+  // in the signed catalog. The index obviously can't list itself in `files[]`,
+  // so seed the allowlist with it explicitly. Without this seed, every pack
+  // install fails with "unexpected file in registry archive: ARTIFACTS.json".
+  const expected = new Set<string>(["ARTIFACTS.json"]);
   for (const file of artifacts.files) {
     assertSafeRelativePath(file.path);
     expected.add(path.normalize(file.path));

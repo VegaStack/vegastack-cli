@@ -252,14 +252,6 @@ export function cursorRulePath(cwd: string): string {
   return path.join(cwd, ".cursor", "rules", "vegastack-cli.mdc");
 }
 
-/** Gemini: extension config + context. Project-scoped (Gemini Code Assist reads them from cwd). */
-export function geminiExtensionPath(cwd: string): string {
-  return path.join(cwd, "gemini-extension.json");
-}
-export function geminiContextPath(cwd: string): string {
-  return path.join(cwd, "CONTEXT.md");
-}
-
 /**
  * Gemini CLI extensions (Apr-2026 docs format):
  * `~/.gemini/extensions/<name>/{gemini-extension.json, skills/, commands/}`
@@ -317,18 +309,19 @@ export function pkgCanonicalSkillMd(): string {
 export function pkgSkillDir(): string {
   return path.join(pkgRoot(), "skills", "vegastack");
 }
+/** Shipped agent templates live under skills/vegastack/templates/ since 0.1.13. */
+function pkgTemplatesDir(): string {
+  return path.join(pkgRoot(), "skills", "vegastack", "templates");
+}
 export function pkgAgentsMd(): string {
-  return path.join(pkgRoot(), "AGENTS.md");
+  return path.join(pkgTemplatesDir(), "AGENTS.md");
 }
 export function pkgClaudePluginManifest(): string {
   return path.join(pkgRoot(), ".claude-plugin", "plugin.json");
 }
 export function pkgCursorRule(): string {
-  return path.join(pkgRoot(), "cursor-rule.mdc");
+  return path.join(pkgTemplatesDir(), "cursor-rule.mdc");
 }
 export function pkgGeminiExtension(): string {
-  return path.join(pkgRoot(), "gemini-extension.json");
-}
-export function pkgGeminiContext(): string {
-  return path.join(pkgRoot(), "CONTEXT.md");
+  return path.join(pkgTemplatesDir(), "gemini-extension.json");
 }

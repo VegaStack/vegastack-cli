@@ -7,8 +7,6 @@ import {
   codexAgentsMdPath,
   codexSkillDir,
   cursorRulePath,
-  geminiContextPath,
-  geminiExtensionPath,
   managedToolDir,
   managedToolMetadataPath,
   projectConfigPath,
@@ -108,11 +106,5 @@ describe("agent install paths", () => {
   it("cursor rule path is project-relative", () => {
     const cwd = "/tmp/proj";
     expect(cursorRulePath(cwd)).toBe(path.join(cwd, ".cursor", "rules", "vegastack-cli.mdc"));
-  });
-
-  it("gemini extension and context are at project root", () => {
-    const cwd = "/tmp/proj";
-    expect(geminiExtensionPath(cwd)).toBe(path.join(cwd, "gemini-extension.json"));
-    expect(geminiContextPath(cwd)).toBe(path.join(cwd, "CONTEXT.md"));
   });
 });

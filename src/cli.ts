@@ -13,7 +13,6 @@ import { ALL_RENDERER_NAMES } from "./agents/index.js";
 // `commands/preview.ts` (cloudflared), `commands/update.ts` (npm view), etc.
 // The `dynamicImport*` helpers below are the single point where the lazy
 // loading happens and exist to keep type signatures explicit.
-// Audit performance/F-002 in audit-1778150875.
 const dynamicImportAsk = () => import("./commands/ask.js");
 const dynamicImportDetect = () => import("./commands/detect.js");
 const dynamicImportDoctor = () => import("./commands/doctor.js");
@@ -119,7 +118,7 @@ Examples:
   vegastack registry update                           update project-selected Registry packs
   vegastack registry install --all                     download every published Registry pack
   vegastack update                                    update CLI + Registry + managed tools
-  vegastack preview --tunnel                       start a local preview and temporary Cloudflare URL
+  vegastack preview --tunnel                       start a local preview and a temporary preview tunnel via Cloudflare
   vegastack scan                                   run enabled security scans for this project
   vegastack scan secrets actions                   run selected scan categories
   vegastack scan --staged                          run the fast staged pre-commit scan
@@ -303,7 +302,7 @@ program
         pretty: opts.pretty,
         debug: opts.debug,
       };
-      if (opts.pack !== undefined) qOpts.entries = opts.pack;
+      if (opts.pack !== undefined && opts.pack.length > 0) qOpts.entries = opts.pack;
       if (opts.tfProvider !== undefined) qOpts.tfProvider = opts.tfProvider;
       if (opts.max !== undefined) qOpts.max = opts.max;
       const { runAsk } = await dynamicImportAsk();
@@ -362,7 +361,7 @@ program
         installTools: opts.installTools,
         pretty: opts.pretty,
       };
-      if (opts.pack !== undefined) searchOpts.entries = opts.pack;
+      if (opts.pack !== undefined && opts.pack.length > 0) searchOpts.entries = opts.pack;
       if (opts.max !== undefined) searchOpts.max = opts.max;
       const { runSearch } = await dynamicImportSearch();
       process.exit(await runSearch(queryWords.join(" "), searchOpts));

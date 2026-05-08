@@ -1,4 +1,4 @@
-# STYLE.md — review-time guidance for `@vegastack/cli`
+# STYLEGUIDE.md — review-time guidance for `@vegastack/cli`
 
 This file is for code reviewers. Cite it in PR comments by section.
 
@@ -8,8 +8,8 @@ This file is for code reviewers. Cite it in PR comments by section.
    handlers. No business logic. If `cli.ts` is growing past ~200 lines, extract.
 2. **Each command is a pure function** of its parsed options. Side effects live
    inside the command handler; they don't escape into the wiring layer.
-3. **Per-agent installers implement `AgentInstaller`** (`src/agents/types.ts`).
-   New agents go in `src/agents/<name>.ts` plus one line in `src/agents/index.ts`.
+3. **Per-agent renderers implement `AgentRenderer`** (`src/agents/types.ts`).
+   New agents go in `src/agents/<name>.ts` plus one entry in `ALL_RENDERERS` in `src/agents/index.ts`.
 4. **`src/lib/` is the dependency floor.** Modules in `lib/` may import each
    other but must not import from `commands/`, `agents/`, or `cli.ts`.
 
@@ -27,7 +27,8 @@ This file is for code reviewers. Cite it in PR comments by section.
 - **Always honor `--dry-run`.** Every code path that writes must check
   `ctx.dryRun` first and emit `would …` notes instead.
 - **Never overwrite user-edited files without `--force`.** This applies to
-  Codex `AGENTS.md`, Gemini `CONTEXT.md`, and any future agent's project files.
+  Codex `AGENTS.md`, Gemini `gemini-extension.json`, Aider `.aider.conf.yml`,
+  Cursor `.cursor/rules/*.mdc`, and any future agent's project files.
 - **Path safety:** any path that comes from user input (CLI args, environment
   variables, config files) goes through `validate.ts` first. Never pass
   un-validated paths to `fs.*Sync` or `child_process.spawn`.

@@ -1,4 +1,0 @@
-interface:
-  display_name: "VegaStack"
-  short_description: "Route infra, deploy, scan, and Registry work through VegaStack"
-  default_prompt: "Use $vegastack to handle an infrastructure, deployment, CI/CD, Terraform, Docker, Kubernetes, preview, security scan, Registry, or agent-skill task with local citations and exact CLI syntax."

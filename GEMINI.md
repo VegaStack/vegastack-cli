@@ -1,0 +1,1 @@
+When working in this repository with Gemini Code Assist or Gemini CLI, follow the guidelines in [AGENTS.md](AGENTS.md). The shipped Gemini extension manifest is [skills/vegastack/templates/gemini-extension.json](skills/vegastack/templates/gemini-extension.json) and the canonical skill body lives at [skills/vegastack/SKILL.md](skills/vegastack/SKILL.md).

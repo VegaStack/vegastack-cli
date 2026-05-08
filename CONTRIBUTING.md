@@ -75,7 +75,7 @@ VEGASTACK_REGISTRY_DIR=/Users/mk/projects/vegastack-cli-registry/cli/packs \
 - **Honor `NO_COLOR`, `--quiet`, `--agent`** in any new command.
 - **Per-agent installers must be idempotent** and respect `--dry-run`.
 
-See [STYLE.md](STYLE.md) for review-time guidance.
+See [STYLEGUIDE.md](STYLEGUIDE.md) for review-time guidance.
 
 ## Tests
 
@@ -102,6 +102,25 @@ new code; the global floor is 70%.
 
 Open an issue at https://github.com/vegastack/vegastack-cli/issues.
 For security issues, follow the process in [SECURITY.md](SECURITY.md).
+
+## Repo layout
+
+| Path | Purpose |
+| --- | --- |
+| `src/cli.ts` | Commander entrypoint. |
+| `src/commands/` | One file per public subcommand (`init`, `setup`, `detect`, `refresh`, `generate`, `ask`, `search`, `doctor`, `registry`, `skills`, `update`, `preview`, `scan`, `terraform-discover`). |
+| `src/agents/` | Per-host renderers (claude-code, codex, cursor, gemini, continue, aider) registered via `ALL_RENDERERS` in `src/agents/index.ts`. |
+| `src/lib/` | Dependency floor; pure helpers. May not import from `commands/`, `agents/`, or `cli.ts`. |
+| `skills/vegastack/` | Shipped Claude Code skill body (`SKILL.md`), `references/`, and `templates/` (the per-host shipped artifacts: `cursor-rule.mdc`, `gemini-extension.json`, `AGENTS.md`). |
+| `tests/{lib,agents,commands,integration,architecture}/` | Vitest suites mirroring `src/`. |
+| `apps/` | Cloudflare Workers (`mcp/`, `dashboard/`) sharing the Registry. Standalone build/test. |
+| `evals/` | Offline answer-quality evals; scored against fixed corpora. |
+| `audits/` | Timestamped production-readiness audit reports. Not shipped via npm. |
+| `docs/reviews/` | Human-readable review notes that complement `audits/`. |
+| `npm/` | npm bin shim and postinstall wrapper that ships in the tarball. |
+| `scripts/` | One-shot maintenance helpers (`generate-skill-from-registry.ts`, `sync-version.mjs`, etc.). |
+
+Hidden roots: `.changeset/` (changesets prerelease channel), `.github/` (CI, issue templates, CODEOWNERS), `.claude-plugin/` (Claude Code marketplace manifest, shipped), `.mcp.json` (MCP server descriptor, shipped), `.editorconfig` / `.prettier*` / `.eslintrc` (formatting), `.nvmrc` (Node 20). The repo-internal `AGENTS.md` and `CLAUDE.md` are contributor-only and **not shipped**; the user-facing template lives at `skills/vegastack/templates/AGENTS.md` and is the source pulled by `pkgAgentsMd()` in `src/lib/paths.ts`.
 
 ## Licensing
 

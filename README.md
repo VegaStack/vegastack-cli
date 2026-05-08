@@ -13,7 +13,9 @@ vegastack search --pack jenkins "withCredentials"
 vegastack doctor
 ```
 
-For the step-by-step guide, see [GET_STARTED.md](GET_STARTED.md).
+For the step-by-step guide, see [GETTING_STARTED.md](GETTING_STARTED.md).
+
+**Supported agents:** Claude Code, Codex, Cursor, Gemini, Continue, Aider. Run `vegastack skills install --host all --agent` to register the skill with every detected host (or pick one with `--host claude-code` etc.).
 
 ## How It Works
 
@@ -65,6 +67,33 @@ vegastack --agent
 vegastack --agent doctor
 vegastack ask --agent --pack cloudflare "wrangler deploy"
 ```
+
+`--agent` writes a structured envelope to stdout (status to stderr). For
+`vegastack ask` the envelope shape is roughly:
+
+```jsonc
+{
+  "status": "ok",
+  "query": "github actions oidc to aws",
+  "mode": "registry-docs",
+  "registry_packs": ["docker", "github-actions"],
+  "knowledge": [{ "id": "...", "title": "...", "overrides_training": true }],
+  "results": [
+    {
+      "registry_pack": "github-actions",
+      "path": "content/.../oidc-in-aws.md",
+      "score": 1494,
+      "match_reasons": ["heading", "exact"]
+    }
+  ],
+  "citations": ["github-actions:content/.../oidc-in-aws.md"],
+  "concept_aliases_used": [{ "registry_pack": "github-actions", "phrase": "oidc", "tokens": [...] }]
+}
+```
+
+`vegastack search` returns `{ query, mode, engine, registry_packs, matches[], citations[] }`.
+Errors emit `{ "kind": "...", "message": "...", "exitCode": <code>, "hint": "..." }` to
+stdout with a non-zero exit. See [`src/cli.ts`](src/cli.ts) for the full exit-code table.
 
 ## Project Files
 

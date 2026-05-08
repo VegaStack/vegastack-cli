@@ -1,7 +1,7 @@
 {
   "name": "@vegastack/cli",
   "version": "0.1.13-next.2",
-  "description": "vegastack — a deterministic, offline knowledge harness for coding agents (Claude Code, Codex, Cursor, Gemini) with project-selected local Registry packs for infrastructure, cloudops, CI/CD, and Terraform.",
+  "description": "vegastack — a deterministic, offline knowledge harness for coding agents (Claude Code, Codex, Cursor, Gemini, Continue, Aider) with project-selected local Registry packs for infrastructure, cloudops, CI/CD, and Terraform.",
   "license": "MIT",
   "author": {
     "name": "VegaStack Inc.",
@@ -32,8 +32,6 @@
     "skill-md",
     "hashicorp",
     "mcp",
-    "openclaw",
-    "hermes",
     "gemini-cli",
     "continue-dev",
     "aider"
@@ -46,15 +44,12 @@
     "npm/",
     "dist/",
     "skills/",
-    "AGENTS.md",
     "CLAUDE.md",
-    "CONTEXT.md",
-    "cursor-rule.mdc",
-    "gemini-extension.json",
+    "GEMINI.md",
     ".claude-plugin/",
     ".mcp.json",
     "README.md",
-    "GET_STARTED.md",
+    "GETTING_STARTED.md",
     "LICENSE"
   ],
   "engines": {
@@ -74,11 +69,9 @@
     "test": "vitest run",
     "coverage": "npm run build && vitest run --coverage",
     "test:watch": "vitest",
-    "version-sync": "changeset version",
+    "version-sync": "changeset version && node scripts/sync-version.mjs",
     "prerouter": "npm run build",
     "postinstall": "node npm/install.js",
-    "generate-skills": "tsx scripts/generate-skills.ts",
-    "generate-skills:check": "npm run generate-skills && git diff --quiet -- skills/recipes skills/personas recipes/INDEX.json personas/INDEX.json",
     "generate-skill": "tsx scripts/generate-skill-from-registry.ts",
     "generate-skill:check": "tsx scripts/generate-skill-from-registry.ts --check",
     "prepack": "npm run build && npm run generate-skill:check",

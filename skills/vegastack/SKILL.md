@@ -23,7 +23,7 @@ metadata:
 
 # VegaStack Router
 
-Requires Node >=18 and `@vegastack/cli` on PATH. VegaStack CLI is the only writer of `.vegastack` project config; do not hand-write `.vegastack/vegastack.yml`, hooks, or generated instruction blocks.
+Requires Node >=20 and `@vegastack/cli` on PATH. VegaStack CLI is the only writer of `.vegastack` project config; do not hand-write `.vegastack/vegastack.yml`, hooks, or generated instruction blocks.
 
 If the current repository contains a VegaStack block in `AGENTS.md` or `CLAUDE.md`, read the shared instruction file linked there first. Shared instructions normally live under `~/.vegastack/instructions/`.
 

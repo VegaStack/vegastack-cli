@@ -1,6 +1,6 @@
 {
   "name": "vegastack",
-  "version": "0.1.13-next.0",
+  "version": "0.1.13-next.2",
   "description": "Local, deterministic VegaStack Registry harness for coding agents. Use `vegastack ask` for grounded citations from project-selected Registry packs.",
   "contextFileName": "skills/vegastack/SKILL.md",
   "mcpServers": {
