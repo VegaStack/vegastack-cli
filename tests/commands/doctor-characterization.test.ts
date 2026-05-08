@@ -1,4 +1,4 @@
-// Characterization test for runDoctor's --json output shape.
+// Characterization test for runDoctor's --agent output shape.
 //
 // Pins the structural contract of the JSON payload so the runDoctor
 // refactor (cyclomatic-complexity reduction) is provably behavior-preserving.
@@ -112,12 +112,12 @@ describe("runDoctor characterization (JSON output contract)", () => {
     const out = await runOnce();
     // verify is undefined (omitted by JSON.stringify) when --verifyRegistry not requested.
     expect(Object.keys(out).sort()).toEqual(
-      ["agents", "checks", "cli_version", "ok", "registry_entries"].sort(),
+      ["agents", "checks", "cli_version", "ok", "registry_packs"].sort(),
     );
     expect(typeof out.ok).toBe("boolean");
     expect(typeof out.cli_version).toBe("string");
     expect(Array.isArray(out.checks)).toBe(true);
-    expect(Array.isArray(out.registry_entries)).toBe(true);
+    expect(Array.isArray(out.registry_packs)).toBe(true);
     expect(out.verify).toBeUndefined();
     expect(Array.isArray(out.agents)).toBe(true);
   });
@@ -146,7 +146,7 @@ describe("runDoctor characterization (JSON output contract)", () => {
     expect(byName.get("Node.js")?.ok).toBe(true); // tests run on Node >= 18
     expect(byName.get("Node.js")?.detail).toMatch(/^v\d+\.\d+/);
     expect(byName.get("VegaStack Registry cache")?.ok).toBe(false); // empty registry
-    expect(byName.get("VegaStack Registry cache")?.detail).toMatch(/no Registry entries/);
+    expect(byName.get("VegaStack Registry cache")?.detail).toMatch(/no Registry packs/);
     expect(byName.get("jq (optional)")?.ok).toBe(false); // empty PATH
     expect(byName.get("ripgrep")?.ok).toBe(false); // no managed rg in tmp tools dir
     expect(byName.get("cloudflared (optional)")?.ok).toBe(false);
@@ -155,7 +155,7 @@ describe("runDoctor characterization (JSON output contract)", () => {
   it("is deterministic across repeated invocations (same env, same JSON)", async () => {
     const a = await runOnce();
     const b = await runOnce();
-    // ok/cli_version/checks/registry_entries/agents/verify must match byte-for-byte.
+    // ok/cli_version/checks/registry_packs/agents/verify must match byte-for-byte.
     expect(JSON.stringify(a)).toEqual(JSON.stringify(b));
   });
 
@@ -174,11 +174,11 @@ describe("runDoctor characterization (JSON output contract)", () => {
     await runDoctor({ json: true, verifyRegistry: true });
     const out = JSON.parse(captured.join("")) as Record<string, unknown>;
     expect(Array.isArray(out.verify)).toBe(true);
-    // Empty registry -> 0 entries verified -> aggregate check passes (failed===0).
+    // Empty registry -> 0 packs verified -> aggregate check passes (failed===0).
     const checks = out.checks as { name: string; ok: boolean; detail: string }[];
     const agg = checks.find((c) => c.name === "Registry artifact verification");
     expect(agg?.ok).toBe(true);
-    expect(agg?.detail).toBe("0 entries verified");
+    expect(agg?.detail).toBe("0 packs verified");
   });
 
   it("non-JSON renderer routes ok/warn/err to the correct log channels", async () => {
@@ -212,7 +212,7 @@ describe("runDoctor characterization (JSON output contract)", () => {
   });
 
   it("registry cache check flips ok=true when entries are installed", async () => {
-    // Stage a fake installed entry so `installedEntries.length > 0` is true.
+    // Stage a fake installed pack so `installedEntries.length > 0` is true.
     // This kills mutants that flip the > 0 comparison (e.g. > 0 -> < 0): with
     // length===1 and `< 0` the check would still report ok=false.
     const entryDir = path.join(process.env.VEGASTACK_REGISTRY_DIR!, "fake-pack");

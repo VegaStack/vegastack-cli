@@ -1,6 +1,6 @@
 # vegastack-cli — persona registry
 #
-# A persona is a curated set of Registry entries, recipes, and tips for a job role.
+# A persona is a curated set of Registry packs, recipes, and tips for a job role.
 # Each [[personas]] entry becomes:
 #   - skills/personas/<id>/SKILL.md
 #   - one row in personas/INDEX.json

@@ -232,7 +232,7 @@ async function buildLegacyAmbiguousResult(args: {
       tokens: [],
       candidate_providers: args.candidates,
       recipes,
-      hint: "Use --tf-provider <name> with `vegastack ask --entry terraform` to disambiguate.",
+      hint: "Use --tf-provider <name> with `vegastack ask --agent --pack terraform` to disambiguate.",
     },
     t0: args.t0,
     timings: zeroTimings(args.detectMs),
@@ -332,7 +332,7 @@ function resolveSingleProvider(
         status: "error",
         query: norm.query,
         error:
-          "Could not detect provider from query. Pass --tf-provider with `vegastack ask --entry terraform`.",
+          "Could not detect provider from query. Pass --tf-provider with `vegastack ask --agent --pack terraform`.",
         code: "ProviderUndetected",
       },
       t0,

@@ -34,7 +34,7 @@ function printDetectionSummary(detection: ReturnType<typeof detectProject>): voi
     log.info(`deploy: ${detection.deploy.targets.join(", ")}`);
   if (detection.ci.providers.length > 0) log.info(`ci: ${detection.ci.providers.join(", ")}`);
   log.info(
-    `recommended registry entries: ${detection.registry.recommended_entries.join(", ") || "none"}`,
+    `recommended Registry packs: ${detection.registry.recommended_entries.join(", ") || "none"}`,
   );
   if (detection.stale?.changed) {
     log.warn(

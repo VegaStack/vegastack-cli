@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.13-next.2
+
+### Patch Changes
+
+- Finalized the public CLI mode terminology: Interactive Mode remains the default, and `--agent` is the structured, non-interactive mode for agents and scripts.
+- Replaced public `--entry` examples and Registry Entry wording with `--pack` and Registry Pack terminology across CLI help, docs, skills, generated instructions, and tests.
+- Added `GET_STARTED.md` as the step-by-step user guide and included it in the npm package files so README links work after install.
+- Updated `registry list --agent` to return `registry_packs` and added regression coverage for help text, skills `--host`, setup next steps, Registry pack schema, and generated lookup plans.
+
 ## 0.1.13-next.1
 
 ### Patch Changes
@@ -72,15 +81,15 @@ Stable release of the Registry-backed VegaStack CLI. This promotes the verified 
 
 ### Fixed
 
-- Kept `vegastack init --dry-run --json` machine-readable by avoiding interactive prompts and terminal control sequences.
-- Kept `vegastack init --json` non-interactive unless `--yes` or `--dry-run` is supplied.
+- Kept `vegastack init --dry-run --agent` agent-readable by avoiding interactive prompts and terminal control sequences.
+- Kept `vegastack init --agent` non-interactive unless `--yes` or `--dry-run` is supplied.
 
 ## [0.1.11-next.1] - 2026-05-05
 
 ### Fixed
 
-- Fixed `vegastack init --dry-run --json` so it emits parseable JSON without interactive prompt control sequences on stdout.
-- Fixed `vegastack init --json` without `--yes` to return a structured validation error instead of prompting on stdout.
+- Fixed `vegastack init --dry-run --agent` so it emits parseable JSON without interactive prompt control sequences on stdout.
+- Fixed `vegastack init --agent` without `--yes` to return a structured validation error instead of prompting on stdout.
 
 ## [0.1.11-next.0] - 2026-05-05
 
@@ -98,7 +107,7 @@ Prerelease of the Registry-backed VegaStack CLI for `develop`.
 
 - Moved project state into project-local VegaStack metadata files; this was later superseded by committed `.vegastack/vegastack.yml`.
 - Replaced archive-era bundle language with VegaStack Registry terminology.
-- Kept Terraform provider discovery behind `vegastack ask --entry terraform --tf-provider <provider>`.
+- Kept Terraform provider discovery behind `vegastack ask --pack terraform --tf-provider <provider>`.
 - Updated public README install guidance so stable installs use `npm i -g @vegastack/cli` and prereleases use `@next`.
 
 ### Removed

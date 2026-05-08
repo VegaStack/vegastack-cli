@@ -2,7 +2,7 @@
 // Postinstall intentionally does not download Registry content or managed
 // scanner/search binaries.
 //
-// Registry entries are installed explicitly with:
+// Registry packs are installed explicitly with:
 //   vegastack init
 //
 // We do perform a best-effort, non-fatal agent skill registration for already

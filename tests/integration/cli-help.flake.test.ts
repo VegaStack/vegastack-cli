@@ -17,7 +17,7 @@ const PKG_ROOT = path.resolve(here, "..", "..");
 const CLI = path.join(PKG_ROOT, "dist", "cli.js");
 
 describe("cli-help parallel safety (issue #60)", () => {
-  it("`vegastack init --dry-run --json` exits 0 across 20 parallel invocations", () => {
+  it("`vegastack init --dry-run --agent` exits 0 across 20 parallel invocations", () => {
     expect(fs.existsSync(CLI), "build dist/cli.js first").toBe(true);
 
     const N = 20;
@@ -25,7 +25,7 @@ describe("cli-help parallel safety (issue #60)", () => {
       const home = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-flake-home-"));
       const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-flake-cwd-"));
       fs.writeFileSync(path.join(cwd, "Dockerfile"), "FROM alpine\n");
-      const r = spawnSync("node", [CLI, "init", "--dry-run", "--json"], {
+      const r = spawnSync("node", [CLI, "init", "--dry-run", "--agent"], {
         cwd,
         encoding: "utf8",
         env: {

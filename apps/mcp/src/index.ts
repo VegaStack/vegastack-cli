@@ -26,7 +26,7 @@ import { createBearerAuth, createRateLimiter, readMiddlewareConfig } from "./mid
 
 // Single source of truth for the worker version string. Bumped in lockstep
 // with apps/mcp/package.json#version (CI repo-meta test enforces equality).
-const WORKER_VERSION = "0.1.13-next.0";
+const WORKER_VERSION = "0.1.13-next.2";
 
 import {
   handleTerraformDiscover,
@@ -343,7 +343,7 @@ const LANDING_HTML = `<!doctype html>
 </head>
 <body>
 <h1>vegastack-mcp</h1>
-<p class="muted">Remote Model Context Protocol server for the <code>vegastack ask --entry terraform --tf-provider <provider></code> Terraform discovery harness.</p>
+<p class="muted">Remote Model Context Protocol server for the <code>vegastack ask --pack terraform --tf-provider <provider></code> Terraform discovery harness.</p>
 <h2>Endpoints</h2>
 <ul>
   <li><code>POST /mcp</code> — StreamableHTTP transport (modern clients)</li>

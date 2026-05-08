@@ -4,8 +4,8 @@ Use this to verify environment health, Registry cache state, managed tools, scan
 
 Flow:
 
-1. Run `vegastack doctor --json`.
-2. If Registry verification is needed, run `vegastack doctor --verify-registry --json`.
+1. Run `vegastack doctor --agent`.
+2. If Registry verification is needed, run `vegastack doctor --verify-registry --agent`.
 3. Summarize failing checks first.
 4. Provide the exact corrective VegaStack command, such as `vegastack init`, `vegastack registry update`, `vegastack update`, or `vegastack skills reconcile`.
 

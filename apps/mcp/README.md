@@ -18,7 +18,7 @@ Cloudflare Workers Remote MCP server that exposes VegaStack Registry evidence to
 | `registry_get_knowledge_card(id)` | Single curated card (markdown + frontmatter parsed). |
 | `registry_get_recipe(id)` | Single curated recipe (TOML parsed). |
 
-The envelope shape is defined in `docs/contracts/discover-types.ts`. It mirrors the CLI's `vegastack ask --entry terraform --tf-provider <provider> <query>` output exactly.
+The envelope shape is defined in `docs/contracts/discover-types.ts`. It mirrors the CLI's `vegastack ask --pack terraform --tf-provider <provider> <query>` output exactly.
 
 ## Local development
 

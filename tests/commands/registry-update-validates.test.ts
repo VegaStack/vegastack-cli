@@ -9,10 +9,10 @@ describe("validateRegistryEntryName — boundary validation", () => {
   });
 
   it("rejects traversal / scheme / slashed values", () => {
-    expect(() => validateRegistryEntryName("../foo")).toThrow(/valid registry entry/i);
-    expect(() => validateRegistryEntryName("foo/bar")).toThrow(/valid registry entry/i);
-    expect(() => validateRegistryEntryName("http://evil/")).toThrow(/valid registry entry/i);
-    expect(() => validateRegistryEntryName("..")).toThrow(/valid registry entry/i);
+    expect(() => validateRegistryEntryName("../foo")).toThrow(/valid Registry pack/i);
+    expect(() => validateRegistryEntryName("foo/bar")).toThrow(/valid Registry pack/i);
+    expect(() => validateRegistryEntryName("http://evil/")).toThrow(/valid Registry pack/i);
+    expect(() => validateRegistryEntryName("..")).toThrow(/valid Registry pack/i);
   });
 
   it("rejects uppercase, underscores, leading digit, empty", () => {

@@ -24,13 +24,13 @@ without the public R2 domain, point `vegastack` at a local Registry pack root:
 
 ```bash
 # In ../vegastack-cli-registry:
-python3 scripts/sync_registry.py --entry terraform --force
+python3 scripts/sync_registry.py --pack terraform --force
 
 # In this repo:
 VEGASTACK_REGISTRY_DIR=/Users/mk/projects/vegastack-cli-registry/cli/packs \
   node dist/cli.js doctor
 VEGASTACK_REGISTRY_DIR=/Users/mk/projects/vegastack-cli-registry/cli/packs \
-  node dist/cli.js ask --entry terraform --tf-provider aws "create an S3 bucket with versioning"
+  node dist/cli.js ask --pack terraform --tf-provider aws "create an S3 bucket with versioning"
 ```
 
 ## Pull-request workflow
@@ -48,7 +48,7 @@ VEGASTACK_REGISTRY_DIR=/Users/mk/projects/vegastack-cli-registry/cli/packs \
    features — patch is fine, and it keeps users upgrading aggressively
    instead of pinning. **Minor versions are reserved for envelope-shape
    changes** (the `manifest_schema_version` bump, breaking shape changes
-   to `vegastack ask --entry terraform --tf-provider <provider> --json` output, etc.). **Major** is reserved for the v1.0
+   to `vegastack ask --pack terraform --tf-provider <provider> --agent` output, etc.). **Major** is reserved for the v1.0
    API-stability commitment. Until v1.0, almost every changeset should
    be `patch`.
 3. **Run the local checks** before you push:
@@ -70,9 +70,9 @@ VEGASTACK_REGISTRY_DIR=/Users/mk/projects/vegastack-cli-registry/cli/packs \
 - **Errors as types.** Throw a `VegaStackError` (`src/lib/errors.ts`); each variant
   has an exit code and a hint. Don't throw plain `Error` in command handlers.
 - **stdout is for data, stderr for status.** All human-readable output goes to
-  `log.{ok,warn,err,info,step}`. Machine-readable output (JSON envelopes) goes
+  `log.{ok,warn,err,info,step}`. Machine-readable output (structured envelopes) goes
   to `log.json` (stdout).
-- **Honor `NO_COLOR`, `--quiet`, `--json`** in any new command.
+- **Honor `NO_COLOR`, `--quiet`, `--agent`** in any new command.
 - **Per-agent installers must be idempotent** and respect `--dry-run`.
 
 See [STYLE.md](STYLE.md) for review-time guidance.

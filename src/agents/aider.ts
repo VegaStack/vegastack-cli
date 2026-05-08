@@ -24,11 +24,11 @@ const CONVENTIONS_BODY = `# VegaStack conventions (managed by @vegastack/cli)
 When the user asks about infrastructure, cloud operations, CI/CD, Terraform,
 or any installed VegaStack Registry pack, invoke the local CLI before answering:
 
-    vegastack ask "<the user's request, in natural language>"
+    vegastack ask --agent "<the user's request, in natural language>"
 
 For Terraform work, specify both the Registry pack and provider:
 
-    vegastack ask --entry terraform --tf-provider <provider> "<query>"
+    vegastack ask --agent --pack terraform --tf-provider <provider> "<query>"
 
 The response is one JSON envelope with four channels:
 
@@ -243,7 +243,7 @@ function removeReadEntry(text: string, entryAliases: readonly string[]): string 
       continue;
     }
 
-    // Block list — drop matching `  - <entry>` continuation lines.
+    // Block list — drop matching `  - <item>` continuation lines.
     let j = i + 1;
     while (j < lines.length) {
       const cur = lines[j] ?? "";
@@ -316,7 +316,7 @@ class AiderRenderer implements AgentRenderer {
         ? referenced
           ? ["Conventions file present and referenced from .aider.conf.yml."]
           : [
-              `Conventions file present but not referenced — re-run \`vegastack skills install --agent aider --force\`.`,
+              `Conventions file present but not referenced — re-run \`vegastack skills install --host aider --force\`.`,
             ]
         : ["Not installed."],
       warnings: [],

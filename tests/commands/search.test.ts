@@ -58,12 +58,12 @@ describe("runSearch", () => {
 
     const parsed = JSON.parse(stdout) as {
       engine: string;
-      matches: { registry_entry: string; path: string; line: number; verified: boolean }[];
+      matches: { registry_pack: string; path: string; line: number; verified: boolean }[];
     };
     expect(parsed.engine).toMatch(/ripgrep|typescript/);
     expect(parsed.matches).toMatchObject([
       {
-        registry_entry: "jenkins",
+        registry_pack: "jenkins",
         path: "docs/pipeline.md",
         line: 3,
         verified: true,

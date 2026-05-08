@@ -119,6 +119,20 @@ export async function listPublishedPackDefinitions(): Promise<PackDefinition[]> 
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+export async function allPublishedRegistryEntryNames(): Promise<string[]> {
+  const catalog = await fetchRegistryCatalog();
+  if (catalog.schema_version !== 1) {
+    throw new VegaStackError(
+      "RegistryVersionMismatch",
+      `registry catalog schema ${catalog.schema_version} is not supported`,
+      {
+        context: { expected: 1, actual: catalog.schema_version },
+      },
+    );
+  }
+  return Object.keys(catalog.entries).sort();
+}
+
 function sourceLabel(source: unknown): string | undefined {
   if (typeof source === "string" && source.length > 0) return source;
   if (!source || typeof source !== "object") return undefined;

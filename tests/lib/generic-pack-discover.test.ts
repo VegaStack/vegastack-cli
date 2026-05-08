@@ -124,7 +124,7 @@ describe("discoverGenericPacks", () => {
 
     expect(result.status).toBe("ok");
     expect(result.results[0]).toMatchObject({
-      registry_entry: "jenkins",
+      registry_pack: "jenkins",
       path: "docs/pipeline.md",
       section_id: "docs/pipeline.md#L1",
     });
@@ -252,7 +252,7 @@ describe("discoverGenericPacks", () => {
       { installTools: false },
     );
 
-    expect(new Set(result.results.map((r) => r.registry_entry))).toEqual(
+    expect(new Set(result.results.map((r) => r.registry_pack))).toEqual(
       new Set(["cloudflare", "github-actions"]),
     );
   });

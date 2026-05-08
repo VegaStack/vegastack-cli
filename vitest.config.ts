@@ -38,13 +38,13 @@ export default defineConfig({
         // and ≥85% lines on `src/lib/`; we are tracking toward that as
         // command-level smoke coverage lands (audit rollup-I, F-002/F-004/F-005).
         // Documented deviation: a handful of commands (`init`, `doctor`,
-        // `update`, `skills`, `terraform-discover`) and large libs
-        // (`registry.ts`, `managed-tool-installer.ts`) still need deep tests —
+        // `update`, `skills`, `terraform-discover`) and deep registry install
+        // paths still need more tests —
         // see issue #82 test-coverage findings.
-        statements: 67,
-        branches: 74,
-        functions: 75,
-        lines: 67,
+        statements: 72,
+        branches: 75,
+        functions: 80,
+        lines: 72,
       },
     },
 

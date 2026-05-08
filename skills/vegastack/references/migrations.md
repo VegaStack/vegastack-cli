@@ -5,9 +5,9 @@ When the user upgrades a provider, **resources get renamed, defaults change, arg
 ## The single workflow
 
 ```bash
-vegastack ask --entry terraform --tf-provider <provider> "migrate <provider> from v<old> to v<new>"
+vegastack ask --agent --pack terraform --tf-provider <provider> "migrate <provider> from v<old> to v<new>"
 # or simply:
-vegastack ask --entry terraform --tf-provider <provider> "<old_resource_name>"   # e.g. "cloudflare_record"
+vegastack ask --agent --pack terraform --tf-provider <provider> "<old_resource_name>"   # e.g. "cloudflare_record"
 ```
 
 The envelope's `knowledge[]` returns matching migration cards. Cards with `overrides_training: true` are explicitly authoritative over your model memory.

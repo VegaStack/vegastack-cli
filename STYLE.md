@@ -38,9 +38,9 @@ This file is for code reviewers. Cite it in PR comments by section.
 
 - **stdout = data, stderr = status.** This is non-negotiable; downstream pipes
   depend on it.
-- **JSON envelope shape is part of the public API.** Don't reorder fields or
+- **structured envelope shape is part of the public API.** Don't reorder fields or
   rename keys without a major version bump.
-- **`--json` mode must be machine-perfect.** No color codes, no extra newlines,
+- **`--agent` mode must be machine-perfect.** No color codes, no extra newlines,
   no partial output on error. JSON in, JSON out.
 - **Honor `NO_COLOR` and `TERM=dumb`.** `kleur` does this automatically;
   `process.stderr.isTTY` is the canonical check.
@@ -60,7 +60,7 @@ This file is for code reviewers. Cite it in PR comments by section.
   `tests/setup.ts` for any test that touches the filesystem.
 - **Mock `process.platform` in agent tests** to verify Windows fallbacks
   without needing a Windows runner.
-- **Snapshot tests for JSON output** (e.g. `vegastack doctor --json`) should mask
+- **Snapshot tests for JSON output** (e.g. `vegastack doctor --agent`) should mask
   per-machine paths via `expect.stringMatching` or normalize-then-snapshot.
 
 ## Helpers (rare; v0.2+)

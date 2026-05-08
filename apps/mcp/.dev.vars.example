@@ -30,4 +30,4 @@
 # Generate a token with: `openssl rand -hex 32`
 # Set in production via: `wrangler secret put MCP_AUTH_TOKEN`
 # REQUIRE_AUTH=true
-# MCP_AUTH_TOKEN=replace-me-with-a-32-byte-hex-secret
+# MCP_AUTH_TOKEN=<set-with-wrangler-secret-put>

@@ -47,6 +47,6 @@ function printRefreshSummary(
   log.info(`${dryRun ? "would update" : "update"} ${plan.project_config}`);
   log.info(`changed: ${plan.changed ? "yes" : "no"}`);
   log.info(
-    `recommended registry entries: ${plan.detection.registry.recommended_entries.join(", ") || "none"}`,
+    `recommended Registry packs: ${plan.detection.registry.recommended_entries.join(", ") || "none"}`,
   );
 }

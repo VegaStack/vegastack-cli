@@ -45,8 +45,8 @@ describe("resolveProjectEntriesWithDetection", () => {
         writeSpy.mockRestore();
       }
 
-      expect(stderr).toContain("auto-detected supplemental registry entries: docker");
-      expect(stderr).toContain("detected additional registry entries not installed: gitlab-ci");
+      expect(stderr).toContain("auto-detected supplemental Registry packs: docker");
+      expect(stderr).toContain("detected additional Registry packs not installed: gitlab-ci");
       expect(stderr).toContain("project detection changed since last refresh");
     });
   });

@@ -1,21 +1,21 @@
 # vegastack-cli — Gemini context
 
 Use the `vegastack` CLI for infrastructure, cloud operations, CI/CD,
-Terraform/HCL, and other project-selected Registry entries.
+Terraform/HCL, and other project-selected Registry packs.
 
 ## How to query
 
 ```bash
-vegastack ask "<the user's natural-language operations request>"
+vegastack ask --agent "<the user's natural-language operations request>"
 ```
 
 For exact citation lookup, use:
 
 ```bash
-vegastack search --entry <registry-entry> "<literal query>"
+vegastack search --agent --pack <registry-pack> "<literal query>"
 ```
 
-Output is a JSON envelope with grounded evidence:
+Output is a structured envelope with grounded evidence:
 
 - `files[]` or `sections[]` — ranked doc paths/sections with citations.
 - `knowledge[]` — date-stamped curated facts about recent provider changes (renames, deprecations, pricing shifts). Read these before generating HCL — they override stale training memory.
@@ -32,7 +32,7 @@ Output is a JSON envelope with grounded evidence:
 
 ## Registry location
 
-Registry entries are selected by `vegastack init`, recorded in the committed `.vegastack/vegastack.yml`, and installed into `~/.vegastack/registry/`. Shared agent instructions live under `~/.vegastack/instructions/`. To refresh selected entries, run `vegastack registry update`; to refresh detected project metadata in `vegastack.yml`, run `vegastack refresh`.
+Registry packs are selected by `vegastack init`, recorded in the committed `.vegastack/vegastack.yml`, and installed into `~/.vegastack/registry/`. Power users can install every published pack with `vegastack registry install --all`. Shared agent instructions live under `~/.vegastack/instructions/`. To refresh selected packs, run `vegastack registry update`; to refresh detected project metadata in `vegastack.yml`, run `vegastack refresh`.
 
 ## Full skill reference
 

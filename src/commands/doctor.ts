@@ -2,7 +2,7 @@
 //
 // Verifies Node, local Registry cache, managed tools, CLI freshness, and
 // per-agent registration. Optional Registry verification checks artifact
-// integrity against each installed entry's ARTIFACTS.json.
+// integrity against each installed pack's ARTIFACTS.json.
 //
 // Structure: `runDoctor` is a thin orchestrator. Each subsystem check is a
 // pure helper returning `Check[]` (or `Check | null`). The non-JSON renderer
@@ -122,7 +122,7 @@ function registryCacheChecks(installedEntries: string[]): Check[] {
       detail:
         installedEntries.length > 0
           ? `${installedEntries.length} installed: ${installedEntries.join(", ")}`
-          : "no Registry entries installed — run 'vegastack init'",
+          : "no Registry packs installed — run 'vegastack init'",
     },
   ];
   for (const entry of installedEntries) {
@@ -195,8 +195,8 @@ function verifyAggregateCheck(verifyResults: VerifyResult[]): Check {
     name: "Registry artifact verification",
     ok: allOk,
     detail: allOk
-      ? `${verifyResults.length} entries verified`
-      : `${failed}/${verifyResults.length} entries failed verification`,
+      ? `${verifyResults.length} packs verified`
+      : `${failed}/${verifyResults.length} packs failed verification`,
   };
 }
 
@@ -242,7 +242,7 @@ function emitJson(args: {
     ok,
     cli_version: args.currentCli,
     checks: args.checks.map((c) => ({ name: c.name, ok: c.ok, detail: c.detail })),
-    registry_entries: args.installedEntries,
+    registry_packs: args.installedEntries,
     verify: args.verifyResults,
     agents: args.agentResults,
   });
@@ -292,7 +292,7 @@ function printAgentRow(ar: AgentResult): void {
   if (hostInstalled && skillRegistered) log.ok(line);
   else log.info(line);
   if (hostInstalled && !skillRegistered) {
-    log.info(`  -> run \`vegastack skills install --agent ${ar.agent}\` to register`);
+    log.info(`  -> run \`vegastack skills install --host ${ar.agent}\` to register`);
   } else if (!hostInstalled && skillRegistered) {
     log.info(
       `  -> host not detected (${ar.host?.evidence ?? "?"}); skill is an orphan, safe to remove`,

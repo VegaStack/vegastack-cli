@@ -7,7 +7,7 @@ import { runDetect } from "../../src/commands/detect.js";
 import { withTmpDir } from "../setup.js";
 
 describe("vegastack detect (smoke)", () => {
-  it("runs in --json mode without crashing on an empty repo", async () => {
+  it("runs in --agent mode without crashing on an empty repo", async () => {
     await withTmpDir(async (dir) => {
       const prevCwd = process.cwd();
       process.chdir(dir);

@@ -668,13 +668,13 @@ function renderAgentInstructions(): string {
   return `# VegaStack Shared Agent Instructions
 
 This shared instruction file is managed by @vegastack/cli.
-For project-specific registry entries, detected stack, and security setup, read the current repository's \`.vegastack/vegastack.yml\`.
+For project-specific Registry packs, detected stack, and security setup, read the current repository's \`.vegastack/vegastack.yml\`.
 
 ## Rules
 
-- For ops, cloud, IaC, CI/CD, Kubernetes, Docker, Supabase, or CLI work, run \`vegastack ask "<user request>"\` and use returned citations.
-- For exact source lookup or debugging weak evidence, run \`vegastack search --entry <entry> "<literal text>"\`.
-- For Terraform-specific work, run \`vegastack ask --entry terraform --tf-provider <provider> "<user request>"\`.
+- For ops, cloud, IaC, CI/CD, Kubernetes, Docker, Supabase, or CLI work, run \`vegastack ask --agent "<user request>"\` and use returned citations.
+- For exact source lookup or debugging weak evidence, run \`vegastack search --agent --pack <pack> "<literal text>"\`.
+- For Terraform-specific work, run \`vegastack ask --agent --pack terraform --tf-provider <provider> "<user request>"\`.
 - Do not invent resource names, arguments, import IDs, command flags, workflow keys, or provider behaviors.
 - Do not print secrets from .env files, shell history, cloud credentials, CI variables, or local config.
 - If a task may modify infrastructure, show the planned change and ask before destructive actions.

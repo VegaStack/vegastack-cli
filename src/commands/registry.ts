@@ -1,6 +1,7 @@
 // `vegastack registry` — local VegaStack Registry management.
 
 import {
+  allPublishedRegistryEntryNames,
   allInstalledRegistryEntryNames,
   ensureProjectInitialized,
   listPublishedRegistryEntryStatuses,
@@ -20,7 +21,7 @@ export function validateRegistryEntryName(name: string): void {
   if (!REGISTRY_ENTRY_RE.test(name)) {
     throw new VegaStackError(
       "ValidationError",
-      `'${name}' is not a valid registry entry name (expected ${REGISTRY_ENTRY_RE.source})`,
+      `'${name}' is not a valid Registry pack name (expected ${REGISTRY_ENTRY_RE.source})`,
     );
   }
 }
@@ -35,11 +36,16 @@ export interface RegistryUpdateOptions extends RegistryOptions {
   all?: boolean;
 }
 
+export interface RegistryInstallOptions extends RegistryOptions {
+  entry?: string;
+  all?: boolean;
+}
+
 export async function runRegistryList(opts: RegistryOptions = {}): Promise<number> {
   try {
     const entries = await listPublishedRegistryEntryStatuses();
     if (opts.json) {
-      log.json({ registry: entries });
+      log.json({ registry_packs: entries });
       return 0;
     }
     process.stderr.write("\nVegaStack Registry\n\n");
@@ -72,7 +78,26 @@ export async function runRegistryUpdate(opts: RegistryUpdateOptions = {}): Promi
     if (opts.json) {
       log.json({ ok: true, updated });
     } else {
-      log.ok(`updated registry entries: ${updated.join(", ") || "(none)"}`);
+      log.ok(`updated Registry packs: ${updated.join(", ") || "(none)"}`);
+    }
+    return 0;
+  } catch (e) {
+    return printError(e);
+  }
+}
+
+export async function runRegistryInstall(opts: RegistryInstallOptions = {}): Promise<number> {
+  try {
+    const entries = await resolveInstallEntries(opts);
+    const installed: string[] = [];
+    for (const entry of entries) {
+      await syncRegistryEntry(entry, opts.force ? { force: true } : {});
+      installed.push(entry);
+    }
+    if (opts.json) {
+      log.json({ ok: true, installed });
+    } else {
+      log.ok(`installed Registry packs: ${installed.join(", ") || "(none)"}`);
     }
     return 0;
   } catch (e) {
@@ -88,4 +113,16 @@ function resolveUpdateEntries(opts: RegistryUpdateOptions): string[] {
   if (opts.all) return allInstalledRegistryEntryNames().sort();
   ensureProjectInitialized(process.cwd());
   return readProjectRegistryEntryNames(process.cwd()).sort();
+}
+
+async function resolveInstallEntries(opts: RegistryInstallOptions): Promise<string[]> {
+  if (opts.entry) {
+    validateRegistryEntryName(opts.entry);
+    return [opts.entry].sort();
+  }
+  if (opts.all) return (await allPublishedRegistryEntryNames()).sort();
+  throw new VegaStackError(
+    "ValidationError",
+    "usage: vegastack registry install <pack> or vegastack registry install --all",
+  );
 }

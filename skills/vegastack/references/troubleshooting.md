@@ -6,14 +6,14 @@ When `vegastack ask`, `vegastack search`, or Terraform evidence doesn't behave t
 
 ```bash
 vegastack doctor          # human-readable
-vegastack doctor --json   # machine-readable; emit and parse
+vegastack doctor --agent   # agent-readable; emit and parse
 ```
 
 Doctor checks (and the matching repair):
 
 | Check | Fail symptom | Fix |
 |---|---|---|
-| Registry pack present | `RegistryEntryMissing` | `vegastack init` or `vegastack registry update` |
+| Registry pack present | `RegistryEntryMissing` | `vegastack init`, `vegastack registry install <pack>`, or `vegastack registry update` |
 | Registry MANIFEST parseable | `ManifestMalformed` | `vegastack registry update --force`; if persistent, file an issue with the doctor JSON |
 | Per-provider MANIFESTs valid | `vegastack ask` returns warnings about missing manifests | `vegastack doctor --verify-registry` for the full schema-validation pass |
 | Registry freshness | stale warning | `vegastack registry update` |
@@ -28,7 +28,7 @@ Response code: `ProviderUndetectable`. The query has no canonical provider name,
 
 **Fix:**
 - Re-tokenize with the user. Ask which cloud / SaaS they're targeting.
-- If you're confident, force the provider with `vegastack ask --entry terraform --tf-provider <name> "<query>"`.
+- If you're confident, force the provider with `vegastack ask --agent --pack terraform --tf-provider <name> "<query>"`.
 - Check the alias for the phrase in the installed Registry pack under `~/.vegastack/registry/terraform/`. If it should match but doesn't, the alias may be missing — file an issue.
 
 ### "Terraform Registry pack not installed"
@@ -36,7 +36,7 @@ Response code: `ProviderUndetectable`. The query has no canonical provider name,
 Response code: `RegistryEntryMissing`. Doctor will say the same thing.
 
 **Fix:**
-- `vegastack init` or `vegastack registry update terraform`.
+- `vegastack init`, `vegastack registry install terraform`, or `vegastack registry update terraform`.
 - If install fails, check `curl -fI https://cli-registry.vegastack.com/cli/REGISTRY.json`.
 - If install fails on Windows long paths: enable long-path support in the Win10 group policy.
 
@@ -45,7 +45,7 @@ Response code: `RegistryEntryMissing`. Doctor will say the same thing.
 Response code: `ProviderUnknown`. You forced a provider name that doesn't exist in the Registry pack.
 
 **Fix:**
-- Run `vegastack doctor --verify-registry --json` to validate the installed Terraform pack.
+- Run `vegastack doctor --verify-registry --agent` to validate the installed Terraform pack.
 - Check the provider directory names under `~/.vegastack/registry/terraform/docs/` when you need the exact local names.
 - Common typos: `mongodb_atlas` → `mongodb-atlas`; `redis_cloud` → `redis-cloud`; `1Password` → `1password`.
 
@@ -54,10 +54,10 @@ Response code: `ProviderUnknown`. You forced a provider name that doesn't exist 
 Means the manifest scoring + grep fallback found nothing for the query in the detected provider's Registry pack.
 
 **Fix:**
-- Try `vegastack ask --entry terraform --tf-provider <provider> --debug` — `timings` and raw `score` fields show whether the pipeline ran every stage.
-- Try `vegastack ask --entry terraform --tf-provider <provider> --raw` — confirms the issue isn't in the enrichment layer.
-- Try a different phrasing or `--tf-provider <name>` with `vegastack ask --entry terraform` to force a different scope.
-- If the user is asking about a resource you know exists but `files[]` doesn't show it, file an issue with `vegastack ask --entry terraform --tf-provider <provider> --debug "<query>"` output attached.
+- Try `vegastack ask --agent --pack terraform --tf-provider <provider> --debug` — `timings` and raw `score` fields show whether the pipeline ran every stage.
+- Try `vegastack ask --agent --pack terraform --tf-provider <provider> --raw` — confirms the issue isn't in the enrichment layer.
+- Try a different phrasing or `--tf-provider <name>` with `vegastack ask --agent --pack terraform` to force a different scope.
+- If the user is asking about a resource you know exists but `files[]` doesn't show it, file an issue with `vegastack ask --agent --pack terraform --tf-provider <provider> --debug "<query>"` output attached.
 
 ### `manifest_entry.required_args` looks too short or too long
 
@@ -93,20 +93,20 @@ Same matching engine as knowledge cards plus a provider-overlap requirement: the
 `warnings: ["Registry pack older than expected; run vegastack registry update"]`
 
 **Fix:**
-- `vegastack registry update --force` or `vegastack init --yes`.
+- `vegastack registry update --force`, `vegastack registry install <pack> --force`, or `vegastack init --yes`.
 - If you can't update (airgap), the warning is informational — the installed Registry pack still works, it just may not have the latest knowledge cards.
 
 ### Performance regression
 
 If `vegastack ask` suddenly takes >1 s warm:
 
-- `vegastack ask --entry terraform --tf-provider <provider> --debug "<query>"` and check `timings.tier1_ms` / `timings.tier2_ms`. If search is slow, run `vegastack setup` or `vegastack update --yes --no-cli --no-registry` to install the managed ripgrep binary.
+- `vegastack ask --agent --pack terraform --tf-provider <provider> --debug "<query>"` and check `timings.tier1_ms` / `timings.tier2_ms`. If search is slow, run `vegastack setup` or `vegastack update --yes --no-cli --no-registry` to install the managed ripgrep binary.
 - If `enrich_ms` dominates, the Registry pack's per-provider MANIFESTs may be huge (post v0.4 multi-surface manifests); filter `--max 5`.
 - If `tier1_ms` dominates with no obvious reason, file an issue with the Registry pack version and the query.
 
 ## When to escalate
 
-- Registry pack install consistently fails on a clean machine: file an issue with `vegastack doctor --json` output and the install log.
+- Registry pack install consistently fails on a clean machine: file an issue with `vegastack doctor --agent` output and the install log.
 - A resource you know exists never appears in `files[]` for any reasonable query: file an issue with the resource name and three queries you tried.
 - A knowledge card fires when it shouldn't (false positive): file an issue with the card ID and the query.
 - The same query gives different `files[]` orderings on two consecutive runs: shouldn't happen — the harness is deterministic. File an issue with `--debug` output from both runs.

@@ -71,7 +71,7 @@ function renderYaml(mcpUrl: string): string {
   const transport = /\/sse(?:$|[?#])/.test(mcpUrl) ? "sse" : "streamable-http";
   return [
     "# Managed by @vegastack/cli — do not hand-edit.",
-    "# Re-run `vegastack skills install --agent continue` to regenerate.",
+    "# Re-run `vegastack skills install --host continue` to regenerate.",
     "name: vegastack",
     "version: 0.1.0",
     "schema: v1",

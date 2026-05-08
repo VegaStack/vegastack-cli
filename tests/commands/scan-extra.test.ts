@@ -107,7 +107,7 @@ describe("scan command entry points (smoke)", () => {
     });
   });
 
-  it("runScanDoctor --json reports tool availability without throwing", async () => {
+  it("runScanDoctor --agent reports tool availability without throwing", async () => {
     await withTmpDir(async (dir) => {
       // Seed a minimal scan config so scanToolsForConfig has something to enumerate.
       const cfgDir = path.join(dir, ".vegastack");

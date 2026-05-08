@@ -35,7 +35,7 @@ export async function runSkills(action: Action, opts: SkillsOptions): Promise<nu
     // message instead of two (the resolve-time err + a generic "no agents").
     throw new VegaStackError(
       "ValidationError",
-      `no valid agents to ${action}. Use --agent <name>, all, or a comma-separated list.`,
+      `no valid agents to ${action}. Use --host <name>, all, or a comma-separated list.`,
       { context: { agents: opts.agents, valid: ALL_RENDERER_NAMES } },
     );
   }

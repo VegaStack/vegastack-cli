@@ -46,7 +46,7 @@ prompt = """
 Use the bundled vegastack skill instructions for "{{args}}". Route the first
 word as a subcommand when it is one of init, ask, scan, search, doctor, update,
 preview, or tunnel. Use VegaStack CLI as the source of truth and prefer
-non-interactive flags such as --yes and --json after resolving user preferences.
+non-interactive flags such as --yes and --agent after resolving user preferences.
 """
 `;
 

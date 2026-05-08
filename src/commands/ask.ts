@@ -31,8 +31,8 @@ export async function runAsk(query: string, opts: AskOptions): Promise<number> {
       throw new VegaStackError(
         "ValidationError",
         opts.all
-          ? "no registry entries are installed in the local VegaStack Registry cache"
-          : "no registry entries are selected in .vegastack/vegastack.yml",
+          ? "no Registry packs are installed in the local VegaStack Registry cache"
+          : "no Registry packs are selected in .vegastack/vegastack.yml",
       );
     }
     assertRegistryEntriesInstalled(registryEntries);

@@ -253,7 +253,7 @@ describe("project harness detection", () => {
       fs.mkdirSync(path.join(dir, ".git"));
       fs.writeFileSync(
         path.join(dir, "README.md"),
-        'Example only: `vegastack search --entry kubernetes "kind: Deployment"`\n',
+        'Example only: `vegastack search --pack kubernetes "kind: Deployment"`\n',
       );
       fs.mkdirSync(path.join(dir, "exports"), { recursive: true });
       fs.writeFileSync(
@@ -290,7 +290,7 @@ describe("project harness init files", () => {
       expect(fs.existsSync(path.join(dir, ".vegastack", "vegastack-lock.json"))).toBe(false);
       expect(fs.existsSync(path.join(dir, ".vegastack", "instructions"))).toBe(false);
       expect(fs.readFileSync(path.join(sharedInstructionsDir(), "AGENTS.md"), "utf8")).toContain(
-        'vegastack ask "<user request>"',
+        'vegastack ask --agent "<user request>"',
       );
     });
   });

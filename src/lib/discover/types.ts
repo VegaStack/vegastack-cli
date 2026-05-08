@@ -47,13 +47,13 @@ export interface DiscoverAmbiguous {
   tokens: string[];
   candidate_providers: { provider: string; score: number }[];
   recipes: RecipeMatch[]; // recipes that span the candidate set still surface here
-  hint: string; // e.g. "Use --tf-provider <name> with `vegastack ask --entry terraform`."
+  hint: string; // e.g. "Use --tf-provider <name> with `vegastack ask --agent --pack terraform`."
 }
 
 export interface DiscoverError {
   query: string;
   error: string; // human-readable
-  code: string; // machine-readable: RegistryEntryMissing | ProviderUnknown | etc.
+  code: string; // agent-readable: RegistryEntryMissing | ProviderUnknown | etc.
 }
 
 // ─── files[] ────────────────────────────────────────────────────────────

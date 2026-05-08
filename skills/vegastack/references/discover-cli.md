@@ -1,13 +1,13 @@
-# `vegastack ask --entry terraform --tf-provider <provider>` CLI reference
+# `vegastack ask --agent --pack terraform --tf-provider <provider>` CLI reference
 
-This is the full reference for the Terraform-specific Registry engine. Load it when the user wants flag-level detail (e.g. `--max`, `--debug`, `--raw`), or when you need the exhaustive scoring stages and ambiguity-handling contract. For general cloudops / CI / Docker / Kubernetes / Jenkins / Supabase questions, prefer `vegastack ask`.
+This is the full reference for the Terraform-specific Registry engine. Load it when the user wants flag-level detail (e.g. `--max`, `--debug`, `--raw`), or when you need the exhaustive scoring stages and ambiguity-handling contract. For general cloudops / CI / Docker / Kubernetes / Jenkins / Supabase questions, prefer `vegastack ask --agent`.
 
-`vegastack ask --entry terraform --tf-provider <provider>` is the deterministic Terraform discovery harness shipped in `@vegastack/cli`. It resolves the installed Terraform Registry pack under `~/.vegastack/registry/terraform/`, auto-detects the provider, runs an 11-stage manifest scoring pass plus a parallel grep fallback, enriches each top-K hit with `manifest_entry` + `example_usage` inline, and emits a single JSON envelope on stdout.
+`vegastack ask --agent --pack terraform --tf-provider <provider>` is the deterministic Terraform discovery harness shipped in `@vegastack/cli`. It resolves the installed Terraform Registry pack under `~/.vegastack/registry/terraform/`, auto-detects the provider, runs an 11-stage manifest scoring pass plus a parallel grep fallback, enriches each top-K hit with `manifest_entry` + `example_usage` inline, and emits a single structured envelope on stdout.
 
 ## Synopsis
 
 ```
-vegastack ask --entry terraform --tf-provider <provider> "<query>" [--max <N>] [--raw] [--debug]
+vegastack ask --agent --pack terraform --tf-provider <provider> "<query>" [--max <N>] [--raw] [--debug]
 ```
 
 | Flag | Default | Notes |
@@ -66,11 +66,11 @@ Side-channel arrays (`knowledge`, `recipes`, `concept_aliases_used`) are always 
   "tokens": [...],
   "candidate_providers": [{"provider": "aws", "score": 0.6}, {"provider": "azure", "score": 0.55}],
   "recipes": [...],
-  "hint": "Use --tf-provider <name> with `vegastack ask --entry terraform` to disambiguate."
+  "hint": "Use --tf-provider <name> with `vegastack ask --agent --pack terraform` to disambiguate."
 }
 ```
 
-Two options: ask the user which provider they meant, or call `vegastack ask --entry terraform --tf-provider <name>` once per candidate.
+Two options: ask the user which provider they meant, or call `vegastack ask --agent --pack terraform --tf-provider <name>` once per candidate.
 
 ### Error response
 
@@ -78,16 +78,16 @@ Two options: ask the user which provider they meant, or call `vegastack ask --en
 {
   "status": "error",
   "query": "...",
-  "error": "Terraform Registry pack not installed; run `vegastack init`.",
+  "error": "Terraform Registry pack not installed; run `vegastack init` or `vegastack registry install terraform`.",
   "code": "RegistryEntryMissing"
 }
 ```
 
-`code` is machine-readable. The codes:
+`code` is agent-readable. The codes:
 
 | `code` | Meaning |
 |---|---|
-| `RegistryEntryMissing` | `~/.vegastack/registry/terraform/` doesn't exist or is empty. User should run `vegastack init` or `vegastack registry update terraform`. |
+| `RegistryEntryMissing` | `~/.vegastack/registry/terraform/` doesn't exist or is empty. User should run `vegastack init`, `vegastack registry install terraform`, or `vegastack registry update terraform`. |
 | `RegistryVersionMismatch` | Installed Registry metadata is not compatible with this CLI. Run `vegastack registry update --force`. |
 | `ProviderUnknown` | `--tf-provider <name>` was given but `<name>` isn't in the Terraform Registry pack root `MANIFEST.json.providers`. |
 | `ProviderUndetectable` | No provider could be detected and no `--tf-provider` was provided. Re-tokenize with the user. |
@@ -166,4 +166,4 @@ If `best − second_best < 0.2` the response is `status: "ambiguous"`. Otherwise
 
 ## When the harness or a manifest is missing
 
-If a per-provider `MANIFEST.json` is missing or unparseable, `vegastack ask --entry terraform --tf-provider <provider>` skips Tier 1 silently and runs Tier 2 only. The response includes `warnings: ["manifest unavailable for <provider>; using grep fallback"]`. Run `vegastack doctor --verify-registry` to diagnose.
+If a per-provider `MANIFEST.json` is missing or unparseable, `vegastack ask --agent --pack terraform --tf-provider <provider>` skips Tier 1 silently and runs Tier 2 only. The response includes `warnings: ["manifest unavailable for <provider>; using grep fallback"]`. Run `vegastack doctor --verify-registry --agent` to diagnose.

@@ -47,7 +47,7 @@ The implementation goes beyond a typical npm postinstall script. Every item belo
 
 ### Subprocess invocation
 
-- **No implicit Registry or managed-tool install in npm postinstall.** `npm/install.js` only performs best-effort global skill registration for detected agent hosts; Registry data is installed explicitly through `vegastack init` and refreshed with `vegastack registry update`.
+- **No implicit Registry or managed-tool install in npm postinstall.** `npm/install.js` only performs best-effort global skill registration for detected agent hosts; Registry data is installed explicitly through `vegastack init`, `vegastack registry install`, or `vegastack registry update`.
 - **Managed tool verification.** Managed binaries are downloaded from their official release channel, verified by SHA256 where the upstream publishes checksums, and stored under `~/.vegastack/tools/`. Extracted binaries are fingerprinted after install and rechecked before reuse.
 - **Argument arrays, not shell strings.** Search and scanner subprocesses are invoked without shell interpolation.
 - **Signal handlers.** Long-running install/update flows clean up tmp dirs before exiting.
@@ -56,7 +56,7 @@ The implementation goes beyond a typical npm postinstall script. Every item belo
 
 - **Discriminated `VegaStackError` type** with stable exit codes (1–12). Each variant has a `hint()` so users see _problem → cause → fix_.
 - **Typed user-facing errors.** Core command failures use `VegaStackError` variants with stable exit codes and hints; best-effort background refresh and postinstall paths are allowed to fail soft so they do not block the requested command.
-- **Postinstall does not download Registry data or managed tools.** Registry installation happens explicitly through `vegastack init`; full machine setup happens through `vegastack setup`.
+- **Postinstall does not download Registry data or managed tools.** Registry installation happens explicitly through `vegastack init` or `vegastack registry install`; first-run machine setup happens through bare `vegastack` or `vegastack setup`.
 
 ### Supply chain
 
@@ -85,7 +85,7 @@ We will acknowledge receipt within **2 business days** and aim to issue a fix or
 If you operate this CLI in a security-sensitive environment, consider:
 
 - **Verify Registry digests yourself** before relying on mirrored content. `ARTIFACTS.json` records every file path, byte size, and SHA256.
-- **Pin the npm version** (for example, `npm i -g @vegastack/cli@0.1.13-next.0` during prerelease testing) and consider `npm ci --ignore-scripts` to skip package lifecycle scripts; then run `vegastack init` inside each project under your own audit.
+- **Pin the npm version** (for example, `npm i -g @vegastack/cli@0.1.13-next.0` during prerelease testing) and consider `npm ci --ignore-scripts` to skip package lifecycle scripts; then run `vegastack` once globally and `vegastack init` inside each project under your own audit.
 - **Restrict the CLI's filesystem writes** by running `vegastack skills install` only inside project directories you control.
 - **Use `VEGASTACK_REGISTRY_DIR=/abs/path/to/cli/packs`** in air-gapped environments to point the CLI at a pre-synced local Registry tree.
 

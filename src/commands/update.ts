@@ -84,7 +84,7 @@ export async function runUpdate(opts: UpdateOpts): Promise<number> {
       log.json({ ok: true, registry, cli_updated: cliUpdated, tools, agents });
     } else {
       if (registry.updated.length > 0)
-        log.ok(`updated registry entries: ${registry.updated.join(", ")}`);
+        log.ok(`updated Registry packs: ${registry.updated.join(", ")}`);
       if (tools) log.ok("updated managed tools");
       if (!opts.cli) log.info("CLI self-update skipped because --no-cli is set");
     }
@@ -186,7 +186,7 @@ async function updateRegistry(opts: UpdateOpts): Promise<{ updated: string[] }> 
     await syncRegistryEntry(entry, opts.force ? { force: true } : {});
     updated.push(entry);
   }
-  if (updated.length === 0) log.info("no registry entries selected for update");
+  if (updated.length === 0) log.info("no Registry packs selected for update");
   return { updated };
 }
 
@@ -203,7 +203,7 @@ function runPostCliToolUpdate(opts: UpdateOpts): boolean {
   const args = ["update", "--no-cli", "--no-registry"];
   if (opts.force) args.push("--force");
   if (opts.yes) args.push("--yes");
-  if (opts.json) args.push("--json");
+  if (opts.json) args.push("--agent");
   log.step(`running post-upgrade managed tool reconciliation: vegastack ${args.join(" ")}`);
   const r = spawnCmdSync("vegastack", args, { stdio: "inherit" });
   if (r.error !== undefined || (r.status ?? 0) !== 0) {

@@ -2,7 +2,7 @@
 // vegastack — CLI entry point.
 
 import { Command, InvalidArgumentError } from "commander";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ALL_RENDERER_NAMES } from "./agents/index.js";
@@ -29,7 +29,6 @@ const dynamicImportSetup = () => import("./commands/setup.js");
 const dynamicImportUpdate = () => import("./commands/update.js");
 import { VegaStackError } from "./lib/errors.js";
 import { printError, setJsonMode, setQuiet } from "./lib/log.js";
-import { globalConfigPath } from "./lib/paths.js";
 import { autoRefreshProjectState } from "./lib/project-state.js";
 import { printUpdateNagIfStale } from "./lib/update-check.js";
 
@@ -46,28 +45,27 @@ function readVersion(): string {
   }
 }
 
-const VALID_AGENTS = `${ALL_RENDERER_NAMES.join(", ")}, all`;
+const VALID_AGENT_HOSTS = `${ALL_RENDERER_NAMES.join(", ")}, all`;
 
-if (process.argv.length <= 2 && !existsSync(globalConfigPath())) {
-  process.stderr.write(
-    "vegastack: global setup has not been completed. Run `vegastack setup` to configure tools and agent skills.\n\n",
-  );
-}
-
-/** Hook called by every command's preAction to apply --quiet / --json. */
+/** Hook called by every command's preAction to apply --quiet / --agent. */
 function applyGlobalFlags(cmd: Command): void {
-  const opts = cmd.optsWithGlobals<{ quiet?: boolean; json?: boolean }>();
+  const opts = cmd.optsWithGlobals<{ quiet?: boolean; agent?: boolean }>();
   if (opts.quiet) setQuiet(true);
-  if (opts.json) setJsonMode(true);
+  if (opts.agent) setJsonMode(true);
   // Cached, network-free nag — silent unless a newer version was discovered
   // by the last `vegastack doctor` / `vegastack update --check` (24h cache).
-  printUpdateNagIfStale(readVersion(), { quiet: Boolean(opts.quiet ?? opts.json) });
+  printUpdateNagIfStale(readVersion(), { quiet: Boolean(opts.quiet ?? opts.agent) });
 }
 
 function applyProjectCommandPrelude(cmd: Command): void {
   applyGlobalFlags(cmd);
-  const opts = cmd.optsWithGlobals<{ quiet?: boolean; json?: boolean }>();
-  autoRefreshProjectState(process.cwd(), { quiet: Boolean(opts.quiet ?? opts.json) });
+  const opts = cmd.optsWithGlobals<{ quiet?: boolean; agent?: boolean }>();
+  autoRefreshProjectState(process.cwd(), { quiet: Boolean(opts.quiet ?? opts.agent) });
+}
+
+function isAgentMode(cmd: Command, opts?: { agent?: boolean }): boolean {
+  if (opts?.agent === true) return true;
+  return Boolean(cmd.optsWithGlobals<{ agent?: boolean }>().agent);
 }
 
 function parseScope(value: string): "global" | "project" {
@@ -99,37 +97,42 @@ program
   )
   .version(readVersion(), "-V, --version", "print the CLI version and exit")
   .option("-q, --quiet", "suppress non-error output", false)
+  .option("--agent", "agent/script mode: structured output and no human prompts", false)
   .showHelpAfterError("(run `vegastack --help` for usage)")
   .addHelpText(
     "after",
     `
 Examples:
-  vegastack setup                                  configure global ~/.vegastack tools and skills
+  vegastack                                        first-run setup or local VegaStack status
+  vegastack setup                                  re-run global ~/.vegastack tools and skills setup
   vegastack init                                   initialize this repo's local agent harness
-  vegastack detect --json                          detect current repo stack without writing
-  vegastack refresh --dry-run --json               show shared config refresh changes
-  vegastack generate github-action vercel --json   return an agent workflow contract
-  vegastack ask "how should this repo deploy safely?" build grounded evidence from selected entries
+  vegastack --agent                                first-run/status as structured output
+  vegastack --agent detect                         detect current repo stack without writing
+  vegastack --agent refresh --dry-run              show shared config refresh changes
+  vegastack --agent generate github-action vercel  return an agent workflow contract
+  vegastack ask "how should this repo deploy safely?" build grounded evidence from selected packs
   vegastack ask --all "github actions oidc to aws" search every locally installed Registry pack
-  vegastack search --entry jenkins "withCredentials" exact source lookup in a Registry pack
+  vegastack ask --pack cloudflare "wrangler deploy" scoped lookup without project init
+  vegastack search --pack jenkins "withCredentials" exact source lookup in a Registry pack
   vegastack doctor                                 verify environment + registry + agent registration
   vegastack registry list                             show local Registry cache state
-  vegastack registry update                           update project-selected Registry entries
-  vegastack update                                    update CLI + registry + managed tools
+  vegastack registry update                           update project-selected Registry packs
+  vegastack registry install --all                     download every published Registry pack
+  vegastack update                                    update CLI + Registry + managed tools
   vegastack preview --tunnel                       start a local preview and temporary Cloudflare URL
   vegastack scan                                   run enabled security scans for this project
   vegastack scan secrets actions                   run selected scan categories
   vegastack scan --staged                          run the fast staged pre-commit scan
-  vegastack ask --entry terraform --tf-provider aws "create an S3 bucket with versioning"
+  vegastack ask --pack terraform --tf-provider aws "create an S3 bucket with versioning"
                                               Terraform-specific registry query
-  vegastack skills install --agent all             register the skill with every detected agent
-  vegastack skills reconcile                       install missing global skills for detected agents
-  vegastack skills install --agent cursor --scope project
+  vegastack skills install --host all              register the skill with every detected agent host
+  vegastack skills reconcile                       install missing global skills for detected agent hosts
+  vegastack skills install --host cursor --scope project
                                               drop a Cursor rule into the current project
-  vegastack skills uninstall --agent all           clean up everywhere
+  vegastack skills uninstall --host all            clean up everywhere
 
 Project-mode commands automatically cache current repo detection when .vegastack/vegastack.yml is present.
-Project-mode ask/search also include already-installed supplemental Registry entries when the repo changed.
+Project-mode ask/search also include already-installed supplemental Registry packs when the repo changed.
 
 Environment variables:
   VEGASTACK_CONFIG_DIR    Override the VegaStack config root (default: ~/.vegastack).
@@ -175,22 +178,40 @@ program
   .description("configure global VegaStack tools, cache, and detected agent skills")
   .option("-y, --yes", "accept recommended defaults", false)
   .option("--dry-run", "show setup plan without writing", false)
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--download-all-registry", "download every published Registry pack during setup", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyGlobalFlags)
-  .action(async (opts: { yes: boolean; dryRun: boolean; json: boolean }) => {
-    const { runSetup } = await dynamicImportSetup();
-    process.exit(await runSetup({ yes: opts.yes, dryRun: opts.dryRun, json: opts.json }));
-  });
+  .action(
+    async (
+      opts: {
+        yes: boolean;
+        dryRun: boolean;
+        downloadAllRegistry: boolean;
+        agent: boolean;
+      },
+      cmd: Command,
+    ) => {
+      const { runSetup } = await dynamicImportSetup();
+      process.exit(
+        await runSetup({
+          yes: opts.yes,
+          dryRun: opts.dryRun,
+          downloadAllRegistry: opts.downloadAllRegistry,
+          json: isAgentMode(cmd, opts),
+        }),
+      );
+    },
+  );
 
 // vegastack detect
 program
   .command("detect")
-  .description("detect current project stack and recommended Registry entries without writing")
-  .option("--json", "emit machine-readable JSON", false)
+  .description("detect current project stack and recommended Registry packs without writing")
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyGlobalFlags)
-  .action(async (opts: { json: boolean }) => {
+  .action(async (opts: { agent: boolean }, cmd: Command) => {
     const { runDetect } = await dynamicImportDetect();
-    process.exit(await runDetect({ json: opts.json }));
+    process.exit(await runDetect({ json: isAgentMode(cmd, opts) }));
   });
 
 // vegastack refresh
@@ -199,11 +220,13 @@ program
   .description("refresh .vegastack/vegastack.yml with current project detection")
   .option("-y, --yes", "write detected defaults without prompting", false)
   .option("--dry-run", "show refresh plan without writing", false)
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyGlobalFlags)
-  .action(async (opts: { yes: boolean; dryRun: boolean; json: boolean }) => {
+  .action(async (opts: { yes: boolean; dryRun: boolean; agent: boolean }, cmd: Command) => {
     const { runRefresh } = await dynamicImportRefresh();
-    process.exit(await runRefresh({ yes: opts.yes, dryRun: opts.dryRun, json: opts.json }));
+    process.exit(
+      await runRefresh({ yes: opts.yes, dryRun: opts.dryRun, json: isAgentMode(cmd, opts) }),
+    );
   });
 
 // vegastack generate
@@ -211,29 +234,29 @@ program
   .command("generate <intent...>")
   .description("return an agent workflow contract for creating ops files")
   .option("--dry-run", "alias for default read-only behavior", false)
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyProjectCommandPrelude)
-  .action(async (intent: string[], opts: { dryRun: boolean; json: boolean }) => {
+  .action(async (intent: string[], opts: { dryRun: boolean; agent: boolean }, cmd: Command) => {
     const { runGenerate } = await dynamicImportGenerate();
-    process.exit(await runGenerate(intent, { dryRun: opts.dryRun, json: opts.json }));
+    process.exit(await runGenerate(intent, { dryRun: opts.dryRun, json: isAgentMode(cmd, opts) }));
   });
 
 // vegastack ask <query>
 program
   .command("ask <query...>")
-  .description("build grounded evidence from project-selected registry entries")
+  .description("build grounded evidence from project-selected Registry packs")
   .option(
     "--all",
-    "search every locally installed Registry pack instead of project-selected entries",
+    "search every locally installed Registry pack instead of project-selected packs",
     false,
   )
   .option(
-    "--entry <names>",
+    "--pack <names>",
     "Registry pack override; repeat or comma-separate, e.g. terraform,supabase",
     collect,
     [],
   )
-  .option("--tf-provider <name>", "when --entry includes terraform, force a Terraform provider")
+  .option("--tf-provider <name>", "when --pack includes terraform, force a Terraform provider")
   .option("-m, --max <n>", "max results", parsePositiveInt, 10)
   .option("--raw", "skip pack-specific enrichment when supported", false)
   .option("--brief", "request a smaller pack-specific envelope when supported", false)
@@ -241,14 +264,14 @@ program
   .option("--no-install-tools", "do not auto-install managed search tools such as ripgrep")
   .option("--no-pretty", "emit minified JSON")
   .option("--debug", "include per-stage timings when supported", false)
-  .option("--json", "alias for default JSON output (kept for consistency)", false)
+  .option("--agent", "emit agent-readable structured output", false)
   .hook("preAction", applyProjectCommandPrelude)
   .action(
     async (
       queryWords: string[],
       opts: {
         all: boolean;
-        entry?: string[];
+        pack?: string[];
         max?: number;
         raw: boolean;
         brief: boolean;
@@ -257,6 +280,7 @@ program
         pretty: boolean;
         debug: boolean;
         tfProvider?: string;
+        agent: boolean;
       },
     ) => {
       const qOpts: {
@@ -279,7 +303,7 @@ program
         pretty: opts.pretty,
         debug: opts.debug,
       };
-      if (opts.entry !== undefined) qOpts.entries = opts.entry;
+      if (opts.pack !== undefined) qOpts.entries = opts.pack;
       if (opts.tfProvider !== undefined) qOpts.tfProvider = opts.tfProvider;
       if (opts.max !== undefined) qOpts.max = opts.max;
       const { runAsk } = await dynamicImportAsk();
@@ -290,14 +314,14 @@ program
 // vegastack search <query>
 program
   .command("search <query...>")
-  .description("exact source lookup across local VegaStack Registry entries")
+  .description("exact source lookup across local VegaStack Registry packs")
   .option(
     "--all",
-    "search every locally installed Registry pack instead of project-selected entries",
+    "search every locally installed Registry pack instead of project-selected packs",
     false,
   )
   .option(
-    "--entry <names>",
+    "--pack <names>",
     "Registry pack override; repeat or comma-separate, e.g. jenkins,docker",
     collect,
     [],
@@ -307,19 +331,20 @@ program
   .option("-i, --ignore-case", "case-insensitive search", false)
   .option("--no-install-tools", "do not auto-install managed search tools such as ripgrep")
   .option("--no-pretty", "emit minified JSON")
-  .option("--json", "alias for default JSON output (kept for consistency)", false)
+  .option("--agent", "emit agent-readable structured output", false)
   .hook("preAction", applyProjectCommandPrelude)
   .action(
     async (
       queryWords: string[],
       opts: {
         all: boolean;
-        entry?: string[];
+        pack?: string[];
         max?: number;
         regex: boolean;
         ignoreCase: boolean;
         installTools: boolean;
         pretty: boolean;
+        agent: boolean;
       },
     ) => {
       const searchOpts: {
@@ -337,7 +362,7 @@ program
         installTools: opts.installTools,
         pretty: opts.pretty,
       };
-      if (opts.entry !== undefined) searchOpts.entries = opts.entry;
+      if (opts.pack !== undefined) searchOpts.entries = opts.pack;
       if (opts.max !== undefined) searchOpts.max = opts.max;
       const { runSearch } = await dynamicImportSearch();
       process.exit(await runSearch(queryWords.join(" "), searchOpts));
@@ -350,31 +375,34 @@ program
   .description("initialize a project-local VegaStack harness in .vegastack/")
   .option("-y, --yes", "accept prompts and write detected defaults", false)
   .option("--dry-run", "show the init plan without writing files", false)
-  .option("--no-download", "do not download missing registry entries during init")
+  .option("--no-download", "do not download missing Registry packs during init")
   .option("--no-tunnels", "skip managed cloudflared install during init")
   .option("--scan", "enable VegaStack scan without prompting")
   .option("--no-scan", "skip VegaStack scan")
   .option("--scan-hook", "also install a local git pre-commit scan hook", false)
   .option("--no-skills", "skip automatic skill installation for detected agent hosts")
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyGlobalFlags)
   .action(
-    async (opts: {
-      yes: boolean;
-      dryRun: boolean;
-      json: boolean;
-      download: boolean;
-      scan?: boolean;
-      scanHook: boolean;
-      tunnels: boolean;
-      skills: boolean;
-    }) => {
+    async (
+      opts: {
+        yes: boolean;
+        dryRun: boolean;
+        download: boolean;
+        scan?: boolean;
+        scanHook: boolean;
+        tunnels: boolean;
+        skills: boolean;
+        agent: boolean;
+      },
+      cmd: Command,
+    ) => {
       const { runInit } = await dynamicImportInit();
       process.exit(
         await runInit({
           yes: opts.yes,
           dryRun: opts.dryRun,
-          json: opts.json,
+          json: isAgentMode(cmd, opts),
           noDownload: !opts.download,
           scan: opts.scan,
           scanHook: opts.scanHook,
@@ -407,7 +435,7 @@ program
   .option("--tunnel-name <name>", "named Cloudflare Tunnel to create/reuse", "vegastack-preview")
   .option("--timeout <seconds>", "seconds to wait for local/tunnel readiness", parsePositiveInt, 60)
   .option("-y, --yes", "accept notices in non-interactive contexts", false)
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .addHelpText(
     "after",
     `
@@ -420,19 +448,22 @@ Cloudflare notice:
   )
   .hook("preAction", applyProjectCommandPrelude)
   .action(
-    async (opts: {
-      command?: string;
-      url?: string;
-      port?: number;
-      tunnel: boolean;
-      hostname?: string;
-      tunnelName: string;
-      timeout: number;
-      yes: boolean;
-      json: boolean;
-      shell: boolean;
-      allowPrivateHost: boolean;
-    }) => {
+    async (
+      opts: {
+        command?: string;
+        url?: string;
+        port?: number;
+        tunnel: boolean;
+        hostname?: string;
+        tunnelName: string;
+        timeout: number;
+        yes: boolean;
+        agent: boolean;
+        shell: boolean;
+        allowPrivateHost: boolean;
+      },
+      cmd: Command,
+    ) => {
       const { runPreview } = await dynamicImportPreview();
       process.exit(
         await runPreview({
@@ -444,7 +475,7 @@ Cloudflare notice:
           tunnelName: opts.tunnelName,
           timeout: opts.timeout,
           yes: opts.yes,
-          json: opts.json,
+          json: isAgentMode(cmd, opts),
           shell: opts.shell,
           allowPrivateHost: opts.allowPrivateHost,
         }),
@@ -456,14 +487,14 @@ Cloudflare notice:
 program
   .command("doctor")
   .description("verify environment, registry, and agent registration")
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .option("--verify-registry", "validate installed registry manifests", false)
   .hook("preAction", applyGlobalFlags)
-  .action(async (opts: { json: boolean; verifyRegistry?: boolean }) => {
+  .action(async (opts: { agent: boolean; verifyRegistry?: boolean }, cmd: Command) => {
     const { runDoctor } = await dynamicImportDoctor();
     process.exit(
       await runDoctor({
-        json: opts.json,
+        json: isAgentMode(cmd, opts),
         verifyRegistry: Boolean(opts.verifyRegistry),
       }),
     );
@@ -475,26 +506,55 @@ const registryCmd = program.command("registry").description("manage the local Ve
 registryCmd
   .command("list")
   .description("list published Registry packs and local cache state")
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyGlobalFlags)
-  .action(async (opts: { json: boolean }) => {
+  .action(async (opts: { agent: boolean }, cmd: Command) => {
     const { runRegistryList } = await dynamicImportRegistry();
-    process.exit(await runRegistryList({ json: opts.json }));
+    process.exit(await runRegistryList({ json: isAgentMode(cmd, opts) }));
   });
 
 registryCmd
-  .command("update [entry]")
-  .description("update installed registry entries from the published Registry")
-  .option(
-    "--all",
-    "update every installed Registry pack instead of project-selected entries",
-    false,
-  )
+  .command("install [pack]")
+  .description("download Registry pack docs into the local cache")
+  .option("--all", "download every published Registry pack", false)
   .option("--force", "re-download even if the published manifest hash matches", false)
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
+  .hook("preAction", applyGlobalFlags)
+  .action(
+    async (
+      pack: string | undefined,
+      opts: { all: boolean; force: boolean; agent: boolean },
+      cmd: Command,
+    ) => {
+      const installOpts: {
+        entry?: string;
+        all: boolean;
+        force: boolean;
+        json: boolean;
+      } = {
+        all: opts.all,
+        force: opts.force,
+        json: isAgentMode(cmd, opts),
+      };
+      if (pack !== undefined) installOpts.entry = pack;
+      const { runRegistryInstall } = await dynamicImportRegistry();
+      process.exit(await runRegistryInstall(installOpts));
+    },
+  );
+
+registryCmd
+  .command("update [pack]")
+  .description("update installed Registry packs from the published Registry")
+  .option("--all", "update every installed Registry pack instead of project-selected packs", false)
+  .option("--force", "re-download even if the published manifest hash matches", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyProjectCommandPrelude)
   .action(
-    async (entry: string | undefined, opts: { all: boolean; force: boolean; json: boolean }) => {
+    async (
+      pack: string | undefined,
+      opts: { all: boolean; force: boolean; agent: boolean },
+      cmd: Command,
+    ) => {
       const updateOpts: {
         entry?: string;
         all: boolean;
@@ -503,9 +563,9 @@ registryCmd
       } = {
         all: opts.all,
         force: opts.force,
-        json: opts.json,
+        json: isAgentMode(cmd, opts),
       };
-      if (entry !== undefined) updateOpts.entry = entry;
+      if (pack !== undefined) updateOpts.entry = pack;
       const { runRegistryUpdate } = await dynamicImportRegistry();
       process.exit(await runRegistryUpdate(updateOpts));
     },
@@ -514,11 +574,11 @@ registryCmd
 registryCmd
   .command("status")
   .description("show local Registry cache state")
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyGlobalFlags)
-  .action(async (opts: { json: boolean }) => {
+  .action(async (opts: { agent: boolean }, cmd: Command) => {
     const { runRegistryStatus } = await dynamicImportRegistry();
-    process.exit(await runRegistryStatus({ json: opts.json }));
+    process.exit(await runRegistryStatus({ json: isAgentMode(cmd, opts) }));
   });
 
 // vegastack scan [categories...]
@@ -533,7 +593,7 @@ const scanCmd = program
   .option("--output <path>", "write JSON scan report to a file")
   .option("--offline", "use cached scanner databases and avoid online vulnerability lookups", false)
   .option("--no-install-tools", "fail instead of installing missing scanner tools")
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .addHelpText(
     "after",
     `
@@ -559,10 +619,11 @@ Disclosure:
         output?: string;
         offline: boolean;
         installTools: boolean;
-        json: boolean;
+        agent: boolean;
       },
+      cmd: Command,
     ) => {
-      const format = opts.json ? "json" : opts.format;
+      const format = isAgentMode(cmd, opts) ? "json" : opts.format;
       if (format !== "text" && format !== "json" && format !== "sarif") {
         throw new InvalidArgumentError(`expected text, json, or sarif, got '${format}'`);
       }
@@ -598,14 +659,14 @@ scanCmd
   .option("--no-install", "write project config without installing scanner tools")
   .option("--hook", "install a local git pre-commit hook", false)
   .option("--force", "overwrite existing generated hooks and reinstall scanner tools", false)
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyProjectCommandPrelude)
   .action(
     async (
-      opts: { install: boolean; hook: boolean; force: boolean; json: boolean },
+      opts: { install: boolean; hook: boolean; force: boolean; agent: boolean },
       cmd: Command,
     ) => {
-      const json = Boolean(opts.json || cmd.optsWithGlobals<{ json?: boolean }>().json);
+      const json = isAgentMode(cmd, opts);
       const { runScanEnable } = await dynamicImportScan();
       process.exit(
         await runScanEnable({
@@ -621,13 +682,13 @@ scanCmd
 scanCmd
   .command("doctor")
   .description("show scan setup status")
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyProjectCommandPrelude)
-  .action(async (opts: { json: boolean }, cmd: Command) => {
+  .action(async (opts: { agent: boolean }, cmd: Command) => {
     const { runScanDoctor } = await dynamicImportScan();
     process.exit(
       await runScanDoctor({
-        json: Boolean(opts.json || cmd.optsWithGlobals<{ json?: boolean }>().json),
+        json: isAgentMode(cmd, opts),
       }),
     );
   });
@@ -637,16 +698,16 @@ scanCmd
   .description("refresh scanner vulnerability databases")
   .option("--offline", "reserved for consistency; update-db needs network for fresh data", false)
   .option("--no-install-tools", "fail instead of installing missing scanner tools")
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyProjectCommandPrelude)
   .action(
-    async (opts: { offline: boolean; installTools: boolean; json: boolean }, cmd: Command) => {
+    async (opts: { offline: boolean; installTools: boolean; agent: boolean }, cmd: Command) => {
       const { runScanUpdateDb } = await dynamicImportScan();
       process.exit(
         await runScanUpdateDb({
           offline: opts.offline,
           installTools: opts.installTools,
-          json: Boolean(opts.json || cmd.optsWithGlobals<{ json?: boolean }>().json),
+          json: isAgentMode(cmd, opts),
         }),
       );
     },
@@ -676,31 +737,34 @@ scanHookCmd
 // vegastack update
 program
   .command("update")
-  .description("update the CLI, project registry entries, and managed tool dependencies")
+  .description("update the CLI, project Registry packs, and managed tool dependencies")
   .option("--check", "only check for a newer version; do not install", false)
   .option("--no-cli", "skip @vegastack/cli self-update")
   .option("--no-registry", "skip Registry pack update")
   .option("--no-tools", "skip managed tool update")
   .option(
     "--all-registry",
-    "update every installed Registry pack instead of project-selected entries",
+    "update every installed Registry pack instead of project-selected packs",
     false,
   )
   .option("--force", "force registry/tool reinstall where supported", false)
   .option("-y, --yes", "accept non-destructive update prompts such as skill registration", false)
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyProjectCommandPrelude)
   .action(
-    async (opts: {
-      check: boolean;
-      cli: boolean;
-      registry: boolean;
-      tools: boolean;
-      allRegistry: boolean;
-      force: boolean;
-      yes: boolean;
-      json: boolean;
-    }) => {
+    async (
+      opts: {
+        check: boolean;
+        cli: boolean;
+        registry: boolean;
+        tools: boolean;
+        allRegistry: boolean;
+        force: boolean;
+        yes: boolean;
+        agent: boolean;
+      },
+      cmd: Command,
+    ) => {
       const { runUpdate } = await dynamicImportUpdate();
       process.exit(
         await runUpdate({
@@ -712,7 +776,7 @@ program
           allRegistry: opts.allRegistry,
           force: opts.force,
           yes: opts.yes,
-          json: opts.json,
+          json: isAgentMode(cmd, opts),
         }),
       );
     },
@@ -721,48 +785,51 @@ program
 // vegastack skills install|uninstall|status
 const skillsCmd = program
   .command("skills")
-  .description("manage per-agent skill registration")
+  .description("manage per-agent-host skill registration")
   .addHelpText(
     "after",
     `
-Agents (--agent): ${VALID_AGENTS}
+Agent hosts (--host): ${VALID_AGENT_HOSTS}
 Scopes (--scope): global (~/.claude, ~/.agents, ~/.codex), project (cwd)
 
 Examples:
-  vegastack skills install --agent all
-  vegastack skills install --agent claude-code,codex
+  vegastack skills install --host all
+  vegastack skills install --host claude-code,codex
   vegastack skills reconcile
-  vegastack skills install --agent cursor --scope project
-  vegastack skills status --agent all --json
-  vegastack skills uninstall --agent gemini --scope project
+  vegastack skills install --host cursor --scope project
+  vegastack --agent skills status --host all
+  vegastack skills uninstall --host gemini --scope project
 `,
   );
 
 skillsCmd
   .command("install")
-  .description(`install skill for one or more agents (valid: ${VALID_AGENTS})`)
-  .option("-a, --agent <list>", "agent(s) to install (default: all)", collect, [])
+  .description(`install skill for one or more agent hosts (valid: ${VALID_AGENT_HOSTS})`)
+  .option("--host <list>", "agent host(s) to install (default: all)", collect, [])
   .option("-s, --scope <scope>", "global | project", parseScope, "global")
   .option("--force", "overwrite existing files / symlinks", false)
   .option("--dry-run", "print what would be done without writing", false)
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyGlobalFlags)
   .action(
-    async (opts: {
-      agent: string[];
-      scope: "global" | "project";
-      force: boolean;
-      dryRun: boolean;
-      json: boolean;
-    }) => {
+    async (
+      opts: {
+        host: string[];
+        scope: "global" | "project";
+        force: boolean;
+        dryRun: boolean;
+        agent: boolean;
+      },
+      cmd: Command,
+    ) => {
       const { runSkills } = await dynamicImportSkills();
       process.exit(
         await runSkills("install", {
-          agents: opts.agent,
+          agents: opts.host,
           scope: opts.scope,
           force: opts.force,
           dryRun: opts.dryRun,
-          json: opts.json,
+          json: isAgentMode(cmd, opts),
         }),
       );
     },
@@ -770,27 +837,30 @@ skillsCmd
 
 skillsCmd
   .command("uninstall")
-  .description(`uninstall skill from one or more agents (valid: ${VALID_AGENTS})`)
-  .option("-a, --agent <list>", "agent(s) to uninstall (default: all)", collect, [])
+  .description(`uninstall skill from one or more agent hosts (valid: ${VALID_AGENT_HOSTS})`)
+  .option("--host <list>", "agent host(s) to uninstall (default: all)", collect, [])
   .option("-s, --scope <scope>", "global | project", parseScope, "global")
   .option("--dry-run", "print what would be done without writing", false)
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyGlobalFlags)
   .action(
-    async (opts: {
-      agent: string[];
-      scope: "global" | "project";
-      dryRun: boolean;
-      json: boolean;
-    }) => {
+    async (
+      opts: {
+        host: string[];
+        scope: "global" | "project";
+        dryRun: boolean;
+        agent: boolean;
+      },
+      cmd: Command,
+    ) => {
       const { runSkills } = await dynamicImportSkills();
       process.exit(
         await runSkills("uninstall", {
-          agents: opts.agent,
+          agents: opts.host,
           scope: opts.scope,
           force: false,
           dryRun: opts.dryRun,
-          json: opts.json,
+          json: isAgentMode(cmd, opts),
         }),
       );
     },
@@ -798,23 +868,25 @@ skillsCmd
 
 skillsCmd
   .command("status")
-  .description(`show skill registration status across agents (valid: ${VALID_AGENTS})`)
-  .option("-a, --agent <list>", "agent(s) to check (default: all)", collect, [])
+  .description(`show skill registration status across agent hosts (valid: ${VALID_AGENT_HOSTS})`)
+  .option("--host <list>", "agent host(s) to check (default: all)", collect, [])
   .option("-s, --scope <scope>", "global | project", parseScope, "global")
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyGlobalFlags)
-  .action(async (opts: { agent: string[]; scope: "global" | "project"; json: boolean }) => {
-    const { runSkills } = await dynamicImportSkills();
-    process.exit(
-      await runSkills("status", {
-        agents: opts.agent,
-        scope: opts.scope,
-        force: false,
-        dryRun: false,
-        json: opts.json,
-      }),
-    );
-  });
+  .action(
+    async (opts: { host: string[]; scope: "global" | "project"; agent: boolean }, cmd: Command) => {
+      const { runSkills } = await dynamicImportSkills();
+      process.exit(
+        await runSkills("status", {
+          agents: opts.host,
+          scope: opts.scope,
+          force: false,
+          dryRun: false,
+          json: isAgentMode(cmd, opts),
+        }),
+      );
+    },
+  );
 
 skillsCmd
   .command("reconcile")
@@ -822,22 +894,25 @@ skillsCmd
   .option("-s, --scope <scope>", "global | project", parseScope, "global")
   .option("--force", "overwrite existing files / symlinks", false)
   .option("--dry-run", "print what would be done without writing", false)
-  .option("--json", "emit machine-readable JSON", false)
+  .option("--agent", "emit agent-readable structured output and avoid prompts", false)
   .hook("preAction", applyGlobalFlags)
   .action(
-    async (opts: {
-      scope: "global" | "project";
-      force: boolean;
-      dryRun: boolean;
-      json: boolean;
-    }) => {
+    async (
+      opts: {
+        scope: "global" | "project";
+        force: boolean;
+        dryRun: boolean;
+        agent: boolean;
+      },
+      cmd: Command,
+    ) => {
       const { runSkillsReconcile } = await dynamicImportSkills();
       process.exit(
         await runSkillsReconcile({
           scope: opts.scope,
           force: opts.force,
           dryRun: opts.dryRun,
-          json: opts.json,
+          json: isAgentMode(cmd, opts),
         }),
       );
     },
@@ -845,6 +920,13 @@ skillsCmd
 
 function collect(value: string, prev: string[]): string[] {
   return [...prev, value];
+}
+
+if (process.argv.length === 2 || (process.argv.length === 3 && process.argv[2] === "--agent")) {
+  const agent = process.argv[2] === "--agent";
+  if (agent) setJsonMode(true);
+  const { runDefaultCommand } = await dynamicImportSetup();
+  process.exit(await runDefaultCommand({ json: agent }));
 }
 
 // Top-level error handler: any uncaught throw in a command becomes a VegaStackError → printError.

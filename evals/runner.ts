@@ -155,7 +155,7 @@ function printHelp(): void {
 // ─── per-prompt scoring ────────────────────────────────────────────────
 
 interface ScoringContext {
-  knowledge: KnowledgeCard[]; // populated by `vegastack ask --entry terraform --tf-provider <provider>` envelope when available; empty for baseline
+  knowledge: KnowledgeCard[]; // populated by `vegastack ask --pack terraform --tf-provider <provider>` envelope when available; empty for baseline
   recipes: RecipeMatch[];
   manifestByResource: Map<string, ManifestResourceEntry>;
 }

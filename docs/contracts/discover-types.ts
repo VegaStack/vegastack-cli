@@ -1,6 +1,6 @@
 // Canonical TypeScript contract for the v0.1 discover envelope.
 // This file is the source of truth for the response shape produced by
-// `vegastack ask --entry terraform --tf-provider <provider>` and consumed by
+// `vegastack ask --pack terraform --tf-provider <provider>` and consumed by
 // the shipped skill, eval runner, MCP server, and dashboard.
 // Update this file only when all consumers are updated in the same PR.
 
@@ -51,7 +51,7 @@ export interface DiscoverAmbiguous {
 export interface DiscoverError {
   query: string;
   error: string;                       // human-readable
-  code: string;                        // machine-readable: RegistryEntryMissing | ProviderUnknown | etc.
+  code: string;                        // agent-readable: RegistryEntryMissing | ProviderUnknown | etc.
 }
 
 // ─── files[] ────────────────────────────────────────────────────────────

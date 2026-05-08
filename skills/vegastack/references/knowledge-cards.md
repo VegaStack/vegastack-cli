@@ -53,7 +53,7 @@ examples that eval prompts may reference.
 | `vault-kv-v2-mount` | KV v2 needs `data/` in the API path, not the resource path; common 404 source. Triggers: `{tokens: [vault_kv,v2]}`. |
 | `mongodb-atlas-cluster-vs-advanced` | `mongodbatlas_cluster` is deprecated; use `mongodbatlas_advanced_cluster`. Triggers: `{tokens: [mongodbatlas_cluster]}`. |
 
-The Registry sync owns the bodies and `authoritative_source` URLs for each card. The CLI reads `index/knowledge.json` from installed Registry entries and matches trigger-like evidence against query tokens.
+The Registry sync owns the bodies and `authoritative_source` URLs for each card. The CLI reads `index/knowledge.json` from installed Registry packs and matches trigger-like evidence against query tokens.
 
 ## How knowledge cards land in the response
 

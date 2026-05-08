@@ -57,7 +57,7 @@ export async function runInit(opts: InitOptions): Promise<number> {
     if (opts.json && !opts.yes && !opts.dryRun) {
       throw new VegaStackError(
         "ValidationError",
-        "`vegastack init --json` requires --yes or --dry-run",
+        "`vegastack init --agent` requires --yes or --dry-run",
         { context: { command: "init", json: true } },
       );
     }
@@ -128,7 +128,7 @@ export async function runInit(opts: InitOptions): Promise<number> {
         log.json({
           dry_run: true,
           plan,
-          installed_registry_entries: [...installed].sort(),
+          installed_registry_packs: [...installed].sort(),
           scan: {
             enabled: enableScan,
             detected_checks: scanDetection.checks,
@@ -195,7 +195,7 @@ export async function runInit(opts: InitOptions): Promise<number> {
     const result = {
       ok: true,
       project_config: path.join(cwd, ".vegastack", "vegastack.yml"),
-      selected_registry_entries: plan.selected.map((p) => p.name),
+      selected_registry_packs: plan.selected.map((p) => p.name),
       registry_cache_root: plan.registryCacheRoot,
       shared_instructions: {
         directory: sharedInstructionsDir(),
@@ -314,7 +314,7 @@ function printPlan(
   }
   const planned = PACKS.filter((p) => p.status === "planned").map((p) => p.name);
   if (planned.length > 0) {
-    process.stderr.write("\nPlanned registry entries not installable yet:\n");
+    process.stderr.write("\nPlanned Registry packs not installable yet:\n");
     process.stderr.write(`  ${planned.join(", ")}\n`);
   }
   process.stderr.write("\n");

@@ -59,6 +59,14 @@ describe("vegastack CLI help / version", () => {
     expect(r.stdout).not.toMatch(/\n {2}install \[options\]/);
   });
 
+  it("bare `vegastack` prints first-run guidance without mutating in non-interactive mode", () => {
+    const env = isolatedEnv();
+    const r = spawnSync("node", [CLI], { encoding: "utf8", env });
+    expect(r.status).toBe(0);
+    expect(`${r.stdout}${r.stderr}`).toContain("vegastack setup --yes");
+    expect(fs.existsSync(path.join(env.HOME ?? "", ".vegastack", "config.json"))).toBe(false);
+  });
+
   it("`vegastack --help` documents env vars and exit codes", () => {
     const r = spawnSync("node", [CLI, "--help"], { encoding: "utf8" });
     expect(r.stdout).toContain("VEGASTACK_REGISTRY_DIR");
@@ -112,9 +120,9 @@ describe("vegastack CLI help / version", () => {
   it("`vegastack registry --help` lists registry actions", () => {
     const r = spawnSync("node", [CLI, "registry", "--help"], { encoding: "utf8" });
     expect(r.stdout).toContain("list");
+    expect(r.stdout).toContain("install");
     expect(r.stdout).toContain("update");
     expect(r.stdout).toContain("status");
-    expect(r.stdout).not.toMatch(/\n\s+install\b/);
   });
 
   it("`vegastack skills --help` lists all actions", () => {
@@ -135,8 +143,8 @@ describe("vegastack CLI help / version", () => {
     expect(r.stdout).toContain("zizmorcore/zizmor");
   });
 
-  it("`vegastack doctor --json` includes top-level ok even on failing checks", () => {
-    const r = spawnSync("node", [CLI, "doctor", "--json"], {
+  it("`vegastack doctor --agent` includes top-level ok even on failing checks", () => {
+    const r = spawnSync("node", [CLI, "doctor", "--agent"], {
       encoding: "utf8",
       env: isolatedEnv(),
     });
@@ -146,7 +154,89 @@ describe("vegastack CLI help / version", () => {
     expect(Array.isArray(parsed.checks)).toBe(true);
   });
 
-  it("`vegastack ask --entry` can be repeated for cross-pack queries", () => {
+  it("accepts agent mode before the subcommand", () => {
+    const r = spawnSync("node", [CLI, "--agent", "doctor"], {
+      encoding: "utf8",
+      env: isolatedEnv(),
+    });
+    expect(r.status).not.toBe(0);
+    const parsed = JSON.parse(r.stdout) as { ok?: boolean; checks?: unknown[] };
+    expect(parsed.ok).toBe(false);
+    expect(Array.isArray(parsed.checks)).toBe(true);
+  });
+
+  it("rejects removed public flags", () => {
+    const removedJsonFlag = `--${"json"}`;
+    const removedEntryFlag = `--${"entry"}`;
+    const removedSkillsAgentFlag = `--${"agent"}`;
+    for (const args of [
+      ["doctor", removedJsonFlag],
+      ["ask", removedEntryFlag, "cloudflare", "wrangler deploy"],
+      ["skills", "status", removedSkillsAgentFlag, "all"],
+    ]) {
+      const r = spawnSync("node", [CLI, ...args], { encoding: "utf8", env: isolatedEnv() });
+      expect(r.status).not.toBe(0);
+      expect(`${r.stdout}${r.stderr}`).toMatch(/unknown option|too many arguments/i);
+    }
+  });
+
+  it("public help does not expose removed --json or --entry flags", () => {
+    const helpTargets = [
+      [],
+      ["ask"],
+      ["search"],
+      ["doctor"],
+      ["registry", "list"],
+      ["registry", "install"],
+      ["registry", "update"],
+      ["registry", "status"],
+      ["skills", "install"],
+      ["skills", "uninstall"],
+      ["skills", "status"],
+      ["skills", "reconcile"],
+    ];
+    for (const target of helpTargets) {
+      const r = spawnSync("node", [CLI, ...target, "--help"], { encoding: "utf8" });
+      expect(r.status, `${target.join(" ") || "root"} --help`).toBe(0);
+      expect(r.stdout, `${target.join(" ") || "root"} --help`).not.toContain("--json");
+      expect(r.stdout, `${target.join(" ") || "root"} --help`).not.toContain("--entry");
+    }
+  });
+
+  it("skills uses --host for host selection and --agent only for Agent Mode", () => {
+    const help = spawnSync("node", [CLI, "skills", "status", "--help"], { encoding: "utf8" });
+    expect(help.status).toBe(0);
+    expect(help.stdout).toContain("--host <list>");
+    expect(help.stdout).toContain("--agent");
+    expect(help.stdout).not.toContain("--agent <");
+
+    const ok = spawnSync("node", [CLI, "skills", "status", "--host", "codex", "--agent"], {
+      encoding: "utf8",
+      env: isolatedEnv(),
+    });
+    expect(ok.status).toBe(0);
+    expect(() => JSON.parse(ok.stdout) as unknown).not.toThrow();
+
+    const oldHostSelector = spawnSync("node", [CLI, "skills", "status", "--agent", "codex"], {
+      encoding: "utf8",
+      env: isolatedEnv(),
+    });
+    expect(oldHostSelector.status).not.toBe(0);
+    expect(`${oldHostSelector.stdout}${oldHostSelector.stderr}`).toMatch(/too many arguments/i);
+  });
+
+  it("`vegastack registry list --agent` emits Registry pack terminology", () => {
+    const r = spawnSync("node", [CLI, "registry", "list", "--agent"], {
+      encoding: "utf8",
+      env: isolatedEnv(),
+    });
+    expect(r.status).not.toBe(1);
+    const parsed = JSON.parse(r.stdout) as { registry_packs?: unknown; registry?: unknown };
+    expect(Array.isArray(parsed.registry_packs)).toBe(true);
+    expect(parsed.registry).toBeUndefined();
+  });
+
+  it("`vegastack ask --pack` can be repeated for cross-pack queries", () => {
     const registryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-registry-"));
     writeMiniPack(registryRoot, "cloudflare", "docs/worker.md", "Cloudflare Worker", [
       "worker",
@@ -162,9 +252,9 @@ describe("vegastack CLI help / version", () => {
       [
         CLI,
         "ask",
-        "--entry",
+        "--pack",
         "cloudflare",
-        "--entry",
+        "--pack",
         "github-actions",
         "--no-install-tools",
         "deploy worker workflow",
@@ -180,11 +270,11 @@ describe("vegastack CLI help / version", () => {
     );
     expect(r.status).toBe(0);
     const parsed = JSON.parse(r.stdout) as {
-      registry_entries: string[];
-      results: { registry_entry: string }[];
+      registry_packs: string[];
+      results: { registry_pack: string }[];
     };
-    expect(parsed.registry_entries).toEqual(["cloudflare", "github-actions"]);
-    expect(new Set(parsed.results.map((result) => result.registry_entry))).toEqual(
+    expect(parsed.registry_packs).toEqual(["cloudflare", "github-actions"]);
+    expect(new Set(parsed.results.map((result) => result.registry_pack))).toEqual(
       new Set(["cloudflare", "github-actions"]),
     );
   });
@@ -207,10 +297,10 @@ describe("vegastack CLI help / version", () => {
     expect(`${r.stdout}${r.stderr}`).toMatch(/unknown command/i);
   });
 
-  it("`vegastack init --dry-run --json` emits parseable JSON without prompts", () => {
+  it("`vegastack init --dry-run --agent` emits parseable JSON without prompts", () => {
     const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-init-"));
     fs.writeFileSync(path.join(cwd, "Dockerfile"), "FROM alpine\n");
-    const r = spawnSync("node", [CLI, "init", "--dry-run", "--json"], {
+    const r = spawnSync("node", [CLI, "init", "--dry-run", "--agent"], {
       cwd,
       encoding: "utf8",
       env: isolatedEnv(),
@@ -274,9 +364,9 @@ describe("vegastack CLI help / version", () => {
     expect(noScanRun.stderr).toContain("Security scanning will be skipped.");
   });
 
-  it("`vegastack init --json` requires --yes instead of prompting on stdout", () => {
+  it("`vegastack init --agent` requires --yes instead of prompting on stdout", () => {
     const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-init-"));
-    const r = spawnSync("node", [CLI, "init", "--json"], {
+    const r = spawnSync("node", [CLI, "init", "--agent"], {
       cwd,
       encoding: "utf8",
       env: isolatedEnv(),
@@ -288,14 +378,14 @@ describe("vegastack CLI help / version", () => {
     expect(body.message).toMatch(/requires --yes or --dry-run/);
   });
 
-  it("`vegastack detect --json` reports package manager and recommended entries", () => {
+  it("`vegastack detect --agent` reports package manager and recommended packs", () => {
     const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-detect-"));
     fs.writeFileSync(
       path.join(cwd, "package.json"),
       JSON.stringify({ packageManager: "yarn@4.5.1", scripts: { build: "next build" } }),
     );
     fs.writeFileSync(path.join(cwd, "yarn.lock"), "");
-    const r = spawnSync("node", [CLI, "detect", "--json"], {
+    const r = spawnSync("node", [CLI, "detect", "--agent"], {
       cwd,
       encoding: "utf8",
       env: isolatedEnv(),
@@ -309,13 +399,13 @@ describe("vegastack CLI help / version", () => {
     expect(body.registry?.recommended_entries).toContain("docker");
   });
 
-  it("`vegastack generate --json` returns an agent contract without writing files", () => {
+  it("`vegastack generate --agent` returns an agent contract without writing files", () => {
     const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "vegastack-generate-"));
     fs.writeFileSync(
       path.join(cwd, "package.json"),
       JSON.stringify({ packageManager: "npm@10.0.0" }),
     );
-    const r = spawnSync("node", [CLI, "generate", "github-action", "vercel", "--json"], {
+    const r = spawnSync("node", [CLI, "generate", "github-action", "vercel", "--agent"], {
       cwd,
       encoding: "utf8",
       env: isolatedEnv(),

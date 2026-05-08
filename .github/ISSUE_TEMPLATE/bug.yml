@@ -6,14 +6,14 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for filing a bug! Please run `vegastack doctor --json` and paste the output below — it captures
+        Thanks for filing a bug! Please run `vegastack doctor --agent` and paste the output below — it captures
         most of the env detail we'd otherwise have to ask for.
   - type: textarea
     id: doctor
     attributes:
-      label: Output of `vegastack doctor --json`
+      label: Output of `vegastack doctor --agent`
       description: |
-        Run `vegastack doctor --json` and paste the entire output. If `vegastack` isn't on PATH or doctor crashes,
+        Run `vegastack doctor --agent` and paste the entire output. If `vegastack` isn't on PATH or doctor crashes,
         paste the error here and proceed without the doctor block.
       render: json
     validations:
@@ -40,7 +40,7 @@ body:
         and any relevant environment variables (`VEGASTACK_REGISTRY_DIR`, etc.).
       placeholder: |
         1. `npm i -g @vegastack/cli`
-        2. `vegastack skills install --agent cursor --scope project`
+        2. `vegastack skills install --host cursor --scope project`
         3. ...
     validations:
       required: true

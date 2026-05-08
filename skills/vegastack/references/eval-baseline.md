@@ -78,5 +78,5 @@ Re-running with the same `registry_version` + `cli_version` + `runner_seed` shou
 ## When to read this file
 
 - Before reporting "lift went down" — check whether the Registry pack/CLI/model versions match.
-- When debugging a flaky prompt — `vegastack ask --entry terraform --tf-provider <provider> --debug "<prompt>"` shows you what `files[]` the harness returned, which tells you whether the failure is content (knowledge card missing) or harness (scoring miss).
-- Run `vegastack ask --entry terraform --tf-provider <provider> --debug` when an eval fails unexpectedly.
+- When debugging a flaky prompt — `vegastack ask --agent --pack terraform --tf-provider <provider> --debug "<prompt>"` shows you what `files[]` the harness returned, which tells you whether the failure is content (knowledge card missing) or harness (scoring miss).
+- Run `vegastack ask --agent --pack terraform --tf-provider <provider> --debug` when an eval fails unexpectedly.

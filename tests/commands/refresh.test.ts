@@ -8,7 +8,7 @@ import { runRefresh } from "../../src/commands/refresh.js";
 import { withTmpDir } from "../setup.js";
 
 describe("vegastack refresh (smoke)", () => {
-  it("runs --dry-run --json without crashing", async () => {
+  it("runs --dry-run --agent without crashing", async () => {
     await withTmpDir(async (dir) => {
       // Seed a minimal project so detection has something to compare against.
       fs.mkdirSync(path.join(dir, ".vegastack"), { recursive: true });

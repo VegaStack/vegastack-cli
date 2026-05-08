@@ -16,11 +16,11 @@ alwaysApply: false
 
 # vegastack (Cursor rule)
 
-This rule mirrors the SKILL.md shipped at `<plugin-root>/skills/vegastack/SKILL.md`. After installing `@vegastack/cli`, run `vegastack skills install --agent cursor` to drop this `.mdc` into `<project>/.cursor/rules/`.
+This rule mirrors the SKILL.md shipped at `<plugin-root>/skills/vegastack/SKILL.md`. After installing `@vegastack/cli`, run `vegastack skills install --host cursor` to drop this `.mdc` into `<project>/.cursor/rules/`.
 
 ## How to use
 
-1. Run `vegastack ask "<user request>"` (one call; the harness uses the project's selected Registry entries). Output is one JSON envelope with grounded citations.
+1. Run `vegastack ask --agent "<user request>"` (one call; the harness uses the project's selected Registry packs). Output is one structured evidence envelope with grounded citations.
 2. Read `knowledge[]` first — those cards override stale training memory when `overrides_training: true`.
 3. The top-K `files[]` arrive **enriched** with `manifest_entry` (top-level args, `blocks: {}`, `import_syntax`, `deprecated`, `recommended_companions`) and the inline `example_usage` block. No follow-up `jq` or `grep` needed for ~95% of tasks.
 4. Cite `citations[]` (file paths + knowledge-card IDs + recipe IDs) in your reply.
@@ -30,8 +30,8 @@ This rule mirrors the SKILL.md shipped at `<plugin-root>/skills/vegastack/SKILL.
 - Never invent resource names or arguments. The manifest is the source of truth.
 - Never fabricate import IDs. Use `manifest_entry.import_syntax.command` verbatim.
 - Respect `deprecated: true` — tell the user before generating code.
-- Use `vegastack search --entry <entry> "<literal query>"` when you need exact source lines.
-- Never write to `~/.config/vegastack/registry/` from a tool call — the Registry cache is managed by `vegastack init` and `vegastack registry update`.
+- Use `vegastack search --agent --pack <pack> "<literal query>"` when you need exact source lines.
+- Never write to `~/.vegastack/registry/` from a tool call — the Registry cache is managed by `vegastack init` and `vegastack registry update`.
 
 ## Full reference
 

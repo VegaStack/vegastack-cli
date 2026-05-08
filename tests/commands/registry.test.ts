@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const registryMocks = vi.hoisted(() => ({
+  allPublishedRegistryEntryNames: vi.fn(),
   allInstalledRegistryEntryNames: vi.fn(),
   ensureProjectInitialized: vi.fn(),
   listPublishedRegistryEntryStatuses: vi.fn(),
@@ -29,7 +30,7 @@ describe("registry command", () => {
     registryMocks.syncRegistryEntry.mockResolvedValue(undefined);
   });
 
-  it("lists published registry entries as JSON", async () => {
+  it("lists published Registry packs as JSON", async () => {
     registryMocks.listPublishedRegistryEntryStatuses.mockResolvedValue([
       { name: "docker", installed: true, selected: true, title: "Docker", shape: "registry-entry" },
     ]);
@@ -37,7 +38,7 @@ describe("registry command", () => {
 
     await expect(runRegistryList({ json: true })).resolves.toBe(0);
     expect(logMocks.json).toHaveBeenCalledWith({
-      registry: [
+      registry_packs: [
         {
           name: "docker",
           installed: true,
@@ -49,7 +50,7 @@ describe("registry command", () => {
     });
   });
 
-  it("updates an explicit validated entry", async () => {
+  it("updates an explicit validated Registry pack", async () => {
     const { runRegistryUpdate } = await import("../../src/commands/registry.js");
 
     await expect(
@@ -59,7 +60,25 @@ describe("registry command", () => {
     expect(logMocks.json).toHaveBeenCalledWith({ ok: true, updated: ["github-actions"] });
   });
 
-  it("updates selected project entries in sorted order by default", async () => {
+  it("installs all published Registry packs without requiring project initialization", async () => {
+    registryMocks.allPublishedRegistryEntryNames.mockResolvedValue(["terraform", "docker"]);
+    const { runRegistryInstall } = await import("../../src/commands/registry.js");
+
+    await expect(runRegistryInstall({ all: true, json: true })).resolves.toBe(0);
+    expect(registryMocks.ensureProjectInitialized).not.toHaveBeenCalled();
+    expect(syncedEntries()).toEqual(["docker", "terraform"]);
+    expect(logMocks.json).toHaveBeenCalledWith({ ok: true, installed: ["docker", "terraform"] });
+  });
+
+  it("requires a pack name or --all for registry install", async () => {
+    const { runRegistryInstall } = await import("../../src/commands/registry.js");
+
+    await expect(runRegistryInstall({ json: true })).resolves.toBe(1);
+    expect(registryMocks.syncRegistryEntry).not.toHaveBeenCalled();
+    expect(logMocks.printError).toHaveBeenCalled();
+  });
+
+  it("updates selected project packs in sorted order by default", async () => {
     registryMocks.readProjectRegistryEntryNames.mockReturnValue(["terraform", "docker"]);
     const { runRegistryUpdate } = await import("../../src/commands/registry.js");
 
@@ -68,7 +87,7 @@ describe("registry command", () => {
     expect(syncedEntries()).toEqual(["docker", "terraform"]);
   });
 
-  it("updates all installed entries without requiring project initialization", async () => {
+  it("updates all installed packs without requiring project initialization", async () => {
     registryMocks.allInstalledRegistryEntryNames.mockReturnValue(["terraform", "aws"]);
     const { runRegistryUpdate } = await import("../../src/commands/registry.js");
 
@@ -77,11 +96,11 @@ describe("registry command", () => {
     expect(syncedEntries()).toEqual(["aws", "terraform"]);
   });
 
-  it("rejects traversal-shaped registry entry names at the command boundary", async () => {
+  it("rejects traversal-shaped Registry pack names at the command boundary", async () => {
     const { validateRegistryEntryName, runRegistryUpdate } =
       await import("../../src/commands/registry.js");
 
-    expect(() => validateRegistryEntryName("../terraform")).toThrow(/valid registry entry name/);
+    expect(() => validateRegistryEntryName("../terraform")).toThrow(/valid Registry pack name/);
     await expect(runRegistryUpdate({ entry: "../terraform" })).resolves.toBe(1);
     expect(registryMocks.syncRegistryEntry).not.toHaveBeenCalled();
     expect(logMocks.printError).toHaveBeenCalled();

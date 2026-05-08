@@ -3,7 +3,7 @@
 // VegaStackError; the top-level handler in cli.ts catches it and renders.
 //
 // Why discriminated union over class hierarchy:
-//   - `kind` is serializable for `--json` mode and tests.
+//   - `kind` is serializable for `--agent` mode and tests.
 //   - Exhaustive `switch (e.kind)` over the union catches new variants at
 //     compile time when we extend it.
 //   - The hint() table lives next to the variants, so adding a new error
@@ -104,9 +104,9 @@ export function asVegaStackError(e: unknown): VegaStackError {
 function hintFor(kind: VegaStackErrorKind, ctx: Readonly<Record<string, unknown>>): string {
   switch (kind) {
     case "RegistryEntryMissing":
-      return "Run `vegastack init` to select and download Registry entries for this project.";
+      return "Run `vegastack init` to select and download Registry packs for this project.";
     case "ArtifactCorrupt":
-      return "The Registry pack on disk is invalid. Re-download with `vegastack registry update --force`. If the problem persists, file a bug with `vegastack doctor --json`.";
+      return "The Registry pack on disk is invalid. Re-download with `vegastack registry update --force`. If the problem persists, file a bug with `vegastack doctor --agent`.";
     case "RegistryVersionMismatch":
       return `The installed Registry pack is not compatible with this CLI version (expected schema_version=${
         typeof ctx.expected === "number" ? ctx.expected : "?"
@@ -114,7 +114,7 @@ function hintFor(kind: VegaStackErrorKind, ctx: Readonly<Record<string, unknown>
     case "NetworkError":
       return "Check your network connection and confirm the VegaStack Registry is reachable.";
     case "ChecksumMismatch":
-      return "The downloaded registry artifact did not match its expected SHA256. This means a corrupt download or a tampered artifact. Retry with `vegastack registry update --force`; if it persists, open an issue at https://github.com/vegastack/vegastack-cli/issues with `vegastack doctor --json`.";
+      return "The downloaded registry artifact did not match its expected SHA256. This means a corrupt download or a tampered artifact. Retry with `vegastack registry update --force`; if it persists, open an issue at https://github.com/vegastack/vegastack-cli/issues with `vegastack doctor --agent`.";
     case "AgentInstallError":
       return "The destination already exists or is not writable. Re-run with --force to overwrite, or pick a different --scope.";
     case "ValidationError":
@@ -128,6 +128,6 @@ function hintFor(kind: VegaStackErrorKind, ctx: Readonly<Record<string, unknown>
     case "Unsupported":
       return "This environment is not supported. See the README's compatibility matrix.";
     case "Unknown":
-      return "Run with --json for the structured error, or open an issue with `vegastack doctor --json` output.";
+      return "Run with --agent for the structured error, or open an issue with `vegastack doctor --agent` output.";
   }
 }

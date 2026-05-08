@@ -837,7 +837,7 @@
     "output": {
       "status": "error",
       "query": "totally unrelated query",
-      "error": "Could not detect provider from query. Pass --tf-provider with `vegastack ask --entry terraform`.",
+      "error": "Could not detect provider from query. Pass --tf-provider with `vegastack ask --agent --pack terraform`.",
       "code": "ProviderUndetected"
     }
   },

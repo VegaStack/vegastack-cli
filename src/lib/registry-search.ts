@@ -60,7 +60,7 @@ export interface RegistrySearchOptions {
 }
 
 export interface RegistrySearchMatch {
-  registry_entry: string;
+  registry_pack: string;
   path: string;
   line: number;
   column: number;
@@ -76,9 +76,9 @@ export interface RegistrySearchResult {
   engine: "ripgrep" | "typescript";
   engine_version?: string;
   policy_hash: string;
-  registry_entries: string[];
+  registry_packs: string[];
   matches: RegistrySearchMatch[];
-  skipped: { registry_entry?: string; path?: string; reason: string }[];
+  skipped: { registry_pack?: string; path?: string; reason: string }[];
   citations: string[];
   warnings?: string[];
 }
@@ -107,7 +107,7 @@ export async function searchRegistry(opts: RegistrySearchOptions): Promise<Regis
   const warnings: string[] = [];
   const entries = [...new Set(opts.entries)].sort();
   if (entries.length === 0) {
-    throw new VegaStackError("ValidationError", "no registry entries selected for search");
+    throw new VegaStackError("ValidationError", "no Registry packs selected for search");
   }
   for (const entry of entries) {
     const root = registryEntryCachePath(entry);
@@ -162,7 +162,7 @@ export async function searchRegistry(opts: RegistrySearchOptions): Promise<Regis
 
   matches.sort(
     (a, b) =>
-      a.registry_entry.localeCompare(b.registry_entry) ||
+      a.registry_pack.localeCompare(b.registry_pack) ||
       a.path.localeCompare(b.path) ||
       a.line - b.line ||
       a.column - b.column,
@@ -175,10 +175,10 @@ export async function searchRegistry(opts: RegistrySearchOptions): Promise<Regis
     engine: rg ? "ripgrep" : "typescript",
     ...(rg ? { engine_version: ripgrepVersion(rg) ?? rg } : {}),
     policy_hash: policyHash,
-    registry_entries: entries,
+    registry_packs: entries,
     matches: capped,
     skipped,
-    citations: capped.map((m) => `${m.registry_entry}:${m.path}:L${m.line}`),
+    citations: capped.map((m) => `${m.registry_pack}:${m.path}:L${m.line}`),
     ...(warnings.length ? { warnings } : {}),
   };
 }
@@ -252,7 +252,7 @@ function searchWithRipgrep(args: {
   const docsRoot = path.join(args.root, "docs");
   if (!fs.existsSync(docsRoot)) {
     args.skipped.push({
-      registry_entry: args.entry,
+      registry_pack: args.entry,
       reason: `docs directory missing at ${docsRoot}`,
     });
     return [];
@@ -288,7 +288,7 @@ function searchWithRipgrep(args: {
   });
   if (r.status !== 0 && r.status !== 1) {
     args.skipped.push({
-      registry_entry: args.entry,
+      registry_pack: args.entry,
       reason: `ripgrep failed: ${(r.stderr || r.stdout || "").trim()}`,
     });
     return searchWithTypescript({
@@ -318,7 +318,7 @@ function searchWithRipgrep(args: {
     if (!fullPath || text === undefined || !lineNumber || !sub) continue;
     const rel = path.relative(args.root, fullPath).split(path.sep).join("/");
     out.push({
-      registry_entry: args.entry,
+      registry_pack: args.entry,
       path: rel,
       line: lineNumber,
       column: sub.start + 1,
@@ -342,7 +342,7 @@ function searchWithTypescript(args: {
   const docsRoot = path.join(args.root, "docs");
   if (!fs.existsSync(docsRoot)) {
     args.skipped.push({
-      registry_entry: args.entry,
+      registry_pack: args.entry,
       reason: `docs directory missing at ${docsRoot}`,
     });
     return [];
@@ -362,7 +362,7 @@ function searchWithTypescript(args: {
     const rel = path.relative(args.root, file).split(path.sep).join("/");
     const raw = readText(file);
     if (raw === null) {
-      args.skipped.push({ registry_entry: args.entry, path: rel, reason: "binary_or_too_large" });
+      args.skipped.push({ registry_pack: args.entry, path: rel, reason: "binary_or_too_large" });
       continue;
     }
     const lines = raw.split(/\r?\n/);
@@ -375,7 +375,7 @@ function searchWithTypescript(args: {
           : regexpLineMatch(matcher, line);
       if (match.index < 0) continue;
       out.push({
-        registry_entry: args.entry,
+        registry_pack: args.entry,
         path: rel,
         line: i + 1,
         column: match.index + 1,
@@ -420,7 +420,7 @@ function listTextFiles(
         if (TEXT_EXT.test(row.name)) out.push(full);
         else {
           skipped.push({
-            registry_entry: entry,
+            registry_pack: entry,
             path: path.relative(root, full).split(path.sep).join("/"),
             reason: "extension_policy",
           });
@@ -446,10 +446,10 @@ function readText(file: string): string | null {
 function verifyMatches(matches: RegistrySearchMatch[]): void {
   const artifactCache = new Map<string, Map<string, { bytes: number; sha256: string }>>();
   for (const match of matches) {
-    const root = registryEntryCachePath(match.registry_entry);
+    const root = registryEntryCachePath(match.registry_pack);
     const artifacts =
-      artifactCache.get(match.registry_entry) ?? readArtifactMap(path.join(root, "ARTIFACTS.json"));
-    artifactCache.set(match.registry_entry, artifacts);
+      artifactCache.get(match.registry_pack) ?? readArtifactMap(path.join(root, "ARTIFACTS.json"));
+    artifactCache.set(match.registry_pack, artifacts);
     assertSafeRelativePath(match.path);
     const file = path.join(root, match.path);
     const expected = artifacts.get(match.path);

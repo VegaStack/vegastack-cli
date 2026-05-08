@@ -154,27 +154,28 @@ function lookupPlanForIntent(intent: string): GenerateContract["lookup_plan"] {
   if (/github|action/.test(intent))
     out.push({
       command:
-        'vegastack ask --entry github-actions "workflow syntax permissions secrets cache package manager"',
+        'vegastack ask --agent --pack github-actions "workflow syntax permissions secrets cache package manager"',
     });
   if (/gitlab/.test(intent))
     out.push({
-      command: 'vegastack ask --entry gitlab-ci "pipeline syntax cache artifacts secrets"',
+      command: 'vegastack ask --agent --pack gitlab-ci "pipeline syntax cache artifacts secrets"',
     });
   if (/vercel/.test(intent))
     out.push({
       command:
-        'vegastack ask --entry vercel "cli deploy prebuilt github actions environment variables"',
+        'vegastack ask --agent --pack vercel "cli deploy prebuilt github actions environment variables"',
     });
   if (/docker/.test(intent))
     out.push({
       command:
-        'vegastack ask --entry docker "Dockerfile multi stage build healthcheck best practices"',
+        'vegastack ask --agent --pack docker "Dockerfile multi stage build healthcheck best practices"',
     });
   if (/kubernetes|k8s/.test(intent))
     out.push({
-      command: 'vegastack ask --entry kubernetes "Deployment Service probes resources env secrets"',
+      command:
+        'vegastack ask --agent --pack kubernetes "Deployment Service probes resources env secrets"',
     });
-  return out.length > 0 ? out : [{ command: `vegastack ask "${intent}"` }];
+  return out.length > 0 ? out : [{ command: `vegastack ask --agent "${intent}"` }];
 }
 
 function validationForIntent(intent: string): string[] {

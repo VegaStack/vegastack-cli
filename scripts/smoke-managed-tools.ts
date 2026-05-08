@@ -52,9 +52,7 @@ try {
   // single literal in source — gitleaks `generic-api-key` would otherwise hit
   // this file on every working-tree and full-history scan (audit secrets/F-001
   // in audit-1778150875). Entropy stays low enough not to trip the rule.
-  const fakeTokenPrefix = "ghp_";
-  const fakeTokenBody = "1234567890abcdef" + "ghijklmnopqrstuvwx";
-  const fakeToken = fakeTokenPrefix + fakeTokenBody;
+  const fakeToken = ["gh", "p_", "1234567890abcdef", "ghijklmnopqrstuvwx"].join("");
   fs.writeFileSync(path.join(repo, "leak.env"), `GITHUB_TOKEN=${fakeToken}\n`);
   const scan = spawnSync(gitleaks, ["dir", "--redact", "."], {
     cwd: repo,

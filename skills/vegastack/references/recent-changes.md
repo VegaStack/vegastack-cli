@@ -9,7 +9,7 @@ For card schema, frontmatter spec, and authoring guidelines see
 ## The single workflow
 
 ```bash
-vegastack ask --entry terraform --tf-provider <provider> "<the user's exact phrasing>"
+vegastack ask --agent --pack terraform --tf-provider <provider> "<the user's exact phrasing>"
 ```
 
 The envelope's `knowledge[]` returns every card whose triggers fire (token AND-within, OR-across; or substring `phrase` match). The card body is included inline; cite `authoritative_source` in your reply.

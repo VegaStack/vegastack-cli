@@ -68,7 +68,7 @@ export function globalLogsRoot(): string {
   return path.join(vegastackConfigRoot(), "logs");
 }
 
-/** Global cache root for reusable VegaStack Registry entries. */
+/** Global cache root for reusable VegaStack Registry packs. */
 export function registryCacheRoot(): string {
   const env = resolveTrustedRoot("VEGASTACK_REGISTRY_DIR");
   if (env !== undefined) return env;

@@ -48,7 +48,7 @@ export const log = {
 };
 
 /**
- * Render a thrown error to the user. In --json mode, emits the VegaStackError's
+ * Render a thrown error to the user. In --agent mode, emits the VegaStackError's
  * `toJSON()` shape on stdout. Otherwise prints a 3-line block on stderr:
  * problem → cause (if any) → hint.
  *

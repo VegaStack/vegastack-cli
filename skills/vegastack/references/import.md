@@ -5,7 +5,7 @@ Bringing an existing cloud / SaaS resource under Terraform management starts wit
 ## The single workflow
 
 ```bash
-vegastack ask --entry terraform --tf-provider <provider> "import existing <provider> <resource> <hint>"
+vegastack ask --agent --pack terraform --tf-provider <provider> "import existing <provider> <resource> <hint>"
 ```
 
 `files[0].manifest_entry.import_syntax` returns `{command, id_format}`:

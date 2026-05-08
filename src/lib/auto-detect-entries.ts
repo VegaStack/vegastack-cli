@@ -19,11 +19,11 @@ export function resolveProjectEntriesWithDetection(cwd: string): string[] {
   }
 
   if (supplemental.length > 0) {
-    log.info(`auto-detected supplemental registry entries: ${supplemental.sort().join(", ")}`);
+    log.info(`auto-detected supplemental Registry packs: ${supplemental.sort().join(", ")}`);
   }
   if (missing.length > 0) {
     log.warn(
-      `detected additional registry entries not installed: ${[...new Set(missing)].sort().join(", ")}; run \`vegastack refresh\` and \`vegastack registry update\``,
+      `detected additional Registry packs not installed: ${[...new Set(missing)].sort().join(", ")}; run \`vegastack refresh\` and \`vegastack registry update\``,
     );
   }
   if (detection.stale?.changed) {

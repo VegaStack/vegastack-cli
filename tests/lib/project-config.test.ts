@@ -57,7 +57,7 @@ describe("project config", () => {
     expect(text).toContain("test: npm test");
   });
 
-  it("sorts registry entries for deterministic committed diffs", () => {
+  it("sorts Registry packs for deterministic committed diffs", () => {
     const text = dumpProjectConfig({
       schema_version: 1,
       registry: {

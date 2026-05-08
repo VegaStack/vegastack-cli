@@ -76,11 +76,11 @@ export interface GenericPackResult {
   status: "ok" | "error";
   query: string;
   mode: "registry-docs";
-  registry_entries: string[];
+  registry_packs: string[];
   knowledge: {
     id: string;
     title: string;
-    registry_entry: string;
+    registry_pack: string;
     path: string;
     section_id: string;
     start_line: number;
@@ -91,20 +91,20 @@ export interface GenericPackResult {
     overrides_training: boolean;
   }[];
   concept_aliases_used: {
-    registry_entry: string;
+    registry_pack: string;
     phrase: string;
     source?: string;
     tokens: string[];
     targets: string[];
   }[];
   dependencies: {
-    registry_entry: string;
+    registry_pack: string;
     name: string;
     source: string;
     evidence?: unknown[];
   }[];
   results: {
-    registry_entry: string;
+    registry_pack: string;
     path: string;
     title?: string;
     section_id?: string;
@@ -122,7 +122,7 @@ export interface GenericPackResult {
     match_reasons?: string[];
   }[];
   citations: string[];
-  errors?: { registry_entry: string; message: string }[];
+  errors?: { registry_pack: string; message: string }[];
   warnings?: string[];
 }
 
@@ -142,7 +142,7 @@ interface DiscoverCtx {
   knowledge: GenericPackResult["knowledge"];
   conceptAliasesUsed: GenericPackResult["concept_aliases_used"];
   dependencies: GenericPackResult["dependencies"];
-  errors: { registry_entry: string; message: string }[];
+  errors: { registry_pack: string; message: string }[];
   warnings: string[];
   exactByEntryPath: Map<string, WeightedRegistrySearchMatch[]>;
 }
@@ -165,7 +165,7 @@ function preparePackContext(ctx: DiscoverCtx, pack: string): PackContext | null 
   const manifest = readManifest(root);
   const fileTitles = manifestFileTitles(manifest);
   if (!fs.existsSync(docsRoot)) {
-    ctx.errors.push({ registry_entry: pack, message: `docs directory missing at ${docsRoot}` });
+    ctx.errors.push({ registry_pack: pack, message: `docs directory missing at ${docsRoot}` });
     return null;
   }
   const aliases = readAliases(root);
@@ -183,7 +183,7 @@ function preparePackContext(ctx: DiscoverCtx, pack: string): PackContext | null 
   const fileTokenScores = manifestFileTokenScores(manifest, tokens);
   const metadataTokens = tokensForMetadata(tokens, pack);
   const dependencyHints = readDependencies(root, metadataTokens).map((d) => ({
-    registry_entry: pack,
+    registry_pack: pack,
     ...d,
   }));
   ctx.dependencies.push(...dependencyHints);
@@ -226,7 +226,7 @@ async function runExactSearch(ctx: DiscoverCtx, pc: PackContext): Promise<void> 
         if (!ctx.warnings.includes(warning)) ctx.warnings.push(warning);
       }
       for (const match of exact.matches) {
-        const key = `${match.registry_entry}:${match.path}`;
+        const key = `${match.registry_pack}:${match.path}`;
         const arr = ctx.exactByEntryPath.get(key) ?? [];
         const weighted = { ...match, query_term: term };
         if (!arr.some((m) => exactMatchKey(m) === exactMatchKey(weighted))) arr.push(weighted);
@@ -299,7 +299,7 @@ function buildSectionResult(
   }
   if (score <= 0 && exactMatches.length === 0) return null;
   const result: GenericPackResult["results"][number] = {
-    registry_entry: pc.pack,
+    registry_pack: pc.pack,
     path: section.path,
     score: score + exactMatchScore(exactMatches),
     excerpt: section.excerpt,
@@ -371,14 +371,14 @@ function buildFinalResult(ctx: DiscoverCtx): GenericPackResult {
     status: ctx.errors.length > 0 && trimmed.length === 0 ? "error" : "ok",
     query: ctx.query,
     mode: "registry-docs",
-    registry_entries: ctx.packs,
+    registry_packs: ctx.packs,
     knowledge: trimmedKnowledge,
     concept_aliases_used: ctx.conceptAliasesUsed,
     dependencies: trimmedDependencies,
     results: trimmed,
     citations: [
       ...trimmed.map(
-        (r) => `${r.registry_entry}:${r.path}${r.start_line ? `:L${r.start_line}` : ""}`,
+        (r) => `${r.registry_pack}:${r.path}${r.start_line ? `:L${r.start_line}` : ""}`,
       ),
       ...trimmedKnowledge.map((k) => k.id),
     ],
@@ -827,7 +827,7 @@ function matchAliases(
     )
     .slice(0, 20)
     .map((a) => ({
-      registry_entry: registryEntry,
+      registry_pack: registryEntry,
       phrase: a.phrase,
       ...(a.source ? { source: a.source } : {}),
       tokens: a.tokens ?? [],
@@ -880,7 +880,7 @@ function readKnowledge(
     return (raw.knowledge ?? [])
       .filter(
         (k) =>
-          k.registry_entry === registryEntry &&
+          k.registry_pack === registryEntry &&
           knowledgeHasUsefulTrigger(k) &&
           scoreKnowledge(k, tokens) > 0,
       )
@@ -1033,7 +1033,7 @@ function scoreKnowledgeForFinal(
   card: GenericPackResult["knowledge"][number],
   tokens: string[],
 ): number {
-  const packTokens = new Set(tokenize(card.registry_entry));
+  const packTokens = new Set(tokenize(card.registry_pack));
   return scoreKnowledge(
     card,
     tokens.filter((token) => !packTokens.has(token)),
@@ -1182,7 +1182,7 @@ function uniqueExactDisplayMatches(
   const seen = new Set<string>();
   const out: WeightedRegistrySearchMatch[] = [];
   for (const match of matches) {
-    const key = `${match.registry_entry}:${match.path}:${match.line}:${match.column}:${match.text}`;
+    const key = `${match.registry_pack}:${match.path}:${match.line}:${match.column}:${match.text}`;
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(match);
@@ -1191,7 +1191,7 @@ function uniqueExactDisplayMatches(
 }
 
 function exactMatchKey(match: WeightedRegistrySearchMatch): string {
-  return `${match.registry_entry}:${match.path}:${match.line}:${match.column}:${match.text}:${match.query_term}`;
+  return `${match.registry_pack}:${match.path}:${match.line}:${match.column}:${match.text}:${match.query_term}`;
 }
 
 function pruneOverlappingResults(
@@ -1200,7 +1200,7 @@ function pruneOverlappingResults(
   const kept: GenericPackResult["results"] = [];
   const perPath = new Map<string, number>();
   for (const result of results) {
-    const pathKey = `${result.registry_entry}:${result.path}`;
+    const pathKey = `${result.registry_pack}:${result.path}`;
     if ((perPath.get(pathKey) ?? 0) >= 3) continue;
     if (kept.some((existing) => sectionsOverlap(existing, result))) continue;
     kept.push(result);
@@ -1219,8 +1219,8 @@ function diversifyByRegistryEntry(
   const selectedKeys = new Set<string>();
   const minPerPack = Math.max(1, Math.min(2, Math.floor(max / packs.length)));
   for (const pack of packs) {
-    for (const result of results.filter((candidate) => candidate.registry_entry === pack)) {
-      if (selected.filter((candidate) => candidate.registry_entry === pack).length >= minPerPack) {
+    for (const result of results.filter((candidate) => candidate.registry_pack === pack)) {
+      if (selected.filter((candidate) => candidate.registry_pack === pack).length >= minPerPack) {
         break;
       }
       const key = resultKey(result);
@@ -1240,14 +1240,14 @@ function diversifyByRegistryEntry(
 }
 
 function resultKey(result: GenericPackResult["results"][number]): string {
-  return `${result.registry_entry}:${result.section_id ?? result.path}:${result.start_line ?? ""}`;
+  return `${result.registry_pack}:${result.section_id ?? result.path}:${result.start_line ?? ""}`;
 }
 
 function sectionsOverlap(
   a: GenericPackResult["results"][number],
   b: GenericPackResult["results"][number],
 ): boolean {
-  if (a.registry_entry !== b.registry_entry || a.path !== b.path) return false;
+  if (a.registry_pack !== b.registry_pack || a.path !== b.path) return false;
   if (a.start_line === undefined || a.end_line === undefined) return true;
   if (b.start_line === undefined || b.end_line === undefined) return true;
   return a.start_line <= b.end_line && b.start_line <= a.end_line;

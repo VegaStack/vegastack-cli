@@ -1,4 +1,4 @@
-// Internal Terraform Registry pack discovery used by `vegastack ask --entry terraform`.
+// Internal Terraform Registry pack discovery used by `vegastack ask --agent --pack terraform`.
 // This is not a public `vegastack terraform` command.
 //
 // Flags:
@@ -9,7 +9,7 @@
 //   --full-examples    restore full example_usage (default: truncated to first HCL block)
 //   --pretty           pretty-print JSON (default: TTY auto-detect)
 //   --debug            include per-stage timings
-//   --json-schema      print the JSON Schema for the envelope and exit
+//   --schema           print the envelope schema and exit
 //
 // Token-efficiency flags:
 //   --brief         Strips manifest_entry and example_usage from each files[] entry,
@@ -63,7 +63,7 @@ export async function runTerraformDiscover(
     return printError(
       new VegaStackError(
         "ValidationError",
-        'usage: vegastack ask --entry terraform --tf-provider <provider> "<natural-language query>"',
+        'usage: vegastack ask --agent --pack terraform --tf-provider <provider> "<natural-language query>"',
       ),
     );
   }

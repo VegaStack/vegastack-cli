@@ -8,7 +8,7 @@ Flow:
 2. If VegaStack should start the app, use `vegastack preview --command "<dev command>" --port <port>`.
 3. For a temporary Cloudflare Quick Tunnel, add `--tunnel`.
 4. For custom hostnames, add `--hostname <hostname>` only after confirming the user controls the Cloudflare zone and is logged in.
-5. Use `--json` when the returned URL should be parsed.
+5. Use `--agent` when the returned URL should be parsed.
 
 `/vegastack tunnel` is a skill alias only. The CLI command is always `vegastack preview --tunnel`; never run `vegastack tunnel`.
 
