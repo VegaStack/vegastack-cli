@@ -12,11 +12,14 @@ import { MANAGED_TOOLS_MANIFEST, managedToolTarget } from "../../src/lib/managed
 import { _clearTrustedRootCacheForTests, gitleaksMetadataPath } from "../../src/lib/paths.js";
 import { withTmpDir } from "../setup.js";
 
+const ORIGINAL_PATH = process.env.PATH;
+
 describe("gitleaks resolver", () => {
   afterEach(() => {
     delete process.env.VEGASTACK_CONFIG_DIR;
     delete process.env.VEGASTACK_GITLEAKS_BIN;
     delete process.env.VEGASTACK_ALLOW_SYSTEM_TOOLS;
+    process.env.PATH = ORIGINAL_PATH;
     _clearTrustedRootCacheForTests();
   });
 

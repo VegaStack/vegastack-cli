@@ -18,6 +18,8 @@ import { _clearTrustedRootCacheForTests, managedToolMetadataPath } from "../../s
 import { resolveRipgrepBin } from "../../src/lib/ripgrep.js";
 import { withTmpDir } from "../setup.js";
 
+const ORIGINAL_PATH = process.env.PATH;
+
 describe("managed tool installer", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -26,6 +28,7 @@ describe("managed tool installer", () => {
     delete process.env.VEGASTACK_TEST_BIN;
     delete process.env.VEGASTACK_RG_BIN;
     delete process.env.VEGASTACK_ALLOW_SYSTEM_TOOLS;
+    process.env.PATH = ORIGINAL_PATH;
     _clearTrustedRootCacheForTests();
   });
 
@@ -132,6 +135,7 @@ describe("ripgrep resolver", () => {
     delete process.env.VEGASTACK_CONFIG_DIR;
     delete process.env.VEGASTACK_RG_BIN;
     delete process.env.VEGASTACK_ALLOW_SYSTEM_TOOLS;
+    process.env.PATH = ORIGINAL_PATH;
     _clearTrustedRootCacheForTests();
   });
 
