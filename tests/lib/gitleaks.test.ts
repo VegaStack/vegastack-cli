@@ -80,7 +80,10 @@ describe("gitleaks resolver", () => {
       fs.writeFileSync(gitleaksMetadataPath(), '{"version":1,"bin":false}\n');
       expect(readGitleaksMetadata()).toBeNull();
 
-      const failing = writeExecutable(path.join(dir, "gitleaks-fails"), "#!/usr/bin/env sh\nexit 2\n");
+      const failing = writeExecutable(
+        path.join(dir, "gitleaks-fails"),
+        "#!/usr/bin/env sh\nexit 2\n",
+      );
       expect(gitleaksVersion(failing)).toBeNull();
     });
   });

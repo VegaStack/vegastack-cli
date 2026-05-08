@@ -139,7 +139,10 @@ describe("ripgrep resolver", () => {
     await withTmpDir(async (dir) => {
       process.env.VEGASTACK_CONFIG_DIR = path.join(dir, "home");
       _clearTrustedRootCacheForTests();
-      const rg = writeExecutable(path.join(dir, "bin", process.platform === "win32" ? "rg.exe" : "rg"), "rg\n");
+      const rg = writeExecutable(
+        path.join(dir, "bin", process.platform === "win32" ? "rg.exe" : "rg"),
+        "rg\n",
+      );
       process.env.PATH = `${path.dirname(rg)}${path.delimiter}${process.env.PATH ?? ""}`;
 
       expect(resolveRipgrepBin()).toBeNull();

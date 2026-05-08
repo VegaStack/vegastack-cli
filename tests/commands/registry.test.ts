@@ -52,9 +52,9 @@ describe("registry command", () => {
   it("updates an explicit validated entry", async () => {
     const { runRegistryUpdate } = await import("../../src/commands/registry.js");
 
-    await expect(runRegistryUpdate({ entry: "github-actions", force: true, json: true })).resolves.toBe(
-      0,
-    );
+    await expect(
+      runRegistryUpdate({ entry: "github-actions", force: true, json: true }),
+    ).resolves.toBe(0);
     expect(registryMocks.syncRegistryEntry).toHaveBeenCalledWith("github-actions", { force: true });
     expect(logMocks.json).toHaveBeenCalledWith({ ok: true, updated: ["github-actions"] });
   });
@@ -78,9 +78,8 @@ describe("registry command", () => {
   });
 
   it("rejects traversal-shaped registry entry names at the command boundary", async () => {
-    const { validateRegistryEntryName, runRegistryUpdate } = await import(
-      "../../src/commands/registry.js"
-    );
+    const { validateRegistryEntryName, runRegistryUpdate } =
+      await import("../../src/commands/registry.js");
 
     expect(() => validateRegistryEntryName("../terraform")).toThrow(/valid registry entry name/);
     await expect(runRegistryUpdate({ entry: "../terraform" })).resolves.toBe(1);
