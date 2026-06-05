@@ -36,7 +36,7 @@ jobs:
       bundle-url: ${{ steps.bundle.outputs.url }}
       tag: ${{ steps.bundle.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Resolve bundle URL for this tag
         id: bundle
@@ -85,7 +85,7 @@ jobs:
       id-token: write       # required for npm trusted publishing + Sigstore
       attestations: write   # for actions/attest-build-provenance
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # setup-node@v6 is the current major as of April 2026 (supports
       # automatic dependency caching from packageManager field).
@@ -150,7 +150,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
